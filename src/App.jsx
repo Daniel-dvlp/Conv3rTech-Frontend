@@ -8,12 +8,21 @@ import DashboardPage from './features/dashboard/DashboardPage';
 import WorkSchedulingPage from './features/dashboard/pages/Work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/Project/ProjectPage';
+
+// ... aquí irán las demás importaciones de tus páginas
+import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
+import UsersPages from './features/dashboard/pages/users/UsersPage';
+import Payments_InstallmentsPage from './features/dashboard/pages/payments_installments/Payments_InstallmentsPage';
 import ServicesCategoryPage from './features/dashboard/pages/Services_category/ServicesCategoryPage';
 import ServicesPage from './features/dashboard/pages/services/ServicesPage';
 import AppoinmentsPage from './features/dashboard/pages/appoinments/AppoinmentsPage';
+;
+
+
 
 function App() {
   return (
+
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" />} />
@@ -22,6 +31,12 @@ function App() {
           <Route index element={<DashboardPage />} />
           <Route path="programacion" element={<WorkSchedulingPage />} />
           <Route path="roles" element={<RolesPage />} />
+          <Route path="proyectos" element={<ProjectPage/>} />
+          {/* ... aquí configurarás las demás rutas */}
+          <Route path="usuarios" element= {<UsersPages/>} />
+          <Route path="clientes" element= {<ClientsPage/>} />
+          <Route path="pagosyabonos" element= {<Payments_InstallmentsPage/>} />
+          {/* ... aquí configurarás las demás rutas */}
           <Route path="proyectos" element={<ProjectPage />} />
           <Route path="categoria_servicios" element={<ServicesCategoryPage />} />
           <Route path="servicios" element={<ServicesPage />} />
@@ -31,6 +46,7 @@ function App() {
       </Routes>
     </BrowserRouter>
   );
+
 }
 
 export default App;
