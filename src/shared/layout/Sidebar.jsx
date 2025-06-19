@@ -27,6 +27,8 @@ const Sidebar = () => {
     { name: 'Cotizaciones', icon: <FaFileContract />, path: '/dashboard/cotizaciones' },
     {name: 'Proyectos', icon: <FaClipboardList />, path: '/dashboard/proyectos' },
     { name: 'Agenda', icon: <FaCalendarAlt />, path: '/dashboard/agenda' },
+    {name: 'Citas', icon: <FaCalendarWeek />, path: '/dashboard/citas' },
+    {name: 'Categoria de Servicios', icon: <FaClipboardList />, path: '/dashboard/categoria_servicios' },
     { name: 'Programación Laboral', icon: <FaCalendarWeek />, path: '/dashboard/programacion' },
     { name: 'Usuarios y Roles', icon: <FaUsersCog />, path: '/dashboard/usuarios' },
     { name: 'Gestión de Roles', icon: <FaUserShield />, path: '/dashboard/roles' },
