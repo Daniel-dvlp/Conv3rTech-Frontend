@@ -1,20 +1,13 @@
-// src/shared/layout/Sidebar.jsx
-
-import { useState } from 'react';
-// 1. IMPORTAMOS Link y useLocation
 import { Link, useLocation } from 'react-router-dom';
 import {
   FaTachometerAlt, FaUserFriends, FaTruck, FaConciergeBell, FaBoxOpen,
   FaShoppingCart, FaDollarSign, FaClipboardList, FaFileContract, FaCalendarAlt,
-  FaCalendarWeek, FaUsersCog, FaUserShield, FaCog, FaSignOutAlt,   FaMoneyCheckAlt
+  FaCalendarWeek, FaUsersCog, FaUserShield, FaCog, FaSignOutAlt, FaMoneyCheckAlt
 } from 'react-icons/fa';
 
-const Sidebar = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-  // 2. OBTENEMOS LA UBICACIÓN ACTUAL
-  const location = useLocation(); // Hook para saber en qué ruta estamos
+const Sidebar = ({ isExpanded, setIsExpanded }) => {
+  const location = useLocation();
 
-  // 3. AÑADIMOS LA PROPIEDAD 'path' a cada objeto del menú
   const mainMenuItems = [
     { name: 'Dashboard', icon: <FaTachometerAlt />, path: '/dashboard' },
     { name: 'Clientes', icon: <FaUserFriends />, path: '/dashboard/clientes' },
@@ -25,11 +18,11 @@ const Sidebar = () => {
     { name: 'Ventas', icon: <FaDollarSign />, path: '/dashboard/ventas' },
     { name: 'Órdenes de Servicio', icon: <FaClipboardList />, path: '/dashboard/ordenes' },
     { name: 'Cotizaciones', icon: <FaFileContract />, path: '/dashboard/cotizaciones' },
-    {name: 'Proyectos', icon: <FaClipboardList />, path: '/dashboard/proyectos' },
-    {name: 'Pagos y Abonos', icon: <  FaMoneyCheckAlt />, path: '/dashboard/pagosyabonos' },
+    { name: 'Proyectos', icon: <FaClipboardList />, path: '/dashboard/proyectos' },
+    { name: 'Pagos y Abonos', icon: <FaMoneyCheckAlt />, path: '/dashboard/pagosyabonos' },
     { name: 'Agenda', icon: <FaCalendarAlt />, path: '/dashboard/agenda' },
-    {name: 'Citas', icon: <FaCalendarWeek />, path: '/dashboard/citas' },
-    {name: 'Categoria de Servicios', icon: <FaClipboardList />, path: '/dashboard/categoria_servicios' },
+    { name: 'Citas', icon: <FaCalendarWeek />, path: '/dashboard/citas' },
+    { name: 'Categoria de Servicios', icon: <FaClipboardList />, path: '/dashboard/categoria_servicios' },
     { name: 'Programación Laboral', icon: <FaCalendarWeek />, path: '/dashboard/programacion' },
     { name: 'Usuarios', icon: <FaUsersCog />, path: '/dashboard/usuarios' },
     { name: 'Gestión de Roles', icon: <FaUserShield />, path: '/dashboard/roles' },
@@ -37,81 +30,75 @@ const Sidebar = () => {
 
   const bottomMenuItems = [
     { name: 'Configuración', icon: <FaCog />, path: '/dashboard/configuracion' },
-    { name: 'Cerrar Sesión', icon: <FaSignOutAlt />, path: '/logout' }, // Path especial para la lógica de logout
+    { name: 'Cerrar Sesión', icon: <FaSignOutAlt />, path: '/logout' },
   ];
 
   const handleLogout = (e) => {
     e.preventDefault();
-    // Aquí iría tu lógica para cerrar sesión
     alert('Cerrando sesión...');
   };
 
   return (
     <aside
-      className={`bg-[#00012A] text-white h-screen p-4 flex flex-col justify-between transition-all duration-300 ease-in-out ${
+      className={`bg-[#00012A] text-white h-screen fixed top-0 left-0 z-50 transition-all duration-300 ease-in-out ${
         isExpanded ? 'w-64' : 'w-20'
       }`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
-      <div>
-        <div className="flex items-center justify-center mb-10 h-10">
+      <div className="flex flex-col h-full justify-between">
+        <div className="flex items-center justify-center h-16 px-4">
           {isExpanded ? (
-            <h1 className="text-xl font-bold ml-2 whitespace-nowrap">Conv3rTech</h1>
+            <h1 className="text-xl font-bold whitespace-nowrap">Conv3rTech</h1>
           ) : (
-            <img src="https://via.placeholder.com/40" alt="Logo" className="rounded-full flex-shrink-0" />
+            <img src="https://via.placeholder.com/40" alt="Logo" className="rounded-full" />
           )}
         </div>
-        <nav>
-          <ul>
-            {mainMenuItems.map((item) => (
-              <li key={item.name} className="mb-2">
-                {/* 4. REEMPLAZAMOS <a> por <Link> y 'href' por 'to' */}
-                <Link
-                  to={item.path}
-                  className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                    // 5. La clase activa se basa en la URL actual
-                    location.pathname === item.path
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  <div className="text-2xl flex-shrink-0">{item.icon}</div>
-                  {isExpanded && <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      </div>
-      <div className="border-t border-gray-700 pt-4">
-        <ul>
-          {bottomMenuItems.map((item) => (
-            <li key={item.name} className="mb-2">
-              {item.name === 'Cerrar Sesión' ? (
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center p-3 rounded-lg transition-colors duration-200 text-gray-400 hover:bg-gray-700 hover:text-white"
-                >
-                  <div className="text-2xl flex-shrink-0">{item.icon}</div>
-                  {isExpanded && <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>}
-                </button>
-              ) : (
-                <Link
-                  to={item.path}
-                  className={`flex items-center p-3 rounded-lg transition-colors duration-200 ${
-                    location.pathname === item.path
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  <div className="text-2xl flex-shrink-0">{item.icon}</div>
-                  {isExpanded && <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>}
-                </Link>
-              )}
-            </li>
+
+        <nav className="flex-grow px-2 space-y-1 overflow-hidden">
+          {mainMenuItems.map((item) => (
+            <Link
+              key={item.name}
+              to={item.path}
+              className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+                location.pathname === item.path
+                  ? 'bg-gray-700 text-white'
+                  : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+              }`}
+            >
+              <div className="text-xl">{item.icon}</div>
+              {isExpanded && <span className="truncate">{item.name}</span>}
+            </Link>
           ))}
-        </ul>
+        </nav>
+
+        <div className="border-t border-gray-700 px-2 py-3">
+          {bottomMenuItems.map((item) =>
+            item.name === 'Cerrar Sesión' ? (
+              <button
+                key={item.name}
+                onClick={handleLogout}
+                className="w-full flex items-center gap-4 p-3 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-white"
+              >
+                <div className="text-xl">{item.icon}</div>
+                {isExpanded && <span className="truncate">{item.name}</span>}
+              </button>
+            ) : (
+              <Link
+                key={item.name}
+                to={item.path}
+                className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+                  location.pathname === item.path
+                    ? 'bg-gray-700 text-white'
+                    : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+                }`}
+              >
+                <div className="text-xl">{item.icon}</div>
+                {isExpanded && <span className="truncate">{item.name}</span>}
+              </Link>
+            )
+          )}
+        </div>
       </div>
     </aside>
   );

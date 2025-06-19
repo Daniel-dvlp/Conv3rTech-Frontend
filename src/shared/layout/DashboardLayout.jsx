@@ -1,22 +1,21 @@
-// src/shared/layout/DashboardLayout.jsx
-
+import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-// LA CLAVE ESTÁ AQUÍ: Importamos el componente Sidebar que ya creamos
-import Sidebar from './Sidebar'; 
+import Sidebar from './Sidebar';
 
 const DashboardLayout = () => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
   return (
-    <div className="flex bg-gray-100 min-h-screen w-screen">
-      
-      {/* Y AQUÍ LO USAMOS: como si fuera una etiqueta HTML normal */}
-      <Sidebar />
+    <div className="flex bg-gray-100 min-h-screen w-screen overflow-hidden">
+      <Sidebar isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
 
-      {/* El resto de tu aplicación se renderizará aquí */}
-      <main className="flex-grow p-8 bg-white">
+      <main
+        className={`flex-grow p-8 bg-white transition-all duration-300 ease-in-out ${
+          isExpanded ? 'ml-64' : 'ml-20'
+        }`}
+      >
         <Outlet />
-
       </main>
-      
     </div>
   );
 };
