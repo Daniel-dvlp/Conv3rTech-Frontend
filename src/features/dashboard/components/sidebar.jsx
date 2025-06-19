@@ -25,7 +25,7 @@ const Sidebar = () => {
     { name: 'Cotizaciones', icon: <FaFileContract /> },
     { name: 'Agenda', icon: <FaCalendarAlt /> },
     { name: 'Programación Laboral', icon: <FaCalendarWeek /> },
-    { name: 'Usuarios y Roles', icon: <FaUsersCog /> },
+    { name: 'Usuarios', icon: <FaUsersCog /> },
     { name: 'Gestión de Roles', icon: <FaUserShield /> },
   ];
 

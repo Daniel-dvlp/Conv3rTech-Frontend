@@ -6,7 +6,7 @@ import { Link, useLocation } from 'react-router-dom';
 import {
   FaTachometerAlt, FaUserFriends, FaTruck, FaConciergeBell, FaBoxOpen,
   FaShoppingCart, FaDollarSign, FaClipboardList, FaFileContract, FaCalendarAlt,
-  FaCalendarWeek, FaUsersCog, FaUserShield, FaCog, FaSignOutAlt
+  FaCalendarWeek, FaUsersCog, FaUserShield, FaCog, FaSignOutAlt,   FaMoneyCheckAlt
 } from 'react-icons/fa';
 
 const Sidebar = () => {
@@ -26,9 +26,10 @@ const Sidebar = () => {
     { name: 'Órdenes de Servicio', icon: <FaClipboardList />, path: '/dashboard/ordenes' },
     { name: 'Cotizaciones', icon: <FaFileContract />, path: '/dashboard/cotizaciones' },
     {name: 'Proyectos', icon: <FaClipboardList />, path: '/dashboard/proyectos' },
+    {name: 'Pagos y Abonos', icon: <  FaMoneyCheckAlt />, path: '/dashboard/pagosyabonos' },
     { name: 'Agenda', icon: <FaCalendarAlt />, path: '/dashboard/agenda' },
     { name: 'Programación Laboral', icon: <FaCalendarWeek />, path: '/dashboard/programacion' },
-    { name: 'Usuarios y Roles', icon: <FaUsersCog />, path: '/dashboard/usuarios' },
+    { name: 'Usuarios', icon: <FaUsersCog />, path: '/dashboard/usuarios' },
     { name: 'Gestión de Roles', icon: <FaUserShield />, path: '/dashboard/roles' },
   ];
 
