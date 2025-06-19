@@ -1,35 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+// src/App.jsx
+
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
+// Layout principal
+import DashboardLayout from './shared/layout/DashboardLayout';
+
+// 1. IMPORTAMOS LA PÁGINA DEL DASHBOARD
+import DashboardPage from './features/dashboard/DashboardPage';
+import WorkSchedulingPage from './features/dashboard/pages/Work_scheduling/WorkSchedulingPage';
+import RolesPage from './features/dashboard/pages/Roles/RolesPage';
+import ProjectPage from './features/dashboard/pages/Project/ProjectPage';
+;
+// ... aquí irán las demás importaciones de tus páginas
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path="/dashboard" element={<DashboardLayout />}>
+          
+          {/* 2. ESTA ES LA LÍNEA QUE LO CONECTA TODO */}
+          {/* Le decimos que por defecto, en /dashboard, muestre DashboardPage */}
+          <Route index element={<DashboardPage />} />
+          <Route path="programacion" element={<WorkSchedulingPage />} />
+          <Route path="roles" element={<RolesPage />} />
+          <Route path="proyectos" element={<ProjectPage/>} />
+          {/* ... aquí configurarás las demás rutas */}
+        </Route>
+
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
