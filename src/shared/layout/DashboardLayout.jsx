@@ -1,21 +1,22 @@
-import { useState } from 'react';
+// src/shared/layout/DashboardLayout.jsx
+
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import Sidebar from './Sidebar'; 
 
 const DashboardLayout = () => {
-  const [isExpanded, setIsExpanded] = useState(false);
-
+  // NO hay estado aquí. El layout es "tonto" y solo organiza.
   return (
-    <div className="flex bg-gray-100 min-h-screen w-screen overflow-hidden">
-      <Sidebar isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+    // 1. El 'div' principal es un contenedor flex.
+    <div className="flex w-full min-h-screen bg-gray-100">
+      
+      {/* 2. El Sidebar es un hijo directo. Ocupará su propio espacio físico. */}
+      <Sidebar />
 
-      <main
-        className={`flex-grow p-8 bg-white transition-all duration-300 ease-in-out ${
-          isExpanded ? 'ml-64' : 'ml-20'
-        }`}
-      >
+      {/* 3. El 'main' es el otro hijo y crece ('flex-grow') para ocupar el resto del espacio. */}
+      <main className="flex-grow p-8 bg-white">
         <Outlet />
       </main>
+      
     </div>
   );
 };
