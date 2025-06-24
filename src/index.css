@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Oculta completamente el scroll */
+.invisible-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.invisible-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari */
+}

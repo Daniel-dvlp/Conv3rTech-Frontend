@@ -2,21 +2,21 @@
 
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar'; 
+import Header from './Header';
 
 const DashboardLayout = () => {
   // NO hay estado aquí. El layout es "tonto" y solo organiza.
   return (
-    // 1. El 'div' principal es un contenedor flex.
-    <div className="flex w-full min-h-screen bg-gray-100">
-      
-      {/* 2. El Sidebar es un hijo directo. Ocupará su propio espacio físico. */}
-      <Sidebar />
 
-      {/* 3. El 'main' es el otro hijo y crece ('flex-grow') para ocupar el resto del espacio. */}
-      <main className="flex-grow p-8 bg-white">
-        <Outlet />
-      </main>
-      
+    <div className="flex bg-gray-100 min-h-screen w-screen">
+      <Sidebar />
+      <div className="flex flex-col flex-grow min-h-screen">
+        <Header />
+        <main className="flex-grow p-8 bg-white">
+          <Outlet />
+        </main>
+      </div>
+
     </div>
   );
 };
