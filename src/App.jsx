@@ -8,6 +8,7 @@ import DashboardLayout from './shared/layout/DashboardLayout';
 
 import DashboardPage from './features/dashboard/DashboardPage';
 //Rutas Daniel
+import LoginPage from './features/auth/pages/LoginPage';
 import WorkSchedulingPage from './features/dashboard/pages/Work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/Project/ProjectPage';
@@ -19,7 +20,7 @@ import Payments_InstallmentsPage from './features/dashboard/pages/payments_insta
 //Rutas Elany
 import ServicesCategoryPage from './features/dashboard/pages/Services_category/ServicesCategoryPage';
 import ServicesPage from './features/dashboard/pages/services/ServicesPage';
-import AppoinmentsPage from './features/dashboard/pages/appoinments/AppoinmentsPage';
+import AppoinmentsPage from './features/dashboard/pages/Appointment/AppoinmentsPage';
 //Rutas Sarai
 import ProductsPage from './features/dashboard/pages/products/ProductsPage';
 import ProductsCategoryPage from './features/dashboard/pages/products_category/ProductsCategoryPage';
@@ -35,9 +36,12 @@ function App() {
     <BrowserRouter>
       <Routes>
         {/* Redirección de la ruta raíz al dashboard */}
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={<Navigate to="/login" />} />
+        {/* Ruta de Login */}
+        <Route path="/login" element={<LoginPage />} />
 
-          <Route path="/dashboard" element={<DashboardLayout />}>
+
+          <Route path="dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="programacion_laboral" element={<WorkSchedulingPage />} />
           <Route path="roles" element={<RolesPage />} />
