@@ -7,7 +7,6 @@ const ClientsPage = () => {
       <p className="mt-4 text-gray-600">
         Aquí se mostrará el modulo de Clientes.
       </p>
-      
     </div>
   );
 };

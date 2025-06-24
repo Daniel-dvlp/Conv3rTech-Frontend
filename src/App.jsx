@@ -2,46 +2,56 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
 
 import DashboardLayout from './shared/layout/DashboardLayout';
-
-
 import DashboardPage from './features/dashboard/DashboardPage';
+//Rutas Daniel
 import WorkSchedulingPage from './features/dashboard/pages/Work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/Project/ProjectPage';
-
-// ... aquí irán las demás importaciones de tus páginas
+// Rutas Luissy
 import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
 import UsersPages from './features/dashboard/pages/users/UsersPage';
 import Payments_InstallmentsPage from './features/dashboard/pages/payments_installments/Payments_InstallmentsPage';
+//Rutas Elany
 import ServicesCategoryPage from './features/dashboard/pages/Services_category/ServicesCategoryPage';
 import ServicesPage from './features/dashboard/pages/services/ServicesPage';
 import AppoinmentsPage from './features/dashboard/pages/appoinments/AppoinmentsPage';
-;
-
-
+//Rutas Sarai
+import ProductsPage from './features/dashboard/pages/products/ProductsPage';
+import ProductsCategoryPage from './features/dashboard/pages/products_category/ProductsCategoryPage';
+import ProductsSalePage from './features/dashboard/pages/products_sale/ProductsSalePage';
+import QuotesPage from './features/dashboard/pages/quotes/QuotesPage';
+//Rutas Cruz
+import PurchasesPage from './features/dashboard/pages/purchases/PurchasesPage';
+import SuppliersPage from './features/dashboard/pages/suppliers/SuppliersPage';
+import ServiceOrdersPage from './features/dashboard/pages/service_orders/ServicesOrdersPage';
 
 function App() {
   return (
-
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" />} />
-        
-        <Route path="/dashboard" element={<DashboardLayout />}>
+          <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
-          <Route path="programacion" element={<WorkSchedulingPage />} />
+          <Route path="programacion_laboral" element={<WorkSchedulingPage />} />
           <Route path="roles" element={<RolesPage />} />
-          <Route path="proyectos" element={<ProjectPage/>} />
-          {/* ... aquí configurarás las demás rutas */}
+          <Route path="proyectos_servicios" element={<ProjectPage/>} />
+          {/*Rutas Luissy */}
           <Route path="usuarios" element= {<UsersPages/>} />
           <Route path="clientes" element= {<ClientsPage/>} />
           <Route path="pagosyabonos" element= {<Payments_InstallmentsPage/>} />
-          {/* ... aquí configurarás las demás rutas */}
-          <Route path="proyectos" element={<ProjectPage />} />
+          {/*Rutas Elany */}
           <Route path="categoria_servicios" element={<ServicesCategoryPage />} />
           <Route path="servicios" element={<ServicesPage />} />
           <Route path="citas" element={<AppoinmentsPage />} />
-        
+          {/*Rutas Sarai */}
+          <Route path="productos" element={<ProductsPage />} />
+          <Route path="categoria_productos" element={<ProductsCategoryPage />} />
+          <Route path="venta_productos" element={<ProductsSalePage />} />
+          <Route path="cotizaciones" element={<QuotesPage />} />
+          {/*Rutas Cruz */}
+          <Route path= "ordenes_servicios" element= {<ServiceOrdersPage/>} />
+          <Route path= "proveedores" element= {<SuppliersPage/>} />
+          <Route path= "compras" element= {<PurchasesPage/>} />
         </Route>
       </Routes>
     </BrowserRouter>
