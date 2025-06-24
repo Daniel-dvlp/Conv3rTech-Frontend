@@ -65,35 +65,46 @@ const Sidebar = () => {
   const bottomMenuItems = [
     { name: 'Configuración', icon: <FaCog />, path: '/dashboard/configuracion' },
     { name: 'Cerrar Sesión', icon: <FaSignOutAlt />, path: '/logout' },
+
   ];
 
   const handleLogout = (e) => {
     e.preventDefault();
+
     alert('Cerrando sesión...');
+
   };
 
   return (
+    // Se usa 'sticky' para que el sidebar "empuje" el contenido en lugar de flotar sobre él.
     <aside
+
       className={`bg-[#00012A] text-white h-screen p-3 flex flex-col transition-all duration-300 ease-in-out ${
         isExpanded ? 'w-64' : 'w-20'
+
       }`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
+
       <div className="flex-grow overflow-y-auto invisible-scrollbar">
         <div className="flex items-center justify-center mb-10 h-10">
           {isExpanded ? (
             <h1 className="text-3xl font-bold ml-2 whitespace-nowrap">
               Conv<span style={{ color: 'rgb(255,179,0)' }}>3</span>rTech
             </h1>
+
           ) : (
             <img
               src="https://via.placeholder.com/40"
               alt="Logo"
+
               className="rounded-full flex-shrink-0"
+
             />
           )}
         </div>
+
 
         <nav>
           <ul className="pl-0">
@@ -160,10 +171,12 @@ const Sidebar = () => {
                     )}
                   </Link>
                 )}
+
               </li>
             ))}
           </ul>
         </nav>
+
       </div>
 
       <div className="border-t border-gray-700 pt-4">
@@ -206,6 +219,7 @@ const Sidebar = () => {
             </li>
           ))}
         </ul>
+
       </div>
     </aside>
   );

@@ -1,12 +1,17 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 
-
+// Layout Principal
 import DashboardLayout from './shared/layout/DashboardLayout';
+
+
+// Importación de todas las páginas de los módulos
+
 import DashboardPage from './features/dashboard/DashboardPage';
 //Rutas Daniel
 import WorkSchedulingPage from './features/dashboard/pages/Work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/Project/ProjectPage';
+
 // Rutas Luissy
 import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
 import UsersPages from './features/dashboard/pages/users/UsersPage';
@@ -29,7 +34,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Redirección de la ruta raíz al dashboard */}
         <Route path="/" element={<Navigate to="/dashboard" />} />
+
           <Route path="/dashboard" element={<DashboardLayout />}>
           <Route index element={<DashboardPage />} />
           <Route path="programacion_laboral" element={<WorkSchedulingPage />} />
@@ -52,11 +59,11 @@ function App() {
           <Route path= "ordenes_servicios" element= {<ServiceOrdersPage/>} />
           <Route path= "proveedores" element= {<SuppliersPage/>} />
           <Route path= "compras" element= {<PurchasesPage/>} />
+
         </Route>
       </Routes>
     </BrowserRouter>
   );
-
 }
 
 export default App;
