@@ -1,15 +1,58 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { FaPlus } from 'react-icons/fa';
+import UsersTable from './components/UsersTable'; 
+import SkeletonRow from './components/SkeletonRow';
+import { mockUsuarios } from './data/User_data'; // debes tener este archivo
 
-const UsersPages = () => {
+const UsuariosPage = () => {
+  const [usuarios, setUsuarios] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setUsuarios(mockUsuarios);
+      setLoading(false);
+    }, 1500);
+  }, []);
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800">Usuarios</h1>
-      <p className="mt-4 text-gray-600">
-        Aquí se mostrará el modulo de Usuarios.
-      </p>
-      
+    <div className="p-4 md:p-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
+        <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all">
+          <FaPlus />
+          Nuevo Usuario
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="bg-white rounded-lg shadow-md overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Documento</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apellido</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {[...Array(5)].map((_, index) => (
+                <SkeletonRow key={index} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <UsersTable usuarios={usuarios} />
+      )}
     </div>
   );
 };
 
-export default UsersPages;
+export default UsuariosPage;

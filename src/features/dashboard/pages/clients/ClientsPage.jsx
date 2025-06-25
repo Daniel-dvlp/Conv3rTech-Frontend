@@ -1,44 +1,50 @@
-import React from 'react';
-import { Table } from 'react-bootstrap'
+import React, { useState, useEffect } from 'react';
+import { FaPlus } from 'react-icons/fa';
+import ClientesTable from './components/ClientesTable';
+import SkeletonRow from './components/SkeletonRow';
+import { mockClientes } from './data/Clientes_data';
 
 const ClientsPage = () => {
+  const [clientes, setClientes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setClientes(mockClientes);
+      setLoading(false);
+    }, 1200);
+  }, []);
+
   return (
-    <div>
-      <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
-      <p className="mt-4 text-gray-600">
-        Aquí se mostrará el modulo de Clientes.
-      </p>
-      <table className="table table-hover">
-        
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">First</th>
-            <th scope="col">Last</th>
-            <th scope="col">Handle</th>
-          </tr>
-        </thead>
-        <tbody>   
-          <tr>
-            <th scope="row">1</th>
-            <td>Mark</td>
-            <td>Otto</td>
-            <td>@mdo</td>
-          </tr>
-          <tr>
-            <th scope="row">2</th>
-            <td>Jacob</td>
-            <td>Thornton</td>
-            <td>@fat</td>
-          </tr>
-          <tr>
-            <th scope="row">3</th>
-            <td>Larry</td>
-            <td>the Bird</td>
-            <td>@twitter</td>
-          </tr>
-        </tbody>
-      </table>
+    <div className="p-4 md:p-8">
+      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+        <h1 className="text-3xl font-bold text-gray-800">Clientes</h1>
+        <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all">
+          <FaPlus />
+          Crear Cliente
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+          <table className="w-full text-center">
+            <thead className="bg-gray-50">
+              <tr>
+                {['Documento', 'Tipo de Documento', 'Nombre', 'Apellido', 'Correo electrónico', 'Celular', 'Estado', 'Acciones'].map((header, i) => (
+                  <th key={i} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">{header}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {[...Array(5)].map((_, index) => (
+                <SkeletonRow key={index} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <ClientesTable clientes={clientes} />
+      )}
     </div>
   );
 };
