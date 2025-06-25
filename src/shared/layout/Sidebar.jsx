@@ -35,6 +35,7 @@ const Sidebar = () => {
         { name: 'Proveedores', path: '/dashboard/proveedores' },
         { name: 'Categorías de Productos', path: '/dashboard/categoria_productos' },
         { name: 'Productos', path: '/dashboard/productos' },
+        { name: 'Cotizaciones', path: '/dashboard/cotizaciones'},
         { name: 'Compras', path: '/dashboard/compras' },
       ]
     },
@@ -55,7 +56,6 @@ const Sidebar = () => {
         { name: 'Venta de Productos', path: '/dashboard/venta_productos' },
         { name: 'Ordenes de Servicios', path: '/dashboard/ordenes_servicios' },
         { name: 'Citas', path: '/dashboard/citas' },
-        { name: 'Cotizaciones', path: '/dashboard/cotizaciones' },
         { name: 'Proyectos de Servicio', path: '/dashboard/proyectos_servicios' },
         { name: 'Pagos y Abonos', path: '/dashboard/pagosyabonos' },
       ]
