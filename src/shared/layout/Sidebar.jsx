@@ -55,7 +55,6 @@ const Sidebar = () => {
         { name: 'Venta de Productos', path: '/dashboard/venta_productos' },
         { name: 'Ordenes de Servicios', path: '/dashboard/ordenes_servicios' },
         { name: 'Citas', path: '/dashboard/citas' },
-        { name: 'Cotizaciones', path: '/dashboard/cotizaciones' },
         { name: 'Proyectos de Servicio', path: '/dashboard/proyectos_servicios' },
         { name: 'Pagos y Abonos', path: '/dashboard/pagosyabonos' },
       ]
