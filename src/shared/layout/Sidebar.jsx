@@ -35,6 +35,7 @@ const Sidebar = () => {
         { name: 'Proveedores', path: '/dashboard/proveedores' },
         { name: 'Categorías de Productos', path: '/dashboard/categoria_productos' },
         { name: 'Productos', path: '/dashboard/productos' },
+        { name: 'Cotizaciones', path: '/dashboard/cotizaciones'},
         { name: 'Compras', path: '/dashboard/compras' },
       ]
     },
