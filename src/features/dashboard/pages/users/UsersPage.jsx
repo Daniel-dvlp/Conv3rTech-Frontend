@@ -5,7 +5,9 @@ import SkeletonRow from './components/SkeletonRow';
 import CreateUserModal from './components/CreateUserModal';
 import { mockUsuarios } from './data/User_data'; // debes tener este archivo
 import { mockRoles } from '../Roles/data/Roles_data'
+import Pagination from '../../../../shared/components/Pagination'; // si tienes paginación
 
+const ITEMS_PER_PAGE = 5; // o el número que desees
 
   
 const UsuariosPage = () => {
@@ -63,7 +65,17 @@ const UsuariosPage = () => {
           </table>
         </div>
       ) : (
+        <>
         <UsersTable usuarios={usuarios} />
+        <Pagination
+          totalItems={usuarios.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          onPageChange={(page) => {
+            // Aquí puedes manejar el cambio de página
+            console.log("Página actual:", page);
+          }}></Pagination>
+        </>
+        
       )}
       <CreateUserModal
         isOpen={openModal}

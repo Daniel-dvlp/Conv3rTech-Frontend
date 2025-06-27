@@ -3,7 +3,9 @@ import { FaPlus } from 'react-icons/fa';
 import ClientesTable from './components/ClientesTable';
 import SkeletonRow from './components/SkeletonRow';
 import { mockClientes } from './data/Clientes_data';
+import Pagination from '../../../../shared/components/Pagination'; // si tienes paginación
 
+const ITEMS_PER_PAGE = 5; // o el número que desees
 
 const ClientsPage = () => {
   const [clientes, setClientes] = useState([]);
@@ -44,7 +46,16 @@ const ClientsPage = () => {
           </table>
         </div>
       ) : (
+        <>
         <ClientesTable clientes={clientes} />
+        <Pagination 
+          totalItems={clientes.length}
+          itemsPerPage={ITEMS_PER_PAGE}
+          currentPage={1} // Aquí puedes manejar el estado de la página actual
+          onPageChange={(page) => console.log(`Página cambiada a: ${page}`)} // Maneja el cambio de página
+        ></Pagination>
+        </>
+        
       )}
     </div>
   );
