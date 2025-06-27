@@ -21,14 +21,15 @@ const Payments_InstallmentsPage = () => {
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Gestión de Pagos y Abonos</h1>
         <div className="flex gap-4">
+          <button className="flex items-center gap-2 border bg-green-500 border-gray-300 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-all">
+            <FaDownload />
+            Exportar
+          </button>
           <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all">
             <FaPlus />
             Registrar Pagos
           </button>
-          <button className="flex items-center gap-2 border border-gray-300 py-2 px-4 rounded-lg text-sm font-medium hover:bg-gray-100 transition-all">
-            <FaDownload />
-            Descargar Balance
-          </button>
+          
         </div>
       </div>
 

@@ -4,6 +4,7 @@ import ClientesTable from './components/ClientesTable';
 import SkeletonRow from './components/SkeletonRow';
 import { mockClientes } from './data/Clientes_data';
 
+
 const ClientsPage = () => {
   const [clientes, setClientes] = useState([]);
   const [loading, setLoading] = useState(true);

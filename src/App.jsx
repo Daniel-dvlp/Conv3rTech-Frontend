@@ -22,10 +22,10 @@ import ServicesCategoryPage from './features/dashboard/pages/Services_category/S
 import ServicesPage from './features/dashboard/pages/services/ServicesPage';
 import AppoinmentsPage from './features/dashboard/pages/Appointment/AppoinmentsPage';
 //Rutas Sarai
-import ProductsPage from './features/dashboard/pages/products/ProductsPage';
-import ProductsCategoryPage from './features/dashboard/pages/products_category/ProductsCategoryPage';
+//import ProductsPage from './features/dashboard/pages/products/ProductsPage';
+//import ProductsCategoryPage from './features/dashboard/pages/products_category/ProductsCategoryPage';
 import ProductsSalePage from './features/dashboard/pages/products_sale/ProductsSalePage';
-import QuotesPage from './features/dashboard/pages/quotes/QuotesPage';
+//import QuotesPage from './features/dashboard/pages/quotes/QuotesPage';
 //Rutas Cruz
 import PurchasesPage from './features/dashboard/pages/purchases/PurchasesPage';
 import SuppliersPage from './features/dashboard/pages/suppliers/SuppliersPage';
@@ -47,8 +47,8 @@ function App() {
           <Route path="roles" element={<RolesPage />} />
           <Route path="proyectos_servicios" element={<ProjectPage/>} />
           {/*Rutas Luissy */}
-          <Route path="usuarios" element= {<UsersPages/>} />
-          <Route path="clientes" element= {<ClientsPage/>} />
+          <Route path="usuarios" element= {<UsersPages/> } />
+          <Route path="clientes" element= {<ClientsPage/> } />
           <Route path="pagosyabonos" element= {<Payments_InstallmentsPage/>} />
           {/*Rutas Elany */}
           <Route path="categoria_servicios" element={<ServicesCategoryPage />} />

@@ -1,7 +1,11 @@
 import React from 'react';
 import { FaEye } from 'react-icons/fa';
+import { useState } from 'react';
+import PaymentsDetailModal from './PaymentsDetailModal';
 
 const PagosTable = ({ pagos }) => {
+    const [selectedPayment, setSelectedPayment] = useState(null);
+
     return (
         <div className="bg-white rounded-lg shadow-md overflow-x-auto">
             <table className="w-full text-center">
@@ -24,12 +28,13 @@ const PagosTable = ({ pagos }) => {
                             <td className="px-4 py-2">{pago.id}</td>
                             <td className="px-4 py-2">{pago.fecha}</td>
                             <td className="px-4 py-2">{pago.numeroContrato}</td>
-                            <td className="px-4 py-2">{pago.nombreCompleto}</td>
-                            <td className="px-4 py-2">{pago.montoTotal.toLocaleString()}</td>
-                            <td className="px-4 py-2">{pago.montoPagado.toLocaleString()}</td>
+                            <td className="px-4 py-2">{pago.nombre} {pago.apellido}</td>
+                            <td className="px-4 py-2">{Number(pago.montoTotal).toLocaleString('es-CO')}</td>
+                            <td className="px-4 py-2">{Number(pago.montoAbonado).toLocaleString('es-CO')}</td>
                             <td className="px-4 py-2">{pago.metodoPago}</td>
                             <td className="px-4 py-2">
-                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${pago.estado === 'Pagado'
+                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                ${pago.estado === 'Pagado'
                                         ? 'bg-green-100 text-green-800'
                                         : pago.estado === 'Cancelado'
                                             ? 'bg-yellow-100 text-red-800'
@@ -39,14 +44,18 @@ const PagosTable = ({ pagos }) => {
                                 </span>
                             </td>
                             <td className="px-4 py-2">
-                                <button className="text-blue-600 hover:text-blue-800" title="Ver detalle">
+                                <button className="text-blue-600 hover:text-blue-800" onClick={() => setSelectedPayment(pago)} title="Ver detalles">
                                     <FaEye />
                                 </button>
+
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+            {selectedPayment && (
+                <PaymentsDetailModal pago={selectedPayment} onClose={() => setSelectedPayment(null)} />
+            )}
         </div>
     );
 };

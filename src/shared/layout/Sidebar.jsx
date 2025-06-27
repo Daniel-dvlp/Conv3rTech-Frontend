@@ -28,6 +28,7 @@ const Sidebar = () => {
         { name: 'Gestión de Roles', path: '/dashboard/roles' },
       ]
     },
+    
     {
       name: 'Compras',
       icon: <FaDollarSign />,

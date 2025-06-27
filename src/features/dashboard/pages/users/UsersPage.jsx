@@ -2,11 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import UsersTable from './components/UsersTable'; 
 import SkeletonRow from './components/SkeletonRow';
+import CreateUserModal from './components/CreateUserModal';
 import { mockUsuarios } from './data/User_data'; // debes tener este archivo
+import { mockRoles } from '../Roles/data/Roles_data'
 
+
+  
 const UsuariosPage = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [openModal, setOpenModal] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
@@ -15,13 +20,22 @@ const UsuariosPage = () => {
     }, 1500);
   }, []);
 
+  const handleCreateUser = (nuevoUsuario) => {
+    
+    console.log("Nuevo usuario:", nuevoUsuario);
+    
+    // Aquí puedes hacer la petición al backend para guardar el usuario
+  };
+
   return (
     <div className="p-4 md:p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
-        <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all">
-          <FaPlus />
-          Nuevo Usuario
+        <button
+          className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+          onClick={() => setOpenModal(true)}
+        >
+          + Crear Usuario
         </button>
       </div>
 
@@ -51,6 +65,12 @@ const UsuariosPage = () => {
       ) : (
         <UsersTable usuarios={usuarios} />
       )}
+      <CreateUserModal
+        isOpen={openModal}
+        onClose={() => setOpenModal(false)}
+        roles={mockRoles}
+        onSubmit={handleCreateUser}
+      />
     </div>
   );
 };
