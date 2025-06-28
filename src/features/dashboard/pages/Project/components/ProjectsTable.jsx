@@ -100,11 +100,11 @@ const ProjectsTable = ({ projects, onViewDetails }) => {
               </td>
               <td className="px-6 py-4">
                 <div className="flex items-center justify-end gap-4">
-                   <button onClick={() => onViewDetails(project)} className="text-gray-400 hover:text-green-600" title="Ver Detalles">
+                   <button onClick={() => onViewDetails(project)} className="text-green-400 hover:text-green-600" title="Ver Detalles">
                     <FaEye size={16} />
                   </button>
-                   <button className="text-gray-400 hover:text-blue-600" title="Editar"><FaEdit size={16} /></button>
-                   <button className="text-gray-400 hover:text-red-600" title="Eliminar"><FaTrashAlt size={16} /></button>
+                   <button className="text-blue-400 hover:text-blue-600" title="Editar"><FaEdit size={16} /></button>
+                   <button className="text-red-400 hover:text-red-600" title="Eliminar"><FaTrashAlt size={16} /></button>
                 </div>
               </td>
             </tr>
