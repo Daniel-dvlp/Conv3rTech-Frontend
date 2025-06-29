@@ -1,26 +1,56 @@
-// src/features/dashboard/pages/users/components/CreateUserModal.jsx
-
 import React, { useState } from 'react';
+import { FaTimes } from 'react-icons/fa';
+
+// Reutilizables
+const FormSection = ({ title, children }) => (
+  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
+    <div className="space-y-4">
+      {children}
+    </div>
+  </div>
+);
+
+const FormLabel = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
+);
+
+const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
 const CreateUserModal = ({ isOpen, onClose, roles, onSubmit }) => {
   const [formData, setFormData] = useState({
-    tipoDocumento: '',
-    documento: '',
-    nombre: '',
-    apellido: '',
-    celular: '',
-    rol: '',
-    correo: '',
-    contrasena: ''
+    tipoDocumento: '', documento: '', nombre: '', apellido: '',
+    celular: '', rol: '', email: '', contrasena: ''
   });
+
+  const [errors, setErrors] = useState({});
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const newErrors = {};
+
+    if (!formData.tipoDocumento) newErrors.tipoDocumento = "Selecciona un tipo de documento";
+    if (!formData.documento) newErrors.documento = "El documento es obligatorio";
+    if (!formData.nombre) newErrors.nombre = "El nombre es obligatorio";
+    if (!formData.apellido) newErrors.apellido = "El apellido es obligatorio";
+    if (!formData.celular) newErrors.celular = "El celular es obligatorio";
+    if (!formData.rol) newErrors.rol = "Selecciona un rol";
+    if (!formData.email) newErrors.email = "El correo es obligatorio";
+    if (!formData.contrasena) newErrors.contrasena = "La contraseña es obligatoria";
+    else if (formData.contrasena.length < 6) newErrors.contrasena = "Debe tener al menos 6 caracteres";
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setErrors({});
     onSubmit(formData);
     onClose();
   };
@@ -28,41 +58,84 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-md shadow-lg w-full max-w-md">
-        <h2 className="text-xl font-semibold text-center mb-4">Crear Usuario</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium">Tipo de Documento:</label>
-            <select name="tipoDocumento" onChange={handleChange} className="w-full border rounded p-1">
-              <option value="">Seleccionar...</option>
-              <option value="CC">CC</option>
-              <option value="TI">TI</option>
-              <option value="CE">CE</option>
-            </select>
-          </div>
+    <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-2xl font-bold text-gray-800">Crear Usuario</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
+            <FaTimes />
+          </button>
+        </header>
 
-          <input name="documento" placeholder="Documento" onChange={handleChange} className="w-full border rounded p-1" />
-          <input name="nombre" placeholder="Nombre" onChange={handleChange} className="w-full border rounded p-1" />
-          <input name="apellido" placeholder="Apellido" onChange={handleChange} className="w-full border rounded p-1" />
-          <input name="celular" placeholder="Celular" onChange={handleChange} className="w-full border rounded p-1" />
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
+          <FormSection title="Datos del Usuario">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <FormLabel htmlFor="tipoDocumento">Tipo de Documento</FormLabel>
+                <select id="tipoDocumento" name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
+                  <option value="">Seleccionar...</option>
+                  <option value="CC">CC</option>
+                  <option value="TI">TI</option>
+                  <option value="CE">CE</option>
+                </select>
+                {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium">Rol:</label>
-            <select name="rol" onChange={handleChange} className="w-full border rounded p-1">
-              <option value="">Seleccionar...</option>
-              {roles.map((rol) => (
-                <option key={rol.id} value={rol.name}>{rol.name}</option>
-              ))}
-            </select>
-          </div>
+              <div>
+                <FormLabel htmlFor="documento">Documento</FormLabel>
+                <input id="documento" name="documento" value={formData.documento} onChange={handleChange} className={inputBaseStyle} />
+                {errors.documento && <p className="text-red-500 text-sm mt-1">{errors.documento}</p>}
+              </div>
 
-          <input name="correo" placeholder="Correo" onChange={handleChange} className="w-full border rounded p-1" />
-          <input name="contrasena" type="password" placeholder="Contraseña" onChange={handleChange} className="w-full border rounded p-1" />
+              <div>
+                <FormLabel htmlFor="nombre">Nombre</FormLabel>
+                <input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
+                {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+              </div>
 
-          <div className="flex justify-end gap-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border rounded hover:bg-gray-100">Cancelar</button>
-            <button type="submit" onclick={onSubmit} className="px-4 py-2 bg-conv3r-gold text-white rounded hover:brightness-95">Crear</button>
+              <div>
+                <FormLabel htmlFor="apellido">Apellido</FormLabel>
+                <input id="apellido" name="apellido" value={formData.apellido} onChange={handleChange} className={inputBaseStyle} />
+                {errors.apellido && <p className="text-red-500 text-sm mt-1">{errors.apellido}</p>}
+              </div>
+
+              <div>
+                <FormLabel htmlFor="celular">Celular</FormLabel>
+                <input id="celular" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
+                {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
+              </div>
+
+              <div>
+                <FormLabel htmlFor="rol">Rol</FormLabel>
+                <select id="rol" name="rol" value={formData.rol} onChange={handleChange} className={inputBaseStyle}>
+                  <option value="">Seleccionar...</option>
+                  {roles.map((rol) => (
+                    <option key={rol.id} value={rol.name}>{rol.name}</option>
+                  ))}
+                </select>
+                {errors.rol && <p className="text-red-500 text-sm mt-1">{errors.rol}</p>}
+              </div>
+
+              <div>
+                <FormLabel htmlFor="email">Correo Electrónico</FormLabel>
+                <input id="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              </div>
+
+              <div>
+                <FormLabel htmlFor="contrasena">Contraseña</FormLabel>
+                <input type="password" id="contrasena" name="contrasena" value={formData.contrasena} onChange={handleChange} className={inputBaseStyle} />
+                {errors.contrasena && <p className="text-red-500 text-sm mt-1">{errors.contrasena}</p>}
+              </div>
+            </div>
+          </FormSection>
+
+          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+            <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
+            <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Crear Usuario</button>
           </div>
         </form>
       </div>

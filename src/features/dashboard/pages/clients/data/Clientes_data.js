@@ -8,7 +8,7 @@ export const mockClientes = [
     email: 'contacto@andina.com',
     celular: '31700001',
     credito: false,
-    estado: 'Inactivo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Sede Principal',
@@ -31,7 +31,7 @@ export const mockClientes = [
     email: 'ventas@elsol.com',
     celular: '31700002',
     credito: true,
-    estado: 'Activo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Sede Principal',
@@ -49,7 +49,7 @@ export const mockClientes = [
     email: 'soporte@tecnoglobal.com',
     celular: '31700003',
     credito: true,
-    estado: 'Activo',
+    estado: false,
     direcciones: [
       {
         nombre: 'Sede Central',
@@ -72,7 +72,7 @@ export const mockClientes = [
     email: 'logistica@express.com',
     celular: '31700004',
     credito: true,
-    estado: 'Inactivo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Oficina Central',
@@ -90,7 +90,7 @@ export const mockClientes = [
     email: 'info@servint.com',
     celular: '31700005',
     credito: true,
-    estado: 'Activo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Sede Principal',
@@ -104,4 +104,25 @@ export const mockClientes = [
       },
     ],
   },
+  {id: 6,
+    documento: '800987654',
+    tipoDocumento: 'NIT',
+    nombre: 'Tecnología Global',
+    apellido: '',
+    email: 'soporte@tecnoglobal.com',
+    celular: '31700003',
+    credito: true,
+    estado: true,
+    direcciones: [
+      {
+        nombre: 'Sede Central',
+        direccion: 'Av. El Dorado #90-50, Bogotá',
+        ciudad: 'Bogotá',
+      },
+      {
+        nombre: 'Sucursal Cali',
+        direccion: 'Cra 15 #10-20, Cali',
+        ciudad: 'Cali',
+      },
+    ],}
 ];

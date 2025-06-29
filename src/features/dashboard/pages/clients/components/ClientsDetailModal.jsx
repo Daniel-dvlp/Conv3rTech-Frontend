@@ -15,7 +15,7 @@ const ClientsDetailModal = ({ cliente, onClose }) => {
   if (!cliente) return null;
 
   const getStatusClass = (estado) =>
-    estado === 'Activo'
+    estado === true
       ? 'bg-green-100 text-green-800'
       : 'bg-red-100 text-red-800';
 
@@ -64,7 +64,7 @@ const ClientsDetailModal = ({ cliente, onClose }) => {
                 <FaToggleOn className="text-green-500" />
                 <span className="font-medium text-gray-600">Estado:</span>
                 <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(cliente.estado)}`}>
-                  {cliente.estado}
+                  {cliente.estado ? 'Activo' : 'Inactivo'}
                 </span>
               </div>
             </div>

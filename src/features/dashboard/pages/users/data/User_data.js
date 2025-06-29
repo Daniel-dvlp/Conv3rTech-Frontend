@@ -9,6 +9,7 @@ export const mockUsuarios = [
     celular: '317 8901 876',
     rol: 'Admin',
     status: 'Activo',
+    contrasena: '123456',
     fechaCreacion: '22-06-25'
   },
   {
@@ -21,6 +22,7 @@ export const mockUsuarios = [
     celular: '312 2844 876',
     rol: 'Tecnico',
     status: 'Inactivo',
+    contrasena: '123456',
     fechaCreacion: '22-06-25'
   },{
   id: 3,
@@ -32,6 +34,7 @@ export const mockUsuarios = [
   celular: '310 4567 123',
   rol: 'Recepcionista',
   status: 'Activo',
+  contrasena: '123456',
   fechaCreacion: '22-06-25'
 },
 {
@@ -44,6 +47,7 @@ export const mockUsuarios = [
   celular: '315 7788 990',
   rol: 'Supervisor',
   status: 'Activo',
+  contrasena: '123456',
   fechaCreacion: '22-06-25'
 },
 {
@@ -56,6 +60,7 @@ export const mockUsuarios = [
   celular: '313 9988 221',
   rol: 'Tecnico',
   status: 'Vacaciones',
+  contrasena: '123456',
   fechaCreacion: '22-06-25'
 }
   // Puedes agregar más usuarios aquí si lo necesitas
