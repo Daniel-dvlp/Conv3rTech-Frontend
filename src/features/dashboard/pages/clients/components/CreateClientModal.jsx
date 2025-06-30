@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus, FaTrash, FaBullseye } from 'react-icons/fa';
 
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
@@ -21,6 +21,12 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit }) => {
 
     const [formData, setFormData] = useState(initialState);
     const [errors, setErrors] = useState({});
+    useEffect(() => {
+        if (isOpen) {
+          setFormData(initialState);
+          setErrors({});
+        }
+      }, [isOpen]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;

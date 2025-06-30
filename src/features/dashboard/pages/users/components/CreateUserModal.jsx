@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
-// Reutilizables
 const FormSection = ({ title, children }) => (
-  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
-    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
-    <div className="space-y-4">
-      {children}
-    </div>
+  <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
+    <h3 className="text-lg font-bold text-gray-800 mb-0  border-gray-200 pb-3">{title}</h3>
+    <div className="space-y-4">{children}</div>
   </div>
 );
 
@@ -17,14 +14,33 @@ const FormLabel = ({ htmlFor, children }) => (
 
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
+
+
 const CreateUserModal = ({ isOpen, onClose, roles, onSubmit }) => {
-  const [formData, setFormData] = useState({
-    tipoDocumento: '', documento: '', nombre: '', apellido: '',
-    celular: '', rol: '', email: '', contrasena: ''
-  });
 
-  const [errors, setErrors] = useState({});
+const initialState = {
+  tipoDocumento: '',
+   documento: '', 
+   nombre: '', 
+   apellido: '',
+  celular: '', 
+  rol: '', 
+  email: '', 
+  contrasena: '', 
+  confirmarContrasena: ''
+};
 
+const [formData, setFormData] = useState(initialState);
+const [errors, setErrors] = useState({});
+
+useEffect(() => {
+    if (isOpen) {
+      setFormData(initialState);
+      setErrors({});
+    }
+  }, [isOpen]);
+
+  // Maneja los cambios en los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -45,14 +61,21 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit }) => {
     if (!formData.contrasena) newErrors.contrasena = "La contraseña es obligatoria";
     else if (formData.contrasena.length < 6) newErrors.contrasena = "Debe tener al menos 6 caracteres";
 
+    if (!formData.confirmarContrasena) {
+      newErrors.confirmarContrasena = "Confirma tu contraseña";
+    } else if (formData.contrasena !== formData.confirmarContrasena) {
+      newErrors.confirmarContrasena = "Las contraseñas no coinciden";
+    }
+
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
 
     setErrors({});
-    onSubmit(formData);
-    onClose();
+  onSubmit(formData);         // Agrega el usuario
+  setFormData(initialState);  // Limpia campos
+  onClose();  
   };
 
   if (!isOpen) return null;
@@ -71,7 +94,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit }) => {
         </header>
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
-          <FormSection title="Datos del Usuario">
+          <FormSection >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <FormLabel htmlFor="tipoDocumento">Tipo de Documento</FormLabel>
@@ -119,17 +142,41 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit }) => {
                 {errors.rol && <p className="text-red-500 text-sm mt-1">{errors.rol}</p>}
               </div>
 
-              <div>
+              <div className="col-span-2">
                 <FormLabel htmlFor="email">Correo Electrónico</FormLabel>
                 <input id="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
               </div>
 
-              <div>
+              <div className="flex justify-around gap-4 col-span-2">
+                <div className='w-full'>
                 <FormLabel htmlFor="contrasena">Contraseña</FormLabel>
-                <input type="password" id="contrasena" name="contrasena" value={formData.contrasena} onChange={handleChange} className={inputBaseStyle} />
+                <input
+                  type="password"
+                  id="contrasena"
+                  name="contrasena"
+                  value={formData.contrasena}
+                  onChange={handleChange}
+                  className={inputBaseStyle} 
+                />
                 {errors.contrasena && <p className="text-red-500 text-sm mt-1">{errors.contrasena}</p>}
+                </div>
+
+                <div className='w-full'>
+                <FormLabel htmlFor="confirmarContrasena">Confirmar Contraseña</FormLabel>
+                <input
+                  type="password"
+                  id="confirmarContrasena"
+                  name="confirmarContrasena"
+                  value={formData.confirmarContrasena}
+                  onChange={handleChange}
+                  className={inputBaseStyle}
+                />
+                {errors.confirmarContrasena && <p className="text-red-500 text-sm mt-1">{errors.confirmarContrasena}</p>}
               </div>
+              </div>
+
+              
             </div>
           </FormSection>
 

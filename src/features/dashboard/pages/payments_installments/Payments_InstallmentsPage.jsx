@@ -5,6 +5,7 @@ import SkeletonRow from './components/SkeletonRow';
 import { mockPagos } from './data/Pagos_data';
 import Pagination from '../../../../shared/components/Pagination';
 import * as XLSX from 'xlsx';
+import CreatePaymentsModal from './components/CreatePaymentsModal';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -13,6 +14,8 @@ const Payments_InstallmentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [mostrarModalPago, setMostrarModalPago] = useState(false);
+  
 
   useEffect(() => {
     setTimeout(() => {
@@ -28,14 +31,18 @@ const Payments_InstallmentsPage = () => {
     XLSX.writeFile(workbook, "ReporteDePagosYabonos.xlsx");
   };
 
+  const handleAgregarPago = (nuevoPago) => {
+    setPagos((prevPagos) => [...prevPagos, nuevoPago]);
+  };
+
   const filteredPagos = useMemo(() =>
     pagos.filter(p =>
       p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.fecha.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.numeroContrato.toString()===(searchTerm) ||
-      p.metodoPago.toLowerCase()===(searchTerm.toLowerCase()) ||
-      p.estado.toLowerCase() === searchTerm.toLowerCase() // comparación exacta para estado
+      p.numeroContrato.toString() === (searchTerm) ||
+      p.metodoPago.toLowerCase() === (searchTerm.toLowerCase()) ||
+      p.estado.toLowerCase() === searchTerm.toLowerCase()
     ), [pagos, searchTerm]
   );
 
@@ -74,7 +81,10 @@ const Payments_InstallmentsPage = () => {
             Exportar
           </button>
 
-          <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all">
+          <button
+            onClick={() => setMostrarModalPago(true)}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+          >
             <FaPlus />
             Registrar Pagos
           </button>
@@ -110,6 +120,12 @@ const Payments_InstallmentsPage = () => {
           )}
         </>
       )}
+
+      <CreatePaymentsModal
+        isOpen={mostrarModalPago}
+        onClose={() => setMostrarModalPago(false)}
+        onAddPago={handleAgregarPago}
+      />
     </div>
   );
 };
