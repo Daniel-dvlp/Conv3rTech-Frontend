@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 
-const ProductsCategoryTable = ({ categories }) => {
+const ProductsCategoryTable = ({ categories, onViewDetails }) => {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
@@ -25,19 +24,23 @@ const ProductsCategoryTable = ({ categories }) => {
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  category.estado === 'Activo'
+                  category.estado === true
                     ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
                 }`}>
-                  {category.estado}
+                  {category.estado ? 'Activo' : 'Inactivo'}
                 </span>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
-                  <button className="text-gray-600 hover:text-gray-900" title="Ver">
+                  <button
+                    className="text-blue-600 hover:text-gray-900"
+                    title="Ver"
+                    onClick={() => onViewDetails(category)}
+                  >
                     <FaEye size={16} />
                   </button>
-                  <button className="text-blue-600 hover:text-blue-900" title="Editar">
+                  <button className="text-yellow-600 hover:text-blue-900" title="Editar">
                     <FaEdit size={16} />
                   </button>
                   <button className="text-red-600 hover:text-red-900" title="Eliminar">

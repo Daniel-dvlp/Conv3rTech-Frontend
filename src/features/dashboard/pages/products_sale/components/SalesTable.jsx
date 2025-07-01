@@ -4,6 +4,25 @@ import React from 'react';
 import { FaEye, FaDownload, FaMinusCircle } from 'react-icons/fa';
 
 const SalesTable = ({ sales }) => {
+  if (!sales || sales.length === 0) {
+    return (
+      <div className="bg-white rounded-lg shadow-md p-4 text-center">
+        <p className="text-gray-500">No hay ventas registradas.</p>
+      </div>
+    );
+  }
+  
+  const getEstadoStyle = (estado) => {
+    switch (estado) {
+      case 'Pendiente':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Registrada':
+        return 'bg-green-100 text-green-800';
+      case 'Anulada':
+        return 'bg-gray-200 text-gray-700';
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
@@ -37,17 +56,13 @@ const SalesTable = ({ sales }) => {
                 {sale.metodoPago}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  sale.estado === 'Registrada'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getEstadoStyle(sale.estado)}`}>
                   {sale.estado}
                 </span>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
-                  <button className="text-gray-600 hover:text-gray-900" title="Ver detalle">
+                  <button className="text-blue-600 hover:text-gray-900" title="Ver detalle">
                     <FaEye size={16} />
                   </button>
                   <button className="text-green-600 hover:text-green-800" title="Descargar factura">

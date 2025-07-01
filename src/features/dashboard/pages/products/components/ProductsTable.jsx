@@ -3,7 +3,12 @@
 import React from 'react';
 import { FaEdit, FaMinusCircle, FaEye } from 'react-icons/fa';
 
-const ProductsTable = ({ products }) => {
+const ProductsTable = ({ products, categories }) => {
+  const getCategoryName = (id) => {
+    const cat = categories.find((c) => c.id === id);
+    return cat ? cat.nombre : 'Desconocida';
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
@@ -23,34 +28,39 @@ const ProductsTable = ({ products }) => {
         <tbody className="divide-y divide-gray-200">
           {products.map((product) => (
             <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-3 whitespace-nowrap">
-                <img
-                  src={product.foto || 'https://via.placeholder.com/40'}
-                  alt={`Foto de ${product.nombre}`}
-                  className="w-10 h-10 object-cover rounded"
-                />
+              <td className="py-2 px-4">
+                {product.foto ? (
+                  <img
+                    src={product.foto}
+                    alt={product.nombre}
+                    className="h-12 w-12 object-cover rounded-full border border-gray-300"
+                  />
+                ) : (
+                  <span className="text-gray-400 italic">Sin foto</span>
+                )}
               </td>
+
+
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{product.nombre}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.modelo}</td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.categoria}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{getCategoryName(product.categoria)}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.unidad}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${product.precio.toLocaleString()}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.stock}</td>
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  product.estado === 'Activo'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
-                }`}>
-                  {product.estado}
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.estado === true
+                  ? 'bg-green-100 text-green-800'
+                  : 'bg-red-100 text-red-800'
+                  }`}>
+                  {product.estado ? 'Activo' : 'Inactivo'}
                 </span>
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
-                  <button className="text-gray-600 hover:text-gray-900" title="Ver">
+                  <button className="text-blue-600 hover:text-gray-900" title="Ver">
                     <FaEye size={16} />
                   </button>
-                  <button className="text-blue-600 hover:text-blue-900" title="Editar">
+                  <button className="text-yellow-600 hover:text-blue-900" title="Editar">
                     <FaEdit size={16} />
                   </button>
                   <button className="text-red-600 hover:text-red-900" title="Eliminar">

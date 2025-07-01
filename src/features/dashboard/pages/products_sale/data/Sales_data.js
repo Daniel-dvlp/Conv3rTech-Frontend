@@ -1,5 +1,3 @@
-// src/features/dashboard/pages/ventas/data/mockSales.js
-
 export const mockSales = [
   {
     id: 1,
@@ -9,6 +7,16 @@ export const mockSales = [
     monto: 200000,
     metodoPago: 'Tarjeta',
     estado: 'Registrada',
+    productos: [
+      {
+        producto: 'Cámara de Seguridad',
+        modelo: 'CS-100',
+        cantidad: 2,
+        unidad: 'unidad',
+        precioUnitario: 100000,
+        subtotal: 200000,
+      },
+    ],
   },
   {
     id: 2,
@@ -18,5 +26,89 @@ export const mockSales = [
     monto: 150000,
     metodoPago: 'Tarjeta',
     estado: 'Anulada',
+    productos: [
+      {
+        producto: 'Sensor de Movimiento',
+        modelo: 'SM-300',
+        cantidad: 1,
+        unidad: 'unidad',
+        precioUnitario: 80000,
+        subtotal: 80000,
+      },
+      {
+        producto: 'Alarma de Seguridad',
+        modelo: 'AS-400',
+        cantidad: 1,
+        unidad: 'unidad',
+        precioUnitario: 70000,
+        subtotal: 70000,
+      },
+    ],
   },
+  {
+    id: 3,
+    numero: '003',
+    cliente: 'Luisa Ramírez',
+    fechaHora: '06/03/2025 09:20 AM',
+    monto: 185000,
+    metodoPago: 'Efectivo',
+    estado: 'Registrada',
+    productos: [
+      {
+        producto: 'Cámara de video',
+        modelo: 'CV-200',
+        cantidad: 1,
+        unidad: 'metro',
+        precioUnitario: 150000,
+        subtotal: 150000,
+      },
+    ],
+  },
+  {
+    id: 4,
+    numero: '004',
+    cliente: 'Carlos Mendoza',
+    fechaHora: '06/03/2025 01:05 PM',
+    monto: 220000,
+    metodoPago: 'Transferencia',
+    estado: 'Registrada',
+    productos: [
+      {
+        producto: 'Control de Acceso',
+        modelo: 'CA-500',
+        cantidad: 1,
+        unidad: 'unidad',
+        precioUnitario: 200000,
+        subtotal: 200000,
+      },
+    ],
+  },
+  {
+    id: 5,
+    numero: '005',
+    cliente: 'Daniela Gómez',
+    fechaHora: '07/03/2025 04:40 PM',
+    monto: 175000,
+    metodoPago: 'Tarjeta',
+    estado: 'Registrada',
+    productos: [
+      {
+        producto: 'Cámara de Seguridad',
+        modelo: 'CS-100',
+        cantidad: 1,
+        unidad: 'unidad',
+        precioUnitario: 100000,
+        subtotal: 100000,
+      },
+      {
+        producto: 'Sensor de Movimiento',
+        modelo: 'SM-300',
+        cantidad: 1,
+        unidad: 'unidad',
+        precioUnitario: 75000,
+        subtotal: 75000,
+      },
+    ],
+  },
+  // Los demás objetos se pueden completar siguiendo el mismo formato
 ];

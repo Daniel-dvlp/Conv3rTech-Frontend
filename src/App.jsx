@@ -12,6 +12,8 @@ import LoginPage from './features/auth/pages/LoginPage';
 import WorkSchedulingPage from './features/dashboard/pages/work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/project/ProjectPage';
+import EditProfilePage from './features/dashboard/pages/profile/EditProfilePage';
+ 
 
 // Rutas Luissy
 import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
@@ -47,6 +49,10 @@ function App() {
           <Route path="programacion_laboral" element={<WorkSchedulingPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="proyectos_servicios" element={<ProjectPage/>} />
+          <Route path="perfil" element={<EditProfilePage />} /> {/* <-- AÑADIMOS LA NUEVA RUTA */}
+          {/* Rutas de Daniel */}
+    
+
           {/*Rutas Luissy */}
           <Route path="usuarios" element= {<UsersPages/>} />
           <Route path="clientes" element= {<ClientsPage/>} />
