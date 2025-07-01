@@ -11,7 +11,6 @@ const UsersTable = ({ usuarios }) => {
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Id</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Documento</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Tipo de Documento</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Nombre</th>
@@ -25,9 +24,7 @@ const UsersTable = ({ usuarios }) => {
         <tbody className="divide-y divide-gray-200">
           {usuarios.map((usuario) => (
             <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-6 py-4 text-center">
-                <span className="text-sm text-gray-600">{usuario.id}</span>
-              </td>
+              
               <td className="px-6 py-4 text-center">
                 <span className="text-sm text-gray-600">{usuario.documento}</span>
               </td>

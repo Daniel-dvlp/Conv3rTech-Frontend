@@ -107,7 +107,7 @@ const Payments_InstallmentsPage = () => {
           <table className="w-full text-center">
             <thead className="bg-gray-50">
               <tr>
-                {['ID','Fecha','Número de Contrato','Nombre y Apellido','Monto Total','Monto Pagado','Método de Pago','Estado','Acciones']
+                {['Fecha','Número de Contrato','Nombre y Apellido','Monto Total','Monto Pagado','Método de Pago','Estado','Acciones']
                   .map((h,i) => (
                     <th key={i} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">
                       {h}

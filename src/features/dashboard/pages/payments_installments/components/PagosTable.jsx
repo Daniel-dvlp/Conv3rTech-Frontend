@@ -10,7 +10,7 @@ const PagosTable = ({ pagos }) => {
       <table className="w-full text-center">
         <thead className="bg-gray-50">
           <tr>
-            {['ID','Fecha','Número de Contrato','Nombre y Apellido','Monto Total','Monto Pagado','Método de Pago','Estado','Acciones']
+            {['Fecha','Número de Contrato','Nombre y Apellido','Monto Total','Monto Pagado','Método de Pago','Estado','Acciones']
               .map(h => (
                 <th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">
                   {h}
@@ -21,7 +21,7 @@ const PagosTable = ({ pagos }) => {
         <tbody className="divide-y divide-gray-200">
           {pagos.map(p => (
             <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-4 py-2">{p.id}</td>
+              
               <td className="px-4 py-2">{p.fecha}</td>
               <td className="px-4 py-2">{p.numeroContrato}</td>
               <td className="px-4 py-2">{p.nombre} {p.apellido}</td>

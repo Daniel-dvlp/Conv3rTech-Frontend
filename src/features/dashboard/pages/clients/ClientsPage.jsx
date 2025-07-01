@@ -28,16 +28,19 @@ const ClientsPage = () => {
   }, []);
 
   // Filtro por búsqueda
-  const filteredClients = useMemo(() =>
-    clientes.filter(c =>
-      c.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      c.documento.toLowerCase() === (searchTerm.toLowerCase()) ||
-      c.tipoDocumento.toLowerCase() === (searchTerm.toLowerCase()) ||
-      c.email.toLowerCase() === (searchTerm.toLowerCase()) ||
-      c.estado.toLowerCase() === searchTerm.toLowerCase() // comparación exacta para estado
-    ), [clientes, searchTerm]
-  );
+ const term = searchTerm.trim().toLowerCase();
+
+const filteredClients = useMemo(() =>
+  clientes.filter(c =>
+    (c.nombre || '').toLowerCase().includes(term) ||
+    (c.apellido || '').toLowerCase().includes(term) ||
+    (c.documento || '').toLowerCase() === term ||
+    (c.tipoDocumento || '').toLowerCase() === term ||
+    (c.email || '').toLowerCase() === term ||
+    (c.estado ? 'activo' : 'inactivo') === term
+  ), [clientes, searchTerm]
+);
+
 
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
 

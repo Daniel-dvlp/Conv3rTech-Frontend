@@ -160,7 +160,7 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit }) => {
                                     )}
                                 </div>
                             ))}
-                            <button type="button" onClick={addDireccion} className="mt-2 inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 font-medium">
+                            <button type="button" onClick={addDireccion} className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition-colors">
                                 <FaPlus /> Agregar otra dirección
                             </button>
                         </div>

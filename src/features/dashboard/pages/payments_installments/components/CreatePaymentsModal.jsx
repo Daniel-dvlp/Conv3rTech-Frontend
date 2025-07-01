@@ -107,29 +107,79 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
     }
   }, [clienteSeleccionado, contratoSeleccionado]);
 
+  const [errores, setErrores] = useState({
+  concepto: '',
+  monto: '',
+  metodoPago: ''
+});
+
+
   /* ──────────────── Agregar abono a la lista local ──────────────── */
-  const handleAgregarAbono = () => {
-    if (!concepto || !monto || !metodoPago || !clienteSeleccionado || !contratoSeleccionado) return;
-
-    const nuevo = {
-      id: Date.now(),
-      fecha: new Date().toLocaleDateString(),
-      numeroContrato: contratoSeleccionado,
-      nombre: clienteSeleccionado.cliente.nombre,
-      apellido: clienteSeleccionado.cliente.apellido,
-      montoTotal: 0,
-      montoAbonado: Number(monto),
-      montoRestante: 0,
-      metodoPago,
-      estado: 'Registrado',
-      concepto
-    };
-
-    setPagosPorGuardar(prev => [...prev, nuevo]);
-    setPagosContrato(prev => [...prev, nuevo]);
-    setMonto('');
-    setConcepto('');
+const handleAgregarAbono = () => {
+  const erroresVal = {
+    concepto: !concepto ? 'Campo requerido' : '',
+    monto: !monto ? 'Campo requerido' : '',
+    metodoPago: !metodoPago ? 'Campo requerido' : ''
   };
+
+  // Si hay errores, no continuar
+  if (erroresVal.concepto || erroresVal.monto || erroresVal.metodoPago) {
+    setErrores(erroresVal);
+    return;
+  }
+
+  // Obtener el contrato base
+  const contratoBase = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
+  const montoTotal = contratoBase?.pagos[0]?.montoTotal || 0;
+
+  // Calcular cuánto se ha abonado ya
+  const pagosDelContrato = [...contratoBase.pagos, ...pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado)];
+  const totalAbonado = pagosDelContrato.reduce((sum, pago) => sum + pago.montoAbonado, 0);
+  const restante = Math.max(montoTotal - totalAbonado, 0);
+  const montoAbono = Number(monto);
+
+  if (montoAbono > restante) {
+    setErrores({ monto: `El monto excede el restante ($${restante.toLocaleString()})` });
+    return;
+  }
+
+  const nuevo = {
+    id: Date.now(),
+    fecha: new Date().toLocaleDateString(),
+    numeroContrato: contratoSeleccionado,
+    nombre: clienteSeleccionado.cliente.nombre,
+    apellido: clienteSeleccionado.cliente.apellido,
+    montoTotal: montoTotal,
+    montoAbonado: montoAbono,
+    montoRestante: Math.max(restante - montoAbono, 0),
+    metodoPago,
+    estado: 'Registrado',
+    concepto
+  };
+
+  setPagosPorGuardar(prev => [...prev, nuevo]);
+  setPagosContrato(prev => [...prev, nuevo]);
+
+  // Limpiar campos
+  setMonto('');
+  setConcepto('');
+  setMetodoPago('');
+  setErrores({});
+};
+/* Reset al cerrar el modal */
+useEffect(() => {
+  if (!isOpen) {
+    setClienteSeleccionado(null);
+    setContratoSeleccionado('');
+    setClienteInput('');
+    setPagosContrato([]);
+    setPagosPorGuardar([]);
+    setConcepto('');
+    setMonto('');
+    setMetodoPago('');
+  }
+}, [isOpen]);
+
 
   /* ──────────────── Guardar y enviar al padre ──────────────── */
   const handleGuardar = () => {
@@ -253,16 +303,24 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
               onChange={e => setConcepto(e.target.value)}
               className={inputBase}
             />
+            {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
+
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Monto a Abonar</label>
+            <label className="block text-sm font-medium mb-1">Monto a Abonar 
+              
+            </label>
+            
             <input
               type="number"
               value={monto}
               onChange={e => setMonto(e.target.value)}
               className={inputBase}
             />
+            
+            {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
+          
           </div>
 
           <div>
@@ -279,6 +337,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
               <option>Cheque</option>
               <option>Tarjeta</option>
             </select>
+            {errores.metodoPago && <p className="text-red-600 text-xs mt-1">{errores.metodoPago}</p>}
           </div>
 
           <button
@@ -295,14 +354,14 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
           <table className="min-w-full bg-white border border-gray-200 text-sm text-left">
             <thead className="bg-gray-100">
               <tr>
-                {['ID', 'Fecha', 'Contrato', 'Monto Total', 'Monto Abonado', 'Restante', 'Método', 'Estado']
+                {['Fecha', 'Contrato', 'Monto Total', 'Monto Abonado', 'Restante', 'Método', 'Estado', 'Acciones']
                   .map(h => <th key={h} className="p-2 border">{h}</th>)}
               </tr>
             </thead>
             <tbody>
               {pagosContrato.map(p => (
                 <tr key={p.id}>
-                  <td className="p-2 border">{p.id}</td>
+                  
                   <td className="p-2 border">{p.fecha}</td>
                   <td className="p-2 border">{contratoSeleccionado}</td>
                   <td className="p-2 border">{p.montoTotal.toLocaleString()}</td>
@@ -310,6 +369,11 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
                   <td className="p-2 border">{p.montoRestante.toLocaleString()}</td>
                   <td className="p-2 border">{p.metodoPago}</td>
                   <td className="p-2 border">{p.estado}</td>
+                  <td className="p-2 border">
+                    <button className='text-red-600 hover:text-red-800'>
+                      Cancelar
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
