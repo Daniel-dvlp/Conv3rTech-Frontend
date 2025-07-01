@@ -12,6 +12,8 @@ import LoginPage from './features/auth/pages/LoginPage';
 import WorkSchedulingPage from './features/dashboard/pages/work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/project/ProjectPage';
+import EditProfilePage from './features/dashboard/pages/profile/EditProfilePage';
+ 
 
 // Rutas Luissy
 import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
@@ -25,7 +27,6 @@ import AppoinmentsPage from './features/dashboard/pages/appointment/Appointments
 import ProductsPage from './features/dashboard/pages/products/ProductsPage';
 import ProductsCategoryPage from './features/dashboard/pages/products_Category/ProductsCategoryPage';
 import ProductsSalePage from './features/dashboard/pages/products_sale/ProductsSalePage';
-
 //Rutas Cruz
 import PurchasesPage from './features/dashboard/pages/purchases/PurchasesPage';
 import SuppliersPage from './features/dashboard/pages/suppliers/SuppliersPage';
@@ -47,9 +48,13 @@ function App() {
           <Route path="programacion_laboral" element={<WorkSchedulingPage />} />
           <Route path="roles" element={<RolesPage />} />
           <Route path="proyectos_servicios" element={<ProjectPage/>} />
+          <Route path="perfil" element={<EditProfilePage />} /> {/* <-- AÑADIMOS LA NUEVA RUTA */}
+          {/* Rutas de Daniel */}
+    
+
           {/*Rutas Luissy */}
-          <Route path="usuarios" element= {<UsersPages/>} />
-          <Route path="clientes" element= {<ClientsPage/>} />
+          <Route path="usuarios" element= {<UsersPages/> } />
+          <Route path="clientes" element= {<ClientsPage/> } />
           <Route path="pagosyabonos" element= {<Payments_InstallmentsPage/>} />
           {/*Rutas Elany */}
           <Route path="categoria_servicios" element={<ServicesCategoryPage />} />
