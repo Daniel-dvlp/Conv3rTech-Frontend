@@ -27,7 +27,6 @@ import AppoinmentsPage from './features/dashboard/pages/appointment/Appointments
 import ProductsPage from './features/dashboard/pages/products/ProductsPage';
 import ProductsCategoryPage from './features/dashboard/pages/products_Category/ProductsCategoryPage';
 import ProductsSalePage from './features/dashboard/pages/products_sale/ProductsSalePage';
-
 //Rutas Cruz
 import PurchasesPage from './features/dashboard/pages/purchases/PurchasesPage';
 import SuppliersPage from './features/dashboard/pages/suppliers/SuppliersPage';
@@ -54,8 +53,8 @@ function App() {
     
 
           {/*Rutas Luissy */}
-          <Route path="usuarios" element= {<UsersPages/>} />
-          <Route path="clientes" element= {<ClientsPage/>} />
+          <Route path="usuarios" element= {<UsersPages/> } />
+          <Route path="clientes" element= {<ClientsPage/> } />
           <Route path="pagosyabonos" element= {<Payments_InstallmentsPage/>} />
           {/*Rutas Elany */}
           <Route path="categoria_servicios" element={<ServicesCategoryPage />} />
