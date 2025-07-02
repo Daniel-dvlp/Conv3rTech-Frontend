@@ -59,4 +59,16 @@ export const mockPagos = [
     montoRestante: 6000000,
     estado: 'Pendiente',
   },
+  {
+    id: 6,
+    fecha: '25/03/2025',
+    numeroContrato: '00005',
+    nombre: 'Carlos',
+    apellido: 'Martínez',
+    montoTotal: 6000000,
+    montoAbonado: 6000000,
+    metodoPago: 'Cheque',
+    montoRestante: 6000000,
+    estado: 'Registrado',
+  },
 ];

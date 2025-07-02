@@ -1,6 +1,7 @@
 import React from 'react';
 import {
-  FaTimes, FaCalendarAlt, FaFileContract, FaUser, FaMoneyBillWave, FaCreditCard, FaToggleOn
+  FaTimes, FaCalendarAlt, FaFileContract, FaUser, FaMoneyBillWave,
+  FaCreditCard, FaToggleOn, FaCommentDots
 } from 'react-icons/fa';
 
 const InfoRow = ({ icon, label, value }) => (
@@ -57,10 +58,11 @@ const PaymentsDetailModal = ({ pago, onClose }) => {
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <FaMoneyBillWave className="text-green-500" /> Detalles del Pago
             </h3>
-            <InfoRow icon={<FaMoneyBillWave />} label="Monto Total" value={`$ ${pago.montoTotal.toLocaleString()}`} />
-            <InfoRow icon={<FaCreditCard />} label="Monto Abonado" value={`$ ${pago.montoAbonado.toLocaleString()}`} />
-            <InfoRow icon={<FaMoneyBillWave />} label="Monto Restante" value={`$ ${pago.montoRestante.toLocaleString()}`} />
-            <InfoRow icon={<FaCreditCard />} label="Método de Pago" value={pago.metodoPago} />
+            <InfoRow icon={<FaMoneyBillWave />} label="Monto Total" value={`$ ${Number(pago.montoTotal || 0).toLocaleString('es-CO')}`} />
+            <InfoRow icon={<FaCreditCard />} label="Monto Abonado" value={`$ ${Number(pago.montoAbonado || 0).toLocaleString('es-CO')}`} />
+            <InfoRow icon={<FaMoneyBillWave />} label="Monto Restante" value={`$ ${Number(pago.montoRestante || 0).toLocaleString('es-CO')}`} />
+            <InfoRow icon={<FaCreditCard />} label="Método de Pago" value={pago.metodoPago || '—'} />
+            <InfoRow icon={<FaCommentDots />} label="Concepto" value={pago.concepto || '—'} />
             <div className="flex items-center gap-2">
               <FaToggleOn className="text-indigo-500" />
               <span className="font-medium text-gray-600">Estado:</span>

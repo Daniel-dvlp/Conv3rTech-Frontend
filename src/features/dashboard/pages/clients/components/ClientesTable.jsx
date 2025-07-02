@@ -27,12 +27,13 @@ const ClientesTable = ({ clientes }) => {
               <td className="px-4 py-2">{cliente.email}</td>
               <td className="px-4 py-2">{cliente.celular}</td>
               <td className="px-4 py-2">
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${cliente.estado === 'Activo'
-                  ? 'bg-green-100 text-green-800'
-                  : 'bg-red-100 text-red-800'
-                  }`}>
-                  {cliente.estado}
-                </span>
+                <span
+  className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+    cliente.estado ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+  }`}
+>
+  {cliente.estado ? 'Activo' : 'Inactivo'}
+</span>
               </td>
               <td className="px-4 py-2">
                 <div className="flex justify-center gap-3">

@@ -1,19 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { FaPlus } from 'react-icons/fa';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FaPlus, FaSearch } from 'react-icons/fa';
 import UsersTable from './components/UsersTable'; 
 import SkeletonRow from './components/SkeletonRow';
 import CreateUserModal from './components/CreateUserModal';
-import { mockUsuarios } from './data/User_data'; // debes tener este archivo
-import { mockRoles } from '../Roles/data/Roles_data'
-import Pagination from '../../../../shared/components/Pagination'; // si tienes paginación
+import { mockUsuarios } from './data/User_data';
+import { mockRoles } from '../Roles/data/Roles_data';
+import Pagination from '../../../../shared/components/Pagination';
 
-const ITEMS_PER_PAGE = 5; // o el número que desees
+const ITEMS_PER_PAGE = 5;
 
-  
 const UsuariosPage = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openModal, setOpenModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     setTimeout(() => {
@@ -23,22 +24,71 @@ const UsuariosPage = () => {
   }, []);
 
   const handleCreateUser = (nuevoUsuario) => {
-    
-    console.log("Nuevo usuario:", nuevoUsuario);
-    
-    // Aquí puedes hacer la petición al backend para guardar el usuario
+    const nuevoId = usuarios.length ? usuarios[usuarios.length - 1].id + 1 : 1;
+
+    const fechaActual = new Date();
+    const fechaFormateada = `${String(fechaActual.getDate()).padStart(2, '0')}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}-${String(fechaActual.getFullYear()).slice(2)}`;
+
+    const usuarioConFormato = {
+      id: nuevoId,
+      ...nuevoUsuario,
+      status: 'Activo',
+      fechaCreacion: fechaFormateada
+    };
+
+    setUsuarios((prev) => {
+      const updated = [...prev, usuarioConFormato];
+      setCurrentPage(Math.ceil(updated.length / ITEMS_PER_PAGE));
+      return updated;
+    });
+
+    console.log("✅ Usuario creado:", usuarioConFormato);
   };
+
+  const filteredUsers = useMemo(() =>
+    usuarios.filter(u =>
+      u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.tipoDocumento.toLowerCase() === (searchTerm.toLowerCase()) ||
+      u.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.documento.toString().includes(searchTerm) ||
+      u.rol.toLowerCase() === (searchTerm.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.status.toLowerCase() === searchTerm.toLowerCase()
+    ), [usuarios, searchTerm]
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+
+  const paginatedUsers = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return filteredUsers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [filteredUsers, currentPage]);
 
   return (
     <div className="p-4 md:p-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
-        <button
-          className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-          onClick={() => setOpenModal(true)}
-        >
-          + Crear Usuario
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+          <button
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+            onClick={() => setOpenModal(true)}
+          >
+            + Crear Usuario
+          </button>
+        </div>
       </div>
 
       {loading ? (
@@ -46,19 +96,19 @@ const UsuariosPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Documento</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apellido</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Documento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apellido</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...Array(5)].map((_, index) => (
+              {[...Array(ITEMS_PER_PAGE)].map((_, index) => (
                 <SkeletonRow key={index} />
               ))}
             </tbody>
@@ -66,22 +116,29 @@ const UsuariosPage = () => {
         </div>
       ) : (
         <>
-        <UsersTable usuarios={usuarios} />
-        <Pagination
-          totalItems={usuarios.length}
-          itemsPerPage={ITEMS_PER_PAGE}
-          onPageChange={(page) => {
-            // Aquí puedes manejar el cambio de página
-            console.log("Página actual:", page);
-          }}></Pagination>
+          <UsersTable usuarios={paginatedUsers} />
+          {totalPages > 1 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={(page) => setCurrentPage(page)}
+            />
+          )}
         </>
-        
       )}
+
       <CreateUserModal
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
         roles={mockRoles}
         onSubmit={handleCreateUser}
+        usuariosExistentes={usuarios.map(u => ({
+          documento: u.documento,
+          tipoDocumento: u.tipoDocumento,
+          email: u.email,
+          celular: u.celular,
+          contrasena: u.contrasena
+        }))}
       />
     </div>
   );
