@@ -1,0 +1,142 @@
+export const mockProducts = [
+  {
+    id: 1,
+    fotos: [],
+    nombre: 'Cámara de Seguridad',
+    modelo: 'CS-100',
+    categoria: 2,
+    unidad: 'unidad',
+    garantia: 12,
+    codigos: [
+      { codigo: 'CS-100' },
+      { codigo: 'CS-100-W' }
+    ],
+    precio: 100000,
+    stock: 50,
+    especificaciones_tecnicas: [
+      { concepto: 'Resolución', valor: '1920x1080 (Full HD)' },
+      { concepto: 'Ángulo de visión', valor: '110°' },
+    ],
+    estado: true,
+  },
+  {
+    id: 2,
+    fotos: [],
+    nombre: 'Cámara de video',
+    modelo: 'CV-200',
+    categoria: 2,
+    unidad: 'metro',
+    garantia: 12,
+    codigos: [
+      { codigo: 'CV-100' },
+      { codigo: 'CV-100-W' }
+    ],
+    precio: 150000,
+    stock: 75,
+    especificaciones_tecnicas: [
+      { concepto: 'Resolución', valor: '4K UHD (3840x2160)' },
+      { concepto: 'Zoom óptico', valor: '12x motorizado' }
+    ],
+    estado: true,
+  },
+  {
+    id: 3,
+    fotos: [],
+    nombre: 'Sensor de Movimiento',
+    modelo: 'SM-300',
+    categoria: 6,
+    unidad: 'unidad',
+    garantia: 12,
+    codigos: [
+      { codigo: 'SM-100' },
+      { codigo: 'SM-100-W' }
+    ],
+    precio: 80000,
+    stock: 100,
+    especificaciones_tecnicas: [
+      { concepto: 'Tecnología de detección', valor: 'Infrarrojo pasivo (PIR)' },
+      { concepto: 'Rango de detección', valor: '12 metros / 90° ángulo' }
+    ],
+    estado: false,
+  },
+  {
+    id: 4,
+    fotos: [],
+    nombre: 'Alarma de Seguridad',
+    modelo: 'AS-400',
+    categoria: 6,
+    unidad: 'unidad',
+    garantia: 12,
+    codigos: [
+      { codigo: 'AS-100' },
+      { codigo: 'AS-100-W' }
+    ],
+    precio: 120000,
+    stock: 60,
+    especificaciones_tecnicas: [
+      { concepto: 'Volumen de sirena', valor: '110 dB' },
+      { concepto: 'Modos de alerta', valor: 'Sonido, luz LED y notificación remota' }
+    ],
+    estado: true,
+  },
+  {
+    id: 5,
+    fotos: [],
+    nombre: 'Control de Acceso',
+    modelo: 'CA-500',
+    categoria: 1,
+    unidad: 'unidad',
+    garantia: 12,
+    codigos: [
+      { codigo: 'CA-100' },
+      { codigo: 'CA-100-W' }
+    ],
+    precio: 200000,
+    stock: 40,
+    especificaciones_tecnicas: [
+      { concepto: 'Métodos de autenticación', valor: 'Huella, tarjeta RFID, PIN' },
+      { concepto: 'Capacidad de usuarios', valor: 'Hasta 1.000 huellas' }
+    ],
+    estado: true,
+  },
+  {
+    id: 6,
+    fotos: [],
+    nombre: 'Grabador DVR',
+    modelo: 'DVR-600',
+    categoria: 3,
+    unidad: 'unidad',
+    garantia: 12,
+    codigos: [
+      { codigo: 'GDVR-100' },
+      { codigo: 'GDVR-100-W' }
+    ],
+    precio: 250000,
+    stock: 30,
+    especificaciones_tecnicas: [
+      { concepto: 'Canales de grabación', valor: '4 canales HD' },
+      { concepto: 'Almacenamiento interno', valor: '1TB HDD integrado' }
+    ],
+    estado: true,
+  },
+  {
+    id: 7,
+    fotos: [],
+    nombre: 'Cerradura Digital',
+    modelo: 'CD-700',
+    categoria: 1,
+    unidad: 'unidad',
+    garantia: 12,
+    codigos: [
+      { codigo: 'CD-100' },
+      { codigo: 'CD-100-W' }
+    ],
+    precio: 300000,
+    stock: 20,
+    especificaciones_tecnicas: [
+      { concepto: 'Tipo de apertura', valor: 'Clave numérica y huella' },
+      { concepto: 'Material', valor: 'Acero inoxidable con resistencia IP65' }
+    ],
+    estado: true,
+  },
+];
