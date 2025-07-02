@@ -109,8 +109,8 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
     const handleSubmit = (e) => {
         e.preventDefault();
         const newErrors = {};
-        
-        const celularRegex =/^\+?[0-9]{10,13}$/;
+
+        const celularRegex = /^\+?[0-9]{10,13}$/;
         if (!formData.celular) {
             newErrors.celular = 'El celular es obligatorio';
         } else if (!celularRegex.test(formData.celular)) {
@@ -160,58 +160,61 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
                 <header className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-xl font-bold text-gray-800">Crear Cliente</h2>
+                    <h2 className="text-2xl font-bold text-gray-800">Crear Cliente</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2"><FaTimes /></button>
                 </header>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className={labelStyle}>Tipo de Documento</label>
-                            <select name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
-                                <option value="">Seleccionar...</option>
-                                <option value="CC">Cédula de Ciudadanía</option>
-                                <option value="TI">Tarjeta de Identidad</option>
-                                <option value="CE">Cédula de Extranjería</option>
-                                <option value="NIT">NIT</option>
-                            </select>
-                            {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
-                        </div>
+                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Información del Cliente</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className={labelStyle}>Tipo de Documento</label>
+                                <select name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="CC">Cédula de Ciudadanía</option>
+                                    <option value="TI">Tarjeta de Identidad</option>
+                                    <option value="CE">Cédula de Extranjería</option>
+                                    <option value="NIT">NIT</option>
+                                </select>
+                                {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
+                            </div>
 
-                        <div>
-                            <label className={labelStyle}>Documento</label>
-                            <input type="text" name="documento" value={formData.documento} onChange={handleChange} className={inputBaseStyle} />
-                            {errors.documento && <p className="text-red-500 text-sm mt-1">{errors.documento}</p>}
-                        </div>
+                            <div>
+                                <label className={labelStyle}>Documento</label>
+                                <input type="text" name="documento" value={formData.documento} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.documento && <p className="text-red-500 text-sm mt-1">{errors.documento}</p>}
+                            </div>
 
-                        <div>
-                            <label className={labelStyle}>Nombre</label>
-                            <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
-                            {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
-                        </div>
+                            <div>
+                                <label className={labelStyle}>Nombre</label>
+                                <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+                            </div>
 
-                        <div>
-                            <label className={labelStyle}>Apellido (opcional)</label>
-                            <input type="text" name="apellido" value={formData.apellido} onChange={handleChange} className={inputBaseStyle} />
-                        </div>
+                            <div>
+                                <label className={labelStyle}>Apellido (opcional)</label>
+                                <input type="text" name="apellido" value={formData.apellido} onChange={handleChange} className={inputBaseStyle} />
+                            </div>
 
-                        <div>
-                            <label className={labelStyle}>Correo</label>
-                            <input type="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
-                            {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-                        </div>
+                            <div>
+                                <label className={labelStyle}>Correo</label>
+                                <input type="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                            </div>
 
-                        <div>
-                            <label className={labelStyle}>Celular</label>
-                            <input type="text" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
-                            {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
+                            <div>
+                                <label className={labelStyle}>Celular</label>
+                                <input type="text" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
+                            </div>
                         </div>
                     </div>
 
-                    <div>
-                        <h3 className="text-lg font-semibold mb-2">Direcciones</h3>
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Direcciones del Cliente</h3>
                         <div className="space-y-4">
                             {formData.direcciones.map((dir, index) => (
                                 <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr,1fr,1fr,auto] gap-4 items-end">
@@ -241,64 +244,68 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
                         </div>
                     </div>
 
-                    <div>
-                        <label className={labelStyle}>Crédito</label>
-                        <div className="flex gap-6">
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.credito === true}
-                                    onChange={() => setFormData((prev) => ({ ...prev, credito: true }))}
-                                    className="h-4 w-4 text-conv3r-gold border-gray-300 rounded"
-                                />
-                                <span className="text-sm text-gray-800">Sí</span>
-                            </label>
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.credito === false}
-                                    onChange={() => setFormData((prev) => ({ ...prev, credito: false }))}
-                                    className="h-4 w-4 text-conv3r-gold border-gray-300 rounded"
-                                />
-                                <span className="text-sm text-gray-800">No</span>
-                            </label>
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Preferencias</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className={labelStyle}>Crédito</label>
+                                <div className="flex gap-6">
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.credito === true}
+                                            onChange={() => setFormData((prev) => ({ ...prev, credito: true }))}
+                                            className="h-4 w-4 text-conv3r-gold border-gray-300 rounded"
+                                        />
+                                        <span className="text-sm text-gray-800">Sí</span>
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.credito === false}
+                                            onChange={() => setFormData((prev) => ({ ...prev, credito: false }))}
+                                            className="h-4 w-4 text-conv3r-gold border-gray-300 rounded"
+                                        />
+                                        <span className="text-sm text-gray-800">No</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className={labelStyle}>Estado</label>
+                                <div className="flex gap-6">
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.estado === true}
+                                            onChange={() => setFormData((prev) => ({ ...prev, estado: true }))}
+                                            className="h-4 w-4 text-green-600 border-gray-300 rounded"
+                                        />
+                                        <span className="text-sm text-gray-800">Activo</span>
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            checked={formData.estado === false}
+                                            onChange={() => setFormData((prev) => ({ ...prev, estado: false }))}
+                                            className="h-4 w-4 text-red-600 border-gray-300 rounded"
+                                        />
+                                        <span className="text-sm text-gray-800">Inactivo</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Selección de Estado */}
-                    <div>
-                        <label className={labelStyle}>Estado</label>
-                        <div className="flex gap-6">
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.estado === true}
-                                    onChange={() => setFormData((prev) => ({ ...prev, estado: true }))}
-                                    className="h-4 w-4 text-green-600 border-gray-300 rounded"
-                                />
-                                <span className="text-sm text-gray-800">Activo</span>
-                            </label>
-                            <label className="flex items-center gap-2">
-                                <input
-                                    type="checkbox"
-                                    checked={formData.estado === false}
-                                    onChange={() => setFormData((prev) => ({ ...prev, estado: false }))}
-                                    className="h-4 w-4 text-red-600 border-gray-300 rounded"
-                                />
-                                <span className="text-sm text-gray-800">Inactivo</span>
-                            </label>
-                        </div>
-                    </div>
-
-
-                    <div className="flex justify-end gap-4 pt-4 border-t mt-6">
+                    <div className="flex justify-end gap-4 pt-6 border-t mt-6">
                         <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
                         <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Cliente</button>
                     </div>
                 </form>
-            </div >
-        </div >
+            </div>
+        </div>
     );
+
 };
 
 export default CreateClientModal;
