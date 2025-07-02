@@ -24,6 +24,7 @@ const Sidebar = () => {
       icon: <FaClipboardList />,
       path: '/dashboard/usuarios'
     },
+    
     {
       name: 'Compras',
       icon: <FaDollarSign />,
