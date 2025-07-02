@@ -110,5 +110,32 @@ export const mockSales = [
       },
     ],
   },
+  {
+    id: 6,
+    numero: '006',
+    cliente: 'Daniela Gómez',
+    fechaHora: '07/03/2025 04:40 PM',
+    monto: 175000,
+    metodoPago: 'Tarjeta',
+    estado: 'Registrada',
+    productos: [
+      {
+        producto: 'Cámara de Seguridad',
+        modelo: 'CS-100',
+        cantidad: 1,
+        unidad: 'unidad',
+        precioUnitario: 100000,
+        subtotal: 100000,
+      },
+      {
+        producto: 'Sensor de Movimiento',
+        modelo: 'SM-300',
+        cantidad: 1,
+        unidad: 'unidad',
+        precioUnitario: 75000,
+        subtotal: 75000,
+      },
+    ],
+  },
   // Los demás objetos se pueden completar siguiendo el mismo formato
 ];

@@ -48,7 +48,6 @@ const ProductCategoryDetailModal = ({ category, onClose }) => {
         <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
           <div className="space-y-6">
             <DetailCard title="Información de la Categoría" icon={<FaInfoCircle className="text-gray-500" />}>
-              <InfoRow label="Nombre">{category.nombre}</InfoRow>
               <InfoRow label="Descripción">{category.descripcion}</InfoRow>
               <InfoRow label="Estado">
                 <span

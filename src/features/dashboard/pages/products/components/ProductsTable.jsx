@@ -1,7 +1,7 @@
 // src/features/dashboard/pages/productos/components/ProductosTable.jsx
 
 import React from 'react';
-import { FaEdit, FaMinusCircle, FaEye } from 'react-icons/fa';
+import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 
 const ProductsTable = ({ products, categories }) => {
   const getCategoryName = (id) => {
@@ -29,9 +29,9 @@ const ProductsTable = ({ products, categories }) => {
           {products.map((product) => (
             <tr key={product.id} className="hover:bg-gray-50 transition-colors">
               <td className="py-2 px-4">
-                {product.foto ? (
+                {Array.isArray(product.fotos) && product.fotos.length > 0 ? (
                   <img
-                    src={product.foto}
+                    src={product.fotos[0]}
                     alt={product.nombre}
                     className="h-12 w-12 object-cover rounded-full border border-gray-300"
                   />
@@ -39,7 +39,6 @@ const ProductsTable = ({ products, categories }) => {
                   <span className="text-gray-400 italic">Sin foto</span>
                 )}
               </td>
-
 
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{product.nombre}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.modelo}</td>
@@ -64,7 +63,7 @@ const ProductsTable = ({ products, categories }) => {
                     <FaEdit size={16} />
                   </button>
                   <button className="text-red-600 hover:text-red-900" title="Eliminar">
-                    <FaMinusCircle size={16} />
+                    <FaTrashAlt size={16} />
                   </button>
                 </div>
               </td>

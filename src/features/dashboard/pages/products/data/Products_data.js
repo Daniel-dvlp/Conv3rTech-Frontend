@@ -1,7 +1,7 @@
 export const mockProducts = [
   {
     id: 1,
-    foto: 'data/image',
+    fotos: [],
     nombre: 'Cámara de Seguridad',
     modelo: 'CS-100',
     categoria: 2,
@@ -21,7 +21,7 @@ export const mockProducts = [
   },
   {
     id: 2,
-    foto: 'data/image',
+    fotos: [],
     nombre: 'Cámara de video',
     modelo: 'CV-200',
     categoria: 2,
@@ -41,7 +41,7 @@ export const mockProducts = [
   },
   {
     id: 3,
-    foto: 'data/image',
+    fotos: [],
     nombre: 'Sensor de Movimiento',
     modelo: 'SM-300',
     categoria: 6,
@@ -61,7 +61,7 @@ export const mockProducts = [
   },
   {
     id: 4,
-    foto: 'data/image',
+    fotos: [],
     nombre: 'Alarma de Seguridad',
     modelo: 'AS-400',
     categoria: 6,
@@ -81,7 +81,7 @@ export const mockProducts = [
   },
   {
     id: 5,
-    foto: 'data/image',
+    fotos: [],
     nombre: 'Control de Acceso',
     modelo: 'CA-500',
     categoria: 1,
@@ -101,7 +101,7 @@ export const mockProducts = [
   },
   {
     id: 6,
-    foto: 'data/image',
+    fotos: [],
     nombre: 'Grabador DVR',
     modelo: 'DVR-600',
     categoria: 3,
@@ -121,7 +121,7 @@ export const mockProducts = [
   },
   {
     id: 7,
-    foto: 'data/image',
+    fotos: [],
     nombre: 'Cerradura Digital',
     modelo: 'CD-700',
     categoria: 1,
