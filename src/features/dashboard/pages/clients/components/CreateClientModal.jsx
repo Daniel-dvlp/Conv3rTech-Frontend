@@ -4,7 +4,8 @@ import { FaTimes, FaPlus, FaTrash, FaBullseye } from 'react-icons/fa';
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
 
-const CreateClientModal = ({ isOpen, onClose, onSubmit }) => {
+const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] }) => {
+
     const initialState = {
         tipoDocumento: '',
         documento: '',
@@ -23,16 +24,67 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit }) => {
     const [errors, setErrors] = useState({});
     useEffect(() => {
         if (isOpen) {
-          setFormData(initialState);
-          setErrors({});
+            setFormData(initialState);
+            setErrors({});
         }
-      }, [isOpen]);
+    }, [isOpen]);
 
+    // Simulación de clientes existentes para validación == Validacion en vivo
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-        setErrors(prev => ({ ...prev, [name]: '' }));
+
+        setErrors(prev => {
+            const updatedErrors = { ...prev };
+
+            // Elimina error si el campo ya no está vacío
+            if (value) updatedErrors[name] = '';
+
+            // Validación en vivo para duplicados (solo en email o documento)
+            if (name === 'documento') {
+                const existeDocumento = clientesExistentes.some(
+                    (c) => c.documento.toLowerCase() === value.toLowerCase()
+                );
+                updatedErrors.documento = existeDocumento ? 'Este documento ya está registrado' : '';
+            }
+
+            if (name === 'email') {
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+                const existeCorreo = clientesExistentes.some(
+                    (c) =>
+                        typeof c.email === 'string' &&
+                        c.email.toLowerCase() === value.toLowerCase()
+                );
+
+                if (!emailRegex.test(value)) {
+                    updatedErrors.email = 'El formato del correo no es válido';
+                } else if (existeCorreo) {
+                    updatedErrors.email = 'Este correo ya está registrado';
+                } else {
+                    updatedErrors.email = '';
+                }
+
+            }
+            if (name === 'celular') {
+                const celularRegex = /^\+?[0-9]{10,13}$/;
+
+                if (!value) {
+                    updatedErrors.celular = 'El celular es obligatorio';
+                } else if (!celularRegex.test(value)) {
+                    updatedErrors.celular = 'Solo se permiten números';
+                } else if (value.length < 10 || value.length > 13) {
+                    updatedErrors.celular = 'Debe tener entre 10 y 13 dígitos';
+                } else {
+                    updatedErrors.celular = '';
+                }
+            }
+
+
+            return updatedErrors;
+        });
     };
+
 
     const handleDireccionChange = (index, e) => {
         const { name, value } = e.target;
@@ -57,6 +109,29 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit }) => {
     const handleSubmit = (e) => {
         e.preventDefault();
         const newErrors = {};
+        
+        const celularRegex =/^\+?[0-9]{10,13}$/;
+        if (!formData.celular) {
+            newErrors.celular = 'El celular es obligatorio';
+        } else if (!celularRegex.test(formData.celular)) {
+            newErrors.celular = 'Solo se permiten números';
+        } else if (formData.celular.length < 10 || formData.celular.length > 13) {
+            newErrors.celular = 'Debe tener entre 10 y 13 dígitos';
+        }
+
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.email)) {
+            newErrors.email = 'El formato del correo no es válido';
+        } else {
+            const existeCorreo = clientesExistentes.some(
+                (c) =>
+                    typeof c.email === 'string' &&
+                    c.email.toLowerCase() === formData.email.toLowerCase()
+            );
+            if (existeCorreo) {
+                newErrors.email = 'Ya existe un cliente con este correo';
+            }
+        }
 
         if (!formData.tipoDocumento) newErrors.tipoDocumento = "Selecciona un tipo de documento";
         if (!formData.documento) newErrors.documento = "El documento es obligatorio";
@@ -214,16 +289,16 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit }) => {
                             </label>
                         </div>
                     </div>
-            
 
-            <div className="flex justify-end gap-4 pt-4 border-t mt-6">
-                <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
-                <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Cliente</button>
-            </div>
-        </form>
-      </div >
-    </div >
-  );
+
+                    <div className="flex justify-end gap-4 pt-4 border-t mt-6">
+                        <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
+                        <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Cliente</button>
+                    </div>
+                </form>
+            </div >
+        </div >
+    );
 };
 
 export default CreateClientModal;

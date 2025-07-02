@@ -107,6 +107,12 @@ const filteredClients = useMemo(() =>
             isOpen={openModal}
             onClose={() => setOpenModal(false)}
             onSubmit={handleAddCliente}
+            clientesExistentes={clientes.map(c => ({
+              documento: c.documento,
+              tipoDocumento: c.tipoDocumento,
+              email: c.email,
+              celular: c.celular
+            }))} // Pasar los clientes existentes para validación
           />
 
         </>

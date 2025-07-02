@@ -132,6 +132,13 @@ const UsuariosPage = () => {
         onClose={() => setOpenModal(false)}
         roles={mockRoles}
         onSubmit={handleCreateUser}
+        usuariosExistentes={usuarios.map(u => ({
+          documento: u.documento,
+          tipoDocumento: u.tipoDocumento,
+          email: u.email,
+          celular: u.celular,
+          contrasena: u.contrasena
+        }))}
       />
     </div>
   );
