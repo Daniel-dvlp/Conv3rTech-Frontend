@@ -1,10 +1,9 @@
-// src/features/dashboard/pages/productos/components/ProductosTable.jsx
-
 import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 
-const ProductsTable = ({ products, categories }) => {
+const ProductsTable = ({ products, categories, onViewDetails }) => {
   const getCategoryName = (id) => {
+    if (!Array.isArray(categories)) return 'Desconocida';
     const cat = categories.find((c) => c.id === id);
     return cat ? cat.nombre : 'Desconocida';
   };
@@ -46,6 +45,7 @@ const ProductsTable = ({ products, categories }) => {
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.unidad}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${product.precio.toLocaleString()}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.stock}</td>
+              
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.estado === true
                   ? 'bg-green-100 text-green-800'
@@ -56,7 +56,11 @@ const ProductsTable = ({ products, categories }) => {
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
-                  <button className="text-blue-600 hover:text-gray-900" title="Ver">
+                  <button
+                    className="text-blue-600 hover:text-gray-900"
+                    title="Ver"
+                    onClick={() => onViewDetails(product)}
+                  >
                     <FaEye size={16} />
                   </button>
                   <button className="text-yellow-600 hover:text-blue-900" title="Editar">

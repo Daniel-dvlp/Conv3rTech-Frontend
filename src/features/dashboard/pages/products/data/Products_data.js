@@ -7,10 +7,7 @@ export const mockProducts = [
     categoria: 2,
     unidad: 'unidad',
     garantia: 12,
-    codigos: [
-      { codigo: 'CS-100' },
-      { codigo: 'CS-100-W' }
-    ],
+    codigo:'123456',
     precio: 100000,
     stock: 50,
     especificaciones_tecnicas: [
@@ -27,10 +24,7 @@ export const mockProducts = [
     categoria: 2,
     unidad: 'metro',
     garantia: 12,
-    codigos: [
-      { codigo: 'CV-100' },
-      { codigo: 'CV-100-W' }
-    ],
+    codigo: '788999',
     precio: 150000,
     stock: 75,
     especificaciones_tecnicas: [
@@ -47,10 +41,7 @@ export const mockProducts = [
     categoria: 6,
     unidad: 'unidad',
     garantia: 12,
-    codigos: [
-      { codigo: 'SM-100' },
-      { codigo: 'SM-100-W' }
-    ],
+    codigo: '222222',
     precio: 80000,
     stock: 100,
     especificaciones_tecnicas: [
@@ -67,10 +58,7 @@ export const mockProducts = [
     categoria: 6,
     unidad: 'unidad',
     garantia: 12,
-    codigos: [
-      { codigo: 'AS-100' },
-      { codigo: 'AS-100-W' }
-    ],
+    codigo: '333333',
     precio: 120000,
     stock: 60,
     especificaciones_tecnicas: [
@@ -87,10 +75,7 @@ export const mockProducts = [
     categoria: 1,
     unidad: 'unidad',
     garantia: 12,
-    codigos: [
-      { codigo: 'CA-100' },
-      { codigo: 'CA-100-W' }
-    ],
+    codigo: '444444',
     precio: 200000,
     stock: 40,
     especificaciones_tecnicas: [
@@ -107,10 +92,7 @@ export const mockProducts = [
     categoria: 3,
     unidad: 'unidad',
     garantia: 12,
-    codigos: [
-      { codigo: 'GDVR-100' },
-      { codigo: 'GDVR-100-W' }
-    ],
+    codigo: '555555',
     precio: 250000,
     stock: 30,
     especificaciones_tecnicas: [
@@ -127,10 +109,7 @@ export const mockProducts = [
     categoria: 1,
     unidad: 'unidad',
     garantia: 12,
-    codigos: [
-      { codigo: 'CD-100' },
-      { codigo: 'CD-100-W' }
-    ],
+    codigo: '777777',
     precio: 300000,
     stock: 20,
     especificaciones_tecnicas: [
