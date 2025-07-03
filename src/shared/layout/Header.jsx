@@ -8,9 +8,6 @@ const Header = () => {
       {/* Iconos alineados a la derecha */}
       <div className="flex items-center gap-6">
         <button className="text-2xl text-[#00012A] hover:text-gray-400 transition-colors">
-          <FaBell />
-        </button>
-        <button className="text-2xl text-[#00012A] hover:text-gray-400 transition-colors">
           <FaUserCircle />
         </button>
       </div>

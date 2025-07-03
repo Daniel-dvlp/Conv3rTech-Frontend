@@ -158,7 +158,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
           {renderListInputs('servicios', 'Servicios Incluidos')}
           
           <FormSection title="Costos Adicionales">
-             <div><FormLabel htmlFor="manoDeObra">Costo de Mano de Obra (COP)</FormLabel><input id="manoDeObra" type="number" name="manoDeObra" value={projectData.costos.manoDeObra} onChange={handleChange} className={inputBaseStyle} placeholder="Ej: 1500000" min="0" /></div>
+            <div><FormLabel htmlFor="manoDeObra">Costo de Mano de Obra (COP)</FormLabel><input id="manoDeObra" type="number" name="manoDeObra" value={projectData.costos.manoDeObra} onChange={handleChange} className={inputBaseStyle} placeholder="Ej: 1500000" min="0" /></div>
           </FormSection>
 
           <FormSection title="Observaciones">

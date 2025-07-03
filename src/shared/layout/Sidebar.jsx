@@ -98,7 +98,7 @@ const Sidebar = () => {
       </div>
 
       {/* MENÚ PRINCIPAL */}
-      <nav className="flex-grow overflow-y-auto">
+      <nav className="flex-grow overflow-y-auto scrollbar-hide">
         <ul className="pl-0">
           {mainMenuItems.map((item) => (
             <li key={item.name} className="mb-2">
