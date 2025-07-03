@@ -14,7 +14,7 @@ const ProgressBar = ({ progress }) => (
   </div>
 );
 
-const ProjectsTable = ({ projects, onViewDetails }) => {
+const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject }) => {
   // Función para determinar el color del estado
   const getStatusClass = (status) => {
     switch (status) {
@@ -37,7 +37,7 @@ const ProjectsTable = ({ projects, onViewDetails }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-m">
         <thead className="bg-gray-50">
           <tr>
             <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider">Numero de Contrato</th>
@@ -56,12 +56,12 @@ const ProjectsTable = ({ projects, onViewDetails }) => {
           {projects.map((project) => (
             <tr key={project.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-6 py-4">
-                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600 text-left">
+                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600 text-left text-m">
                   {project.numeroContrato}
                 </button>
               </td>
               <td className="px-6 py-4">
-                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600  text-left">
+                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600  text-left text-m">
                   {project.nombre}
                 </button>
                 <div className="text-m text-gray-500">Cliente: {project.cliente}</div>
@@ -78,17 +78,17 @@ const ProjectsTable = ({ projects, onViewDetails }) => {
                 </div>
               </td>
               <td className="px-6 py-4 text-gray-600">
-                <div>Inicio: {project.fechaInicio}</div>
-                <div>Fin: {project.fechaFin}</div>
+                <div className="text-m">Inicio: {project.fechaInicio}</div>
+                <div className="text-m">Fin: {project.fechaFin}</div>
               </td>
               {/* ------------------------- */}
               <td className="px-6 py-4">
-                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getStatusClass(project.estado)}`}>
+                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getStatusClass(project.estado)} text-m`}>
                   {project.estado}
                 </span>
               </td>
               <td className="px-6 py-4">
-                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getPriorityClass(project.prioridad)}`}>
+                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getPriorityClass(project.prioridad)} text-m`}>
                   {project.prioridad}
                 </span>
               </td>
@@ -100,11 +100,11 @@ const ProjectsTable = ({ projects, onViewDetails }) => {
               </td>
               <td className="px-6 py-4">
                 <div className="flex items-center justify-end gap-4">
-                   <button onClick={() => onViewDetails(project)} className="text-green-400 hover:text-green-600" title="Ver Detalles">
+                   <button onClick={() => onViewDetails(project)} className="text-blue-400 hover:text-blue-600 text-m" title="Ver Detalles">
                     <FaEye size={16} />
                   </button>
-                   <button className="text-blue-400 hover:text-blue-600" title="Editar"><FaEdit size={16} /></button>
-                   <button className="text-red-400 hover:text-red-600" title="Eliminar"><FaTrashAlt size={16} /></button>
+                   <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-m" title="Editar"><FaEdit size={16} /></button>
+                   <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-m" title="Eliminar"><FaTrashAlt size={16} /></button>
                 </div>
               </td>
             </tr>

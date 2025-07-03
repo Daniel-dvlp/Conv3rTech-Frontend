@@ -10,6 +10,10 @@ const Sidebar = () => {
   const [openMenus, setOpenMenus] = useState({});
   const location = useLocation();
 
+  const isChildActive = (children) => {
+    return children?.some(child => location.pathname === child.path);
+  };
+
   const toggleMenu = (menuName) => {
     setOpenMenus((prev) => ({
       ...prev,
@@ -19,12 +23,7 @@ const Sidebar = () => {
 
   const mainMenuItems = [
     { name: 'Dashboard', icon: <FaTachometerAlt />, path: '/dashboard' },
-    {
-      name: 'Usuarios',
-      icon: <FaClipboardList />,
-      path: '/dashboard/usuarios'
-    },
-    
+    { name: 'Usuarios', icon: <FaClipboardList />, path: '/dashboard/usuarios' },
     {
       name: 'Compras',
       icon: <FaDollarSign />,
@@ -76,9 +75,25 @@ const Sidebar = () => {
     alert('Cerrando sesión...');
   };
 
+  const getBubbleClasses = (isActive) => {
+    return isActive
+      ? 'bg-white text-[#00012A] font-semibold shadow-md rounded-l-full pl-4 pr-2 transition-all duration-300'
+      : 'hover:bg-gray-700 hover:text-white text-gray-400 transition-all duration-300';
+  };
+
+  const getSubitemBubbleClasses = (isActive) => {
+    return isActive
+      ? 'bg-white text-[#00012A] font-semibold shadow-md rounded-l-full pl-4 pr-2 transition-all duration-300'
+      : 'hover:bg-gray-700 hover:text-white text-gray-400 transition-all duration-300';
+  };
+
+  const getActiveTextColor = (isActive) => {
+    return isActive ? { color: '#00012A' } : {};
+  };
+
   return (
     <aside
-      className={`bg-[#00012A] text-white h-screen p-3 flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}
+      className={`bg-[#00012A] text-white h-screen pl-3 rounded-r-xl flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
@@ -100,122 +115,122 @@ const Sidebar = () => {
       {/* MENÚ PRINCIPAL */}
       <nav className="flex-grow overflow-y-auto">
         <ul className="pl-0">
-          {mainMenuItems.map((item) => (
-            <li key={item.name} className="mb-2">
-              {item.children ? (
-                <>
-                  <button
-                    onClick={() => toggleMenu(item.name)}
-                    className={`w-full flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg transition-colors duration-200 ${openMenus[item.name] ? 'bg-gray-700 text-white' : 'text-gray-400 hover:bg-gray-700 hover:text-white'}`}
-                  >
-                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>{item.icon}</div>
-                    {isExpanded && (
-                      <>
-                        <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
-                        <span className="ml-auto mr-2">{openMenus[item.name] ? '▲' : '▼'}</span>
-                      </>
+          {mainMenuItems.map((item) => {
+            const isActiveParent = location.pathname === item.path || isChildActive(item.children);
+            return (
+              <li key={item.name} className="mb-2 relative " >
+                {item.children ? (
+                  <>
+                    <button
+                      onClick={() => toggleMenu(item.name)}
+                      className={`w-full flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${getBubbleClasses(isActiveParent)}`}
+                    >
+                      <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>
+                        {item.icon}
+                      </div>
+                      {isExpanded && (
+                        <>
+                          <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
+                          <span className="ml-auto mr-2">{(openMenus[item.name] || isActiveParent) ? '▲' : '▼'}</span>
+                        </>
+                      )}
+                    </button>
+                    {(openMenus[item.name] || isActiveParent) && isExpanded && (
+                      <ul className="ml-6 mt-1 pl-0">
+                        {item.children.map((subItem) => {
+                          const isActive = location.pathname === subItem.path;
+                          return (
+                            <li key={subItem.name} className="mb-1 relative">
+                              <Link
+                                to={subItem.path}
+                                className={`no-underline flex items-center p-2 rounded-lg text-sm ${getSubitemBubbleClasses(isActive)}`}
+                              >
+                                <span style={getActiveTextColor(isActive)}>{subItem.name}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     )}
-                  </button>
-                  {openMenus[item.name] && isExpanded && (
-                    <ul className="ml-6 mt-1 pl-0">
-                      {item.children.map((subItem) => (
-                        <li key={subItem.name} className="mb-1">
-                          <Link
-                            to={subItem.path}
-                            className={`no-underline flex items-center p-2 rounded-lg text-sm transition-colors duration-200 ${
-                              location.pathname === subItem.path
-                                ? 'bg-gray-600 text-white'
-                                : 'text-gray-400 hover:bg-gray-600 hover:text-white'
-                            }`}
-                          >
-                            {subItem.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <Link
-                  to={item.path}
-                  className={`no-underline flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg transition-colors duration-200 ${
-                    location.pathname === item.path
-                      ? 'bg-gray-700 text-white'
-                      : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                  }`}
-                >
-                  <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>{item.icon}</div>
-                  {isExpanded && (
-                    <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
-                  )}
-                </Link>
-              )}
-            </li>
-          ))}
+                  </>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className={`no-underline flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${getBubbleClasses(isActiveParent)}`}
+                  >
+                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`} style={getActiveTextColor(isActiveParent)}>
+                      {item.icon}
+                    </div>
+                    {isExpanded && (
+                      <span className="ml-4 font-semibold whitespace-nowrap" style={getActiveTextColor(isActiveParent)}>
+                        {item.name}
+                      </span>
+                    )}
+                  </Link>
+                )}
+              </li>
+            );
+          })}
         </ul>
       </nav>
 
       {/* MENÚ INFERIOR */}
-      <div className="border-t border-gray-700 pt-4">
-        <ul className="pl-0">
-          {bottomMenuItems.map((item) => (
-            <li key={item.name} className="mb-2">
-              {item.children ? (
-                <>
+      <div className="border-t border-gray-700 pt-4 pr-0">
+        <ul className="pl-0 pr-0">
+          {bottomMenuItems.map((item) => {
+            const isActiveParent = location.pathname === item.path || isChildActive(item.children);
+            return (
+              <li key={item.name} className="mb-2 relative">
+                {item.children ? (
+                  <>
+                    <button
+                      onClick={() => toggleMenu(item.name)}
+                      className={`w-full flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${getBubbleClasses(isActiveParent)}`}
+                    >
+                      <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>
+                        {item.icon}
+                      </div>
+                      {isExpanded && (
+                        <>
+                          <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
+                          <span className="ml-auto mr-2">{(openMenus[item.name] || isActiveParent) ? '▲' : '▼'}</span>
+                        </>
+                      )}
+                    </button>
+                    {(openMenus[item.name] || isActiveParent) && isExpanded && (
+                      <ul className="ml-6 mt-1 pl-0">
+                        {item.children.map((subItem) => {
+                          const isActive = location.pathname === subItem.path;
+                          return (
+                            <li key={subItem.name} className="mb-1 relative">
+                              <Link
+                                to={subItem.path}
+                                className={`no-underline flex items-center p-2 rounded-lg text-sm ${getSubitemBubbleClasses(isActive)}`}
+                              >
+                                <span style={getActiveTextColor(isActive)}>{subItem.name}</span>
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </>
+                ) : (
                   <button
-                    onClick={() => toggleMenu(item.name)}
-                    className={`w-full flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg transition-colors duration-200 ${
-                      openMenus[item.name]
-                        ? 'bg-gray-700 text-white'
-                        : 'text-gray-400 hover:bg-gray-700 hover:text-white'
-                    }`}
+                    onClick={handleLogout}
+                    className={`w-full flex items-center p-2 rounded-lg ${getBubbleClasses(isActiveParent)} ${isExpanded ? 'justify-start' : 'justify-center'}`}
                   >
                     <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>
                       {item.icon}
                     </div>
                     {isExpanded && (
-                      <>
-                        <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
-                        <span className="ml-auto mr-2">{openMenus[item.name] ? '▲' : '▼'}</span>
-                      </>
+                      <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
                     )}
                   </button>
-                  {openMenus[item.name] && isExpanded && (
-                    <ul className="ml-6 mt-1 pl-0">
-                      {item.children.map((subItem) => (
-                        <li key={subItem.name} className="mb-1">
-                          <Link
-                            to={subItem.path}
-                            className={`no-underline flex items-center p-2 rounded-lg text-sm transition-colors duration-200 ${
-                              location.pathname === subItem.path
-                                ? 'bg-gray-600 text-white'
-                                : 'text-gray-400 hover:bg-gray-600 hover:text-white'
-                            }`}
-                          >
-                            {subItem.name}
-                          </Link>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </>
-              ) : (
-                <button
-                  onClick={handleLogout}
-                  className={`w-full flex items-center p-2 rounded-lg transition-colors duration-200 text-gray-400 hover:bg-gray-700 hover:text-white ${
-                    isExpanded ? 'justify-start' : 'justify-center'
-                  }`}
-                >
-                  <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>
-                    {item.icon}
-                  </div>
-                  {isExpanded && (
-                    <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
-                  )}
-                </button>
-              )}
-            </li>
-          ))}
+                )}
+              </li>
+            );
+          })}
         </ul>
       </div>
     </aside>

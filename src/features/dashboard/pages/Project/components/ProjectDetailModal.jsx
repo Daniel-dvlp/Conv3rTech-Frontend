@@ -28,7 +28,7 @@ const InfoRow = ({ icon, label, children }) => (
   </div>
 );
 
-const ProjectDetailModal = ({ project, onClose }) => {
+const ProjectDetailModal = ({ project, onClose, onEdit }) => {
   if (!project) return null;
 
   const costoMateriales = (project.materiales ?? []).reduce((sum, item) => sum + (item.cantidad * item.precio), 0);
@@ -59,9 +59,12 @@ const ProjectDetailModal = ({ project, onClose }) => {
             <h2 className="text-2xl font-bold text-gray-900">{project.nombre}</h2>
             <p className="text-md text-gray-600">Cliente: {project.cliente}</p>
           </div>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl p-2 rounded-full">
-            <FaTimes />
-          </button>
+          <div className="flex gap-2 items-center">
+            <button onClick={() => onEdit && onEdit(project)} className="px-3 py-1 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 font-semibold rounded-lg text-sm transition-colors">Editar</button>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl p-2 rounded-full">
+              <FaTimes />
+            </button>
+          </div>
         </header>
 
         <div className="p-4 sm:p-6 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">

@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       animation: {
-        "fade-in": "fadeIn 0.3s ease-out",
+        "fade-in": "fadeIn 0.25s ease-in-out",
       },
       keyframes: {
         fadeIn: {
@@ -38,5 +38,8 @@ export default {
       },
     },
   },
-  plugins: [tailwindScrollbar],
+  plugins: [
+    require('tailwind-scrollbar'),
+    require('@tailwindcss/forms'),
+  ],
 };

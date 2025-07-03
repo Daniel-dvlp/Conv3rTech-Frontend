@@ -1,42 +1,36 @@
-// src/features/dashboard/pages/project/components/NewProjectModal.jsx
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import { useState as useAutocompleteState } from 'react';
 
-// Componente reutilizable para las secciones del formulario
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
     <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
-    <div className="space-y-4">
-      {children}
-    </div>
+    <div className="space-y-4">{children}</div>
   </div>
 );
 
-// Componente reutilizable para las etiquetas
 const FormLabel = ({ htmlFor, children }) => (
-    <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
 );
 
-// Estilo base para todos los inputs y selects
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
-
-const NewProjectModal = ({ isOpen, onClose, onSave }) => {
-  // --- TU LÓGICA DE ESTADO Y MANEJADORES (SIN NINGÚN CAMBIO) ---
-  const initialState = {
+const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
+  const initialState = project || {
     nombre: '', numeroContrato: '', cliente: '', responsable: '',
     fechaInicio: '', fechaFin: '', estado: 'Pendiente', prioridad: 'Media',
     descripcion: '', ubicacion: '', observaciones: '',
-    empleadosAsociados: [],
-    materiales: [],
-    servicios: [],
-    costos: { manoDeObra: '' },
+    empleadosAsociados: [], materiales: [], servicios: [], costos: { manoDeObra: '' },
   };
   const [projectData, setProjectData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [empleadoSearch, setEmpleadoSearch] = useState('');
+
+  useEffect(() => {
+    if (project && isOpen) {
+      setProjectData(project);
+    }
+  }, [project, isOpen]);
 
   const mockClientes = ['Constructora XYZ', 'Hospital Central', 'Oficinas BigCorp'];
   const mockResponsables = ['Daniela V.', 'Carlos R.', 'Ana G.', 'Sofía M.'];
@@ -81,7 +75,6 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   };
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Validaciones
     const newErrors = {};
     if (!projectData.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
     if (!projectData.cliente) newErrors.cliente = 'Selecciona un cliente';
@@ -93,12 +86,10 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     if (projectData.servicios.length === 0) newErrors.servicios = 'Agrega al menos un servicio';
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
-    onSave({ ...projectData, id: `P-${Date.now()}` });
-    setProjectData(initialState);
+    onUpdate({ ...projectData });
     setErrors({});
     onClose();
   };
-  // -----------------------------------------------------------------
 
   const renderListInputs = (listName, label) => {
     const items = projectData[listName];
@@ -107,7 +98,6 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     return (
       <FormSection title={label}>
         <div className="space-y-4">
-          {/* Encabezados para la lista */}
           <div className="grid grid-cols-[1fr,auto,auto,auto] gap-3 px-1 text-xs font-bold text-gray-500">
               <span>Nombre del {singularLabel.toLowerCase()}</span>
               <span className="w-20 text-center">Cantidad</span>
@@ -136,7 +126,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <header className="flex justify-between items-center p-4 border-b flex-shrink-0">
-          <h2 className="text-2xl font-bold text-gray-800">Crear Nuevo Proyecto</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Editar Proyecto</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2"><FaTimes /></button>
         </header>
 
@@ -201,7 +191,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
 
           <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
-            <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Proyecto</button>
+            <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Cambios</button>
             {Object.keys(errors).length > 0 && <div className="text-red-500 text-sm mt-2">Corrige los errores antes de guardar.</div>}
           </div>
         </form>
@@ -210,4 +200,4 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-export default NewProjectModal;
+export default EditProjectModal; 

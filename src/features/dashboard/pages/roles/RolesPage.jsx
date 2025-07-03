@@ -1,46 +1,136 @@
 // src/features/dashboard/pages/roles/RolesPage.jsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus } from 'react-icons/fa';
 import RolesTable from './components/RolesTable'; 
-// 1. ELIMINAMOS SkeletonRow y lo reemplazamos por el TableSkeleton compartido
-import TableSkeleton from '../../../../shared/components/TableSkeleton'; 
-// 2. CORREGIMOS la ruta para que coincida con la tuya
-import { mockRoles } from './data/Roles_data'; 
+import TableSkeleton from '../../../../shared/components/TableSkeleton'; // Usando el esqueleto compartido
+import Pagination from '../../../../shared/components/Pagination';
+import NewRoleModal from './components/NewRoleModal';
+import EditRoleModal from './components/EditRoleModal';
+import RoleDetailModal from './components/RoleDetailModal';
+// 1. IMPORTAMOS todas las funciones CRUD que necesitamos de nuestro archivo de datos
+import { getRoles, createRole, updateRole, deleteRole } from './data/Roles_data'; 
 
-// 3. DEFINIMOS las cabeceras que le pasaremos a nuestro esqueleto
-const roleTableHeaders = ['Rol', 'Descripción', 'Permisos', 'Estado', 'Acciones'];
+const ITEMS_PER_PAGE = 7;
 
 const RolesPage = () => {
   const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [viewingRole, setViewingRole] = useState(null);
+  const [editingRole, setEditingRole] = useState(null);
+
+  const loadRoles = () => {
+    setLoading(true);
+    setTimeout(() => {
+      const allRoles = getRoles();
+      setRoles(allRoles);
+      setLoading(false);
+    }, 500);
+  };
 
   useEffect(() => {
-    setTimeout(() => {
-      setRoles(mockRoles);
-      setLoading(false);
-    }, 1500);
+    loadRoles();
   }, []);
+
+  const totalPages = Math.ceil(roles.length / ITEMS_PER_PAGE);
+  const paginatedRoles = useMemo(() => {
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    return roles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  }, [roles, currentPage]);
+
+  const handleSaveRole = (newRoleData) => {
+    createRole(newRoleData);
+    loadRoles(); // Recargamos para ver los cambios
+  };
+
+  // Corregimos esta función para que llame a 'updateRole'
+  const handleUpdateRole = (id, updatedData) => {
+    updateRole(id, updatedData);
+    loadRoles(); // Recargamos para ver los cambios
+  };
+
+  const handleViewDetails = (rol) => {
+    setViewingRole(rol);
+  };
+
+  const handleOpenEditModal = (rol) => {
+    setEditingRole(rol);
+  };
+
+  // 2. NUEVA FUNCIÓN PARA MANEJAR LA ELIMINACIÓN
+  const handleDeleteRole = (rol) => {
+    // Pedimos confirmación al usuario para una acción segura
+    if (window.confirm(`¿Estás seguro de que deseas eliminar el rol "${rol.name}"? Esta acción no se puede deshacer.`)) {
+      try {
+        deleteRole(rol.id);
+        loadRoles(); // Recargamos la lista para que el rol eliminado desaparezca
+        // Opcional: Mostrar notificación de éxito
+        // toast.success(`El rol "${rol.name}" ha sido eliminado.`);
+      } catch (error) {
+        console.error('Error al eliminar el rol:', error);
+        // Opcional: Mostrar notificación de error
+        // toast.error('Error al eliminar el rol.');
+      }
+    }
+  };
+
+  const roleTableHeaders = ['Rol', 'Descripción', 'Permisos', 'Estado', 'Acciones'];
 
   return (
     <div className="p-4 md:p-8">
-      {/* El encabezado no cambia */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Gestión de Roles</h1>
-        <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all">
-          <FaPlus />
-          Nuevo Rol
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Gestión de Roles</h1>
+          <p className="text-gray-600 mt-2">Administra los roles y permisos del sistema</p>
+        </div>
+        <button 
+          onClick={() => setIsCreateModalOpen(true)} 
+          className="flex items-center gap-2 bg-conv3r-gold hover:bg-yellow-500 text-conv3r-dark font-bold py-2 px-4 rounded-lg transition-colors"
+        >
+          <FaPlus /> Nuevo Rol
         </button>
       </div>
 
-      {/* 4. LA LÓGICA DE CARGA AHORA ES SÚPER LIMPIA */}
+      {/* ... tus tarjetas de estadísticas no cambian ... */}
+
       {loading ? (
-        // En lugar de duplicar la tabla, llamamos al componente reutilizable
-        <TableSkeleton headers={roleTableHeaders} rowCount={5} />
+        <TableSkeleton headers={roleTableHeaders} rowCount={ITEMS_PER_PAGE} />
       ) : (
-        // Cuando termina de cargar, mostramos la tabla real
-        <RolesTable roles={roles} />
+        // 3. CONECTAMOS TODAS las acciones a la tabla
+        <RolesTable 
+          roles={paginatedRoles}
+          onViewDetails={handleViewDetails}
+          onEditRole={handleOpenEditModal}
+          onDeleteRole={handleDeleteRole}
+        />
       )}
+      
+      {/* ... tu paginador no cambia ... */}
+
+      {/* Los modales ahora reciben las funciones correctas */}
+      <NewRoleModal 
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSave={(data) => {
+          handleSaveRole(data);
+          setIsCreateModalOpen(false);
+        }}
+      />
+      <RoleDetailModal 
+        role={viewingRole}
+        onClose={() => setViewingRole(null)}
+      />
+      <EditRoleModal
+        isOpen={!!editingRole}
+        onClose={() => setEditingRole(null)}
+        onUpdate={(id, data) => {
+          handleUpdateRole(id, data);
+          setEditingRole(null);
+        }}
+        role={editingRole}
+      />
     </div>
   );
 };
