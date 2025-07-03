@@ -343,7 +343,7 @@ useEffect(() => {
           <button
             type="button"
             onClick={handleAgregarAbono}
-            className="bg-blue-600 hover:brightness-95 px-4 py-2 rounded text-white font-bold flex items-center justify-center gap-2"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
           >
             <FaPlus /> Agregar
           </button>
@@ -394,7 +394,7 @@ useEffect(() => {
               setPagosPorGuardar([]); // Limpia la lista temporal
               onClose(); // Cierra el modal
             }}
-            className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95"
+            className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
           >
             Guardar
           </button>

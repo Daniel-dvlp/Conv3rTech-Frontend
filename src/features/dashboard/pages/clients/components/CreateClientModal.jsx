@@ -238,7 +238,7 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
                                     )}
                                 </div>
                             ))}
-                            <button type="button" onClick={addDireccion} className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition-colors">
+                            <button type="button" onClick={addDireccion} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]">
                                 <FaPlus /> Agregar otra dirección
                             </button>
                         </div>
