@@ -268,21 +268,21 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
                 />
                 {errors.contrasena && <p className="text-red-500 text-sm mt-1">{errors.contrasena}</p>}
 
-                <div className="mt-2 space-y-1 text-sm text-gray-600">
-                  <p className={validacionesContrasena.longitud ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.longitud ? '✅' : '❌'} Entre 8 y 10 caracteres
+                <div className="mt-1 ml-2 space-y-0 text-sm text-gray-600">
+                  <p className={validacionesContrasena.longitud ? "text-green-600 mb-0" : "text-red-500 mb-0"} >
+                    {validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 10 caracteres
                   </p>
                   <p className={validacionesContrasena.mayuscula ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.mayuscula ? '✅' : '❌'} Al menos una letra mayúscula
+                    {validacionesContrasena.mayuscula ? '✓' : '✗'} Al menos una letra mayúscula
                   </p>
                   <p className={validacionesContrasena.minuscula ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.minuscula ? '✅' : '❌'} Al menos una letra minúscula
+                    {validacionesContrasena.minuscula ? '✓' : '✗'} Al menos una letra minúscula
                   </p>
                   <p className={validacionesContrasena.numero ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.numero ? '✅' : '❌'} Al menos un número
+                    {validacionesContrasena.numero ? '✓' : '✗'} Al menos un número
                   </p>
                   <p className={validacionesContrasena.especial ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.especial ? '✅' : '❌'} Al menos un símbolo (ej. @, #, $)
+                    {validacionesContrasena.especial ? '✓' : '✗'} Al menos un símbolo (ej. @, #, $)
                   </p>
                 </div>
               </div>

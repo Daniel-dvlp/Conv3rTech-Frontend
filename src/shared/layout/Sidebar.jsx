@@ -119,7 +119,7 @@ const Sidebar = () => {
                   {openMenus[item.name] && isExpanded && (
                     <ul className="ml-6 mt-1 pl-0">
                       {item.children.map((subItem) => (
-                        <li key={subItem.name} className="mb-1">
+                        <li key={subItem.name} className="mb-1 w-100">
                           <Link
                             to={subItem.path}
                             className={`no-underline flex items-center p-2 rounded-lg text-sm transition-colors duration-200 ${
