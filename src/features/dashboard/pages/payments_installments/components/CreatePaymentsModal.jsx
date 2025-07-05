@@ -1,5 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes, FaPlus } from 'react-icons/fa';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+
 
 const inputBase = 'w-full p-2.5 border rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -108,77 +111,111 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
   }, [clienteSeleccionado, contratoSeleccionado]);
 
   const [errores, setErrores] = useState({
-  concepto: '',
-  monto: '',
-  metodoPago: ''
-});
+    concepto: '',
+    monto: '',
+    metodoPago: ''
+  });
+
+  // ──────────────── Descargar PDF ────────────────
+ const handleDescargarPDF = () => {
+  if (!contratoSeleccionado || pagosContrato.length === 0) return;
+
+  const doc = new jsPDF();
+  const cliente = clienteSeleccionado?.cliente;
+
+  doc.setFontSize(16);
+  doc.text('Seguimiento de Pagos del Contrato', 14, 20);
+
+  doc.setFontSize(12);
+  doc.text(`Cliente: ${cliente?.nombre} ${cliente?.apellido}`, 14, 30);
+  doc.text(`Documento: ${cliente?.documento}`, 14, 38);
+  doc.text(`Contrato: ${contratoSeleccionado}`, 14, 46);
+
+  autoTable(doc, {
+    startY: 55,
+    head: [['Fecha', 'Monto Total', 'Abonado', 'Restante', 'Método', 'Estado', 'Concepto']],
+    body: pagosContrato.map(p => [
+      p.fecha,
+      `$${p.montoTotal.toLocaleString()}`,
+      `$${p.montoAbonado.toLocaleString()}`,
+      `$${p.montoRestante.toLocaleString()}`,
+      p.metodoPago,
+      p.estado,
+      p.concepto
+    ]),
+    styles: { fontSize: 10 }
+  });
+
+  doc.save(`Pagos_${contratoSeleccionado}.pdf`);
+};
+
 
 
   /* ──────────────── Agregar abono a la lista local ──────────────── */
-const handleAgregarAbono = () => {
-  const erroresVal = {
-    concepto: !concepto ? 'Campo requerido' : '',
-    monto: !monto ? 'Campo requerido' : '',
-    metodoPago: !metodoPago ? 'Campo requerido' : ''
-  };
+  const handleAgregarAbono = () => {
+    const erroresVal = {
+      concepto: !concepto ? 'Campo requerido' : '',
+      monto: !monto ? 'Campo requerido' : '',
+      metodoPago: !metodoPago ? 'Campo requerido' : ''
+    };
 
-  // Si hay errores, no continuar
-  if (erroresVal.concepto || erroresVal.monto || erroresVal.metodoPago) {
-    setErrores(erroresVal);
-    return;
-  }
+    // Si hay errores, no continuar
+    if (erroresVal.concepto || erroresVal.monto || erroresVal.metodoPago) {
+      setErrores(erroresVal);
+      return;
+    }
 
-  // Obtener el contrato base
-  const contratoBase = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
-  const montoTotal = contratoBase?.pagos[0]?.montoTotal || 0;
+    // Obtener el contrato base
+    const contratoBase = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
+    const montoTotal = contratoBase?.pagos[0]?.montoTotal || 0;
 
-  // Calcular cuánto se ha abonado ya
-  const pagosDelContrato = [...contratoBase.pagos, ...pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado)];
-  const totalAbonado = pagosDelContrato.reduce((sum, pago) => sum + pago.montoAbonado, 0);
-  const restante = Math.max(montoTotal - totalAbonado, 0);
-  const montoAbono = Number(monto);
+    // Calcular cuánto se ha abonado ya
+    const pagosDelContrato = [...contratoBase.pagos, ...pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado)];
+    const totalAbonado = pagosDelContrato.reduce((sum, pago) => sum + pago.montoAbonado, 0);
+    const restante = Math.max(montoTotal - totalAbonado, 0);
+    const montoAbono = Number(monto);
 
-  if (montoAbono > restante) {
-    setErrores({ monto: `El monto excede el restante ($${restante.toLocaleString()})` });
-    return;
-  }
+    if (montoAbono > restante) {
+      setErrores({ monto: `El monto excede el restante ($${restante.toLocaleString()})` });
+      return;
+    }
 
-  const nuevo = {
-    id: Date.now(),
-    fecha: new Date().toLocaleDateString(),
-    numeroContrato: contratoSeleccionado,
-    nombre: clienteSeleccionado.cliente.nombre,
-    apellido: clienteSeleccionado.cliente.apellido,
-    montoTotal: montoTotal,
-    montoAbonado: montoAbono,
-    montoRestante: Math.max(restante - montoAbono, 0),
-    metodoPago,
-    estado: 'Registrado',
-    concepto
-  };
+    const nuevo = {
+      id: Date.now(),
+      fecha: new Date().toLocaleDateString(),
+      numeroContrato: contratoSeleccionado,
+      nombre: clienteSeleccionado.cliente.nombre,
+      apellido: clienteSeleccionado.cliente.apellido,
+      montoTotal: montoTotal,
+      montoAbonado: montoAbono,
+      montoRestante: Math.max(restante - montoAbono, 0),
+      metodoPago,
+      estado: 'Registrado',
+      concepto
+    };
 
-  setPagosPorGuardar(prev => [...prev, nuevo]);
-  setPagosContrato(prev => [...prev, nuevo]);
+    setPagosPorGuardar(prev => [...prev, nuevo]);
+    setPagosContrato(prev => [...prev, nuevo]);
 
-  // Limpiar campos
-  setMonto('');
-  setConcepto('');
-  setMetodoPago('');
-  setErrores({});
-};
-/* Reset al cerrar el modal */
-useEffect(() => {
-  if (!isOpen) {
-    setClienteSeleccionado(null);
-    setContratoSeleccionado('');
-    setClienteInput('');
-    setPagosContrato([]);
-    setPagosPorGuardar([]);
-    setConcepto('');
+    // Limpiar campos
     setMonto('');
+    setConcepto('');
     setMetodoPago('');
-  }
-}, [isOpen]);
+    setErrores({});
+  };
+  /* Reset al cerrar el modal */
+  useEffect(() => {
+    if (!isOpen) {
+      setClienteSeleccionado(null);
+      setContratoSeleccionado('');
+      setClienteInput('');
+      setPagosContrato([]);
+      setPagosPorGuardar([]);
+      setConcepto('');
+      setMonto('');
+      setMetodoPago('');
+    }
+  }, [isOpen]);
 
 
   /* ──────────────── Guardar y enviar al padre ──────────────── */
@@ -222,67 +259,67 @@ useEffect(() => {
           onClick={(e) => e.stopPropagation()}
         >
 
-        {/* Título */} {/* Header */}
-        <div className="flex justify-between items-center border-b pb-4 mb-4">
-          <h2 className="text-xl font-bold">Registrar Pagos o Abonos</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl">
-            <FaTimes />
-          </button>
-        </div>
+          {/* Título */} {/* Header */}
+          <div className="flex justify-between items-center border-b pb-4 mb-4">
+            <h2 className="text-xl font-bold">Registrar Pagos o Abonos</h2>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl">
+              <FaTimes />
+            </button>
+          </div>
 
-        {/* Cliente y contrato */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" ref={dropdownRef}>
-          {/* Buscador de cliente */}
-          <div className="relative">
-            <label className="block text-sm font-medium mb-1">Buscar Cliente</label>
-            <input
-              value={clienteInput}
-              onChange={e => {
-                setClienteInput(e.target.value);
-                setShowDropdown(true);
-              }}
-              onFocus={() => setShowDropdown(true)}
-              className={inputBase}
-              placeholder="Nombre, apellido o documento"
-            />
-            {showDropdown && clientesFiltrados.length > 0 && (
-              <ul className="absolute z-50 bg-white border border-gray-300 rounded-lg shadow w-full max-h-48 overflow-auto mt-1">
-                {clientesFiltrados.map(cli => (
-                  <li
-                    key={cli.cliente.id}
-                    onClick={() => {
-                      setClienteSeleccionado(cli);
-                      setClienteInput(`${cli.cliente.nombre} ${cli.cliente.apellido} - ${cli.cliente.documento}`);
-                      setShowDropdown(false);
-                      setContratoSeleccionado('');
-                    }}
-                    className="px-4 py-2 cursor-pointer hover:bg-gray-100"
-                  >
-                    {cli.cliente.nombre} {cli.cliente.apellido} - {cli.cliente.documento}
-                  </li>
+          {/* Cliente y contrato */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" ref={dropdownRef}>
+            {/* Buscador de cliente */}
+            <div className="relative">
+              <label className="block text-sm font-medium mb-1">Buscar Cliente</label>
+              <input
+                value={clienteInput}
+                onChange={e => {
+                  setClienteInput(e.target.value);
+                  setShowDropdown(true);
+                }}
+                onFocus={() => setShowDropdown(true)}
+                className={inputBase}
+                placeholder="Nombre, apellido o documento"
+              />
+              {showDropdown && clientesFiltrados.length > 0 && (
+                <ul className="absolute z-50 bg-white border border-gray-300 rounded-lg shadow w-full max-h-48 overflow-auto mt-1">
+                  {clientesFiltrados.map(cli => (
+                    <li
+                      key={cli.cliente.id}
+                      onClick={() => {
+                        setClienteSeleccionado(cli);
+                        setClienteInput(`${cli.cliente.nombre} ${cli.cliente.apellido} - ${cli.cliente.documento}`);
+                        setShowDropdown(false);
+                        setContratoSeleccionado('');
+                      }}
+                      className="px-4 py-2 cursor-pointer hover:bg-gray-100"
+                    >
+                      {cli.cliente.nombre} {cli.cliente.apellido} - {cli.cliente.documento}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            {/* Contratos */}
+            <div>
+              <label className="block text-sm font-medium mb-1">N° de Contrato</label>
+              <select
+                value={contratoSeleccionado}
+                onChange={e => setContratoSeleccionado(e.target.value)}
+                className={inputBase}
+              >
+                <option value="">Seleccionar...</option>
+                {clienteSeleccionado?.contratos.map(c => (
+                  <option key={c.numero} value={c.numero}>{c.numero}</option>
                 ))}
-              </ul>
-            )}
+              </select>
+            </div>
           </div>
 
-          {/* Contratos */}
-          <div>
-            <label className="block text-sm font-medium mb-1">N° de Contrato</label>
-            <select
-              value={contratoSeleccionado}
-              onChange={e => setContratoSeleccionado(e.target.value)}
-              className={inputBase}
-            >
-              <option value="">Seleccionar...</option>
-              {clienteSeleccionado?.contratos.map(c => (
-                <option key={c.numero} value={c.numero}>{c.numero}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Info cliente */}
-        {clienteSeleccionado && (
+          {/* Info cliente */}
+          {clienteSeleccionado && (
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6 shadow-sm">
               <h3 className="text-blue-800 font-bold text-lg mb-2">Información del Cliente</h3>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
@@ -294,115 +331,124 @@ useEffect(() => {
           )}
 
 
-        {/* Formulario de abono */}
-        <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-4 items-end mb-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">Concepto</label>
-            <input
-              value={concepto}
-              onChange={e => setConcepto(e.target.value)}
-              className={inputBase}
-            />
-            {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
+          {/* Formulario de abono */}
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-4 items-end mb-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Concepto</label>
+              <input
+                value={concepto}
+                onChange={e => setConcepto(e.target.value)}
+                className={inputBase}
+              />
+              {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
 
-          </div>
+            </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Monto a Abonar 
-              
-            </label>
-            
-            <input
-              type="number"
-              value={monto}
-              onChange={e => setMonto(e.target.value)}
-              className={inputBase}
-            />
-            
-            {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
-          
-          </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Monto a Abonar
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Método de Pago</label>
-            <select
-              value={metodoPago}
-              onChange={e => setMetodoPago(e.target.value)}
-              className={inputBase}
+              </label>
+
+              <input
+                type="number"
+                value={monto}
+                onChange={e => setMonto(e.target.value)}
+                className={inputBase}
+              />
+
+              {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
+
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Método de Pago</label>
+              <select
+                value={metodoPago}
+                onChange={e => setMetodoPago(e.target.value)}
+                className={inputBase}
+              >
+                <option value="">Seleccionar...</option>
+                <option>Efectivo</option>
+                <option>Transferencia</option>
+                <option>PSE</option>
+                <option>Cheque</option>
+                <option>Tarjeta</option>
+              </select>
+              {errores.metodoPago && <p className="text-red-600 text-xs mt-1">{errores.metodoPago}</p>}
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAgregarAbono}
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <option value="">Seleccionar...</option>
-              <option>Efectivo</option>
-              <option>Transferencia</option>
-              <option>PSE</option>
-              <option>Cheque</option>
-              <option>Tarjeta</option>
-            </select>
-            {errores.metodoPago && <p className="text-red-600 text-xs mt-1">{errores.metodoPago}</p>}
+              <FaPlus /> Agregar
+            </button>
+          </div>
+          {clienteSeleccionado && contratoSeleccionado && pagosContrato.length > 0 && (
+            <div className="flex justify-end mt-4">
+              <button
+                onClick={handleDescargarPDF}
+                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
+              >
+                Descargar PDF del Contrato
+              </button>
+            </div>
+          )}
+          {/* Tabla dentro del modal */}
+          <div className="overflow-x-auto">
+            <table className="min-w-full bg-white border border-gray-200 text-sm text-left">
+              <thead className="bg-gray-100">
+                <tr>
+                  {['Fecha', 'Contrato', 'Monto Total', 'Monto Abonado', 'Restante', 'Método', 'Estado', 'Acciones']
+                    .map(h => <th key={h} className="p-2 border">{h}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {pagosContrato.map(p => (
+                  <tr key={p.id}>
+
+                    <td className="p-2 border">{p.fecha}</td>
+                    <td className="p-2 border">{contratoSeleccionado}</td>
+                    <td className="p-2 border">{p.montoTotal.toLocaleString()}</td>
+                    <td className="p-2 border">{p.montoAbonado.toLocaleString()}</td>
+                    <td className="p-2 border">{p.montoRestante.toLocaleString()}</td>
+                    <td className="p-2 border">{p.metodoPago}</td>
+                    <td className="p-2 border">{p.estado}</td>
+                    <td className="p-2 border">
+                      <button className='text-red-600 hover:text-red-800'>
+                        Cancelar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <button
-            type="button"
-            onClick={handleAgregarAbono}
-            className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <FaPlus /> Agregar
-          </button>
-        </div>
+          {/* Botones finales */}
+          <div className="flex justify-end gap-4 mt-6">
+            <button
+              onClick={onClose}
+              className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={() => {
+                pagosPorGuardar.forEach(pago => onAddPago(pago)); // Agrega al índice
+                setPagosPorGuardar([]); // Limpia la lista temporal
+                onClose(); // Cierra el modal
+              }}
+              className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
+            >
+              Guardar
+            </button>
 
-        {/* Tabla dentro del modal */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200 text-sm text-left">
-            <thead className="bg-gray-100">
-              <tr>
-                {['Fecha', 'Contrato', 'Monto Total', 'Monto Abonado', 'Restante', 'Método', 'Estado', 'Acciones']
-                  .map(h => <th key={h} className="p-2 border">{h}</th>)}
-              </tr>
-            </thead>
-            <tbody>
-              {pagosContrato.map(p => (
-                <tr key={p.id}>
-                  
-                  <td className="p-2 border">{p.fecha}</td>
-                  <td className="p-2 border">{contratoSeleccionado}</td>
-                  <td className="p-2 border">{p.montoTotal.toLocaleString()}</td>
-                  <td className="p-2 border">{p.montoAbonado.toLocaleString()}</td>
-                  <td className="p-2 border">{p.montoRestante.toLocaleString()}</td>
-                  <td className="p-2 border">{p.metodoPago}</td>
-                  <td className="p-2 border">{p.estado}</td>
-                  <td className="p-2 border">
-                    <button className='text-red-600 hover:text-red-800'>
-                      Cancelar
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Botones finales */}
-        <div className="flex justify-end gap-4 mt-6">
-          <button
-            onClick={onClose}
-            className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={() => {
-              pagosPorGuardar.forEach(pago => onAddPago(pago)); // Agrega al índice
-              setPagosPorGuardar([]); // Limpia la lista temporal
-              onClose(); // Cierra el modal
-            }}
-            className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
-          >
-            Guardar
-          </button>
-
+          </div>
         </div>
       </div>
     </div>
-      </div>
   );
 };
 
