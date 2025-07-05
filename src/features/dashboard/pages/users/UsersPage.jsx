@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
-import UsersTable from './components/UsersTable'; 
+import UsersTable from './components/UsersTable';
 import SkeletonRow from './components/SkeletonRow';
 import CreateUserModal from './components/CreateUserModal';
 import { mockUsuarios } from './data/User_data';
-import { mockRoles } from '../Roles/data/Roles_data';
+import { mockRoles } from '../roles/data/Roles_data';
 import Pagination from '../../../../shared/components/Pagination';
 
 const ITEMS_PER_PAGE = 5;
@@ -48,12 +48,12 @@ const UsuariosPage = () => {
   const filteredUsers = useMemo(() =>
     usuarios.filter(u =>
       u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.tipoDocumento.toLowerCase() === (searchTerm.toLowerCase()) ||
+      u.tipoDocumento.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.documento.toString().includes(searchTerm) ||
-      u.rol.toLowerCase() === (searchTerm.toLowerCase()) ||
+      u.rol.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.status.toLowerCase() === searchTerm.toLowerCase()
+      u.status.toLowerCase().includes(searchTerm.toLowerCase())
     ), [usuarios, searchTerm]
   );
 
@@ -65,7 +65,7 @@ const UsuariosPage = () => {
   }, [filteredUsers, currentPage]);
 
   return (
-    <div className="p-4 md:p-8">
+    <div className="p-2 md:p-8 ">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Gestión de Usuarios</h1>
         <div className="flex items-center gap-2">
@@ -96,9 +96,8 @@ const UsuariosPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Id</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo de Documento</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Documento</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Apellido</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
@@ -116,7 +115,13 @@ const UsuariosPage = () => {
         </div>
       ) : (
         <>
-          <UsersTable usuarios={paginatedUsers} />
+          <UsersTable
+            usuarios={usuarios}
+            usuariosFiltrados={filteredUsers}
+            paginaActual={currentPage}
+            itemsPorPagina={ITEMS_PER_PAGE}
+            setUsuarios={setUsuarios}
+          />
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}

@@ -24,7 +24,8 @@ export const mockUsuarios = [
     status: 'Inactivo',
     contrasena: '123456',
     fechaCreacion: '22-06-25'
-  },{
+  },
+  {
   id: 3,
   documento: '9876543210',
   tipoDocumento: 'CC',
@@ -61,6 +62,19 @@ export const mockUsuarios = [
   rol: 'Tecnico',
   status: 'Vacaciones',
   contrasena: '123456',
+  fechaCreacion: '22-06-25'
+},
+{
+  id: 6,
+  documento: '3634728368',
+  tipoDocumento: 'CE',
+  nombre: 'Sarai',
+  apellido: 'Rodríguez',
+  email: 'csarai.rdz@gmail.com',
+  celular: '3139988221',
+  rol: 'Tecnico',
+  status: 'Vacaciones',
+  contrasena: '12345678901',
   fechaCreacion: '22-06-25'
 }
   // Puedes agregar más usuarios aquí si lo necesitas

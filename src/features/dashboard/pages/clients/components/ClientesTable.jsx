@@ -4,7 +4,7 @@ import ClientsDetailModal from './ClientsDetailModal';
 import { useState } from 'react';
 
 
-const ClientesTable = ({ clientes }) => {
+const ClientesTable = ({ clientes, onEdit }) => {
   const [selectedClient, setSelectedClient] = useState(null);
 
   return (
@@ -43,7 +43,8 @@ const ClientesTable = ({ clientes }) => {
                   }} title="Ver detalles">
                     <FaEye />
                   </button>
-                  <button className="text-yellow-600 hover:text-yellow-800" title="Editar">
+                  <button className="text-yellow-600 hover:text-yellow-800" title="Editar"
+                  onClick={() => onEdit(cliente)}>
                     <FaEdit />
                   </button>
                   <button className="text-red-600 hover:text-red-800" title="Eliminar">
@@ -59,6 +60,7 @@ const ClientesTable = ({ clientes }) => {
         cliente={selectedClient}
         onClose={() => setSelectedClient(null)}
       />
+      
 
     </div>
   );

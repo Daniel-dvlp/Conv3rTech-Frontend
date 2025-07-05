@@ -5,6 +5,7 @@ import SkeletonRow from './components/SkeletonRow';
 import { mockClientes } from './data/Clientes_data';
 import Pagination from '../../../../shared/components/Pagination';
 import CreateClientModal from './components/CreateClientModal';
+import EditClientModal from './components/EditClientModal';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -19,6 +20,9 @@ const ClientsPage = () => {
   const handleAddCliente = (nuevoCliente) => {
     setClientes((prev) => [...prev, { id: Date.now(), ...nuevoCliente }]);
   };
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [editarModalAbierto, setEditarModalAbierto] = useState(false);
+
 
   useEffect(() => {
     setTimeout(() => {
@@ -27,19 +31,30 @@ const ClientsPage = () => {
     }, 1200);
   }, []);
 
-  // Filtro por búsqueda
- const term = searchTerm.trim().toLowerCase();
+  const handleEditClick = (cliente) => {
+    setClienteSeleccionado(cliente);
+    setEditarModalAbierto(true); // ✅ ¡Así debe ser!
+  };
 
-const filteredClients = useMemo(() =>
-  clientes.filter(c =>
-    (c.nombre || '').toLowerCase().includes(term) ||
-    (c.apellido || '').toLowerCase().includes(term) ||
-    (c.documento || '').toLowerCase() === term ||
-    (c.tipoDocumento || '').toLowerCase() === term ||
-    (c.email || '').toLowerCase() === term ||
-    (c.estado ? 'activo' : 'inactivo') === term
-  ), [clientes, searchTerm]
-);
+  const handleEditSubmit = (clienteActualizado) => {
+    setClientes(prev =>
+      prev.map(c => c.id === clienteActualizado.id ? clienteActualizado : c)
+    );
+    setEditarModalAbierto(true)
+  };
+  // Filtro por búsqueda
+  const term = searchTerm.trim().toLowerCase();
+
+  const filteredClients = useMemo(() =>
+    clientes.filter(c =>
+      (c.nombre || '').toLowerCase().includes(term) ||
+      (c.apellido || '').toLowerCase().includes(term) ||
+      (c.documento || '').toLowerCase().includes(term) ||
+      (c.tipoDocumento || '').toLowerCase().includes(term) ||
+      (c.email || '').toLowerCase().includes(term) ||
+      (c.estado ? 'activo' : 'inactivo').includes(term)
+    ), [clientes, searchTerm]
+  );
 
 
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
@@ -95,7 +110,11 @@ const filteredClients = useMemo(() =>
         </div>
       ) : (
         <>
-          <ClientesTable clientes={paginatedClients} />
+          <ClientesTable
+            clientes={paginatedClients}
+            onEdit={handleEditClick}
+          />
+
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -114,11 +133,15 @@ const filteredClients = useMemo(() =>
               celular: c.celular
             }))} // Pasar los clientes existentes para validación
           />
-
+          <EditClientModal
+            isOpen={editarModalAbierto}
+            onClose={() => setEditarModalAbierto(false)}
+            clientData={clienteSeleccionado}
+            onSubmit={handleEditSubmit}
+          />
         </>
       )}
     </div>
   );
 };
-
 export default ClientsPage;

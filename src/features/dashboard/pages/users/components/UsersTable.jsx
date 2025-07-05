@@ -1,18 +1,41 @@
 import React, { useState } from 'react';
 import { FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
 import UserDetailModal from './UserDetailModal';
+import EditUserModal from './EditUserModal';
+import { mockRoles } from '../../roles/data/Roles_data';
 
 
-const UsersTable = ({ usuarios }) => {
+const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina, setUsuarios }) => {
   const [selectedUser, setSelectedUser] = useState(null);
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+
+  const startIndex = (paginaActual - 1) * itemsPorPagina;
+  const usuariosPaginados = usuariosFiltrados.slice(startIndex, startIndex + itemsPorPagina);
+
+
+  const handleEditarUsuario = (usuario) => {
+    setUsuarioSeleccionado(usuario);
+    setModalAbierto(true);
+  };
+
+  const actualizarUsuario = (usuarioActualizado) => {
+    setUsuarios(prev =>
+      prev.map(u =>
+        u.id === usuarioActualizado.id ? usuarioActualizado : u
+      )
+    );
+    setModalAbierto(false);
+    setUsuarioSeleccionado(null);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Documento</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Tipo de Documento</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Documento</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Nombre</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Apellido</th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Correo</th>
@@ -22,26 +45,27 @@ const UsersTable = ({ usuarios }) => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {usuarios.map((usuario) => (
+          {usuariosPaginados.map((usuario) => (
             <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
+
+              <td className="px-6 py-4 text-center">
+                <span className="text-xs text-gray-600">{usuario.tipoDocumento}</span>
+              </td>
+              <td className="px-6 py-4 text-center">
+                <span className="text-xs text-gray-600">{usuario.documento}</span>
+              </td>
               
               <td className="px-6 py-4 text-center">
-                <span className="text-sm text-gray-600">{usuario.documento}</span>
+                <span className="text-xs text-gray-600">{usuario.nombre}</span>
               </td>
               <td className="px-6 py-4 text-center">
-                <span className="text-sm text-gray-600">{usuario.tipoDocumento}</span>
+                <span className="text-xs text-gray-600">{usuario.apellido}</span>
               </td>
               <td className="px-6 py-4 text-center">
-                <span className="text-sm text-gray-600">{usuario.nombre}</span>
+                <span className="text-xs text-gray-600">{usuario.email}</span>
               </td>
               <td className="px-6 py-4 text-center">
-                <span className="text-sm text-gray-600">{usuario.apellido}</span>
-              </td>
-              <td className="px-6 py-4 text-center">
-                <span className="text-sm text-gray-600">{usuario.email}</span>
-              </td>
-              <td className="px-6 py-4 text-center">
-                <span className="text-sm text-gray-700 font-medium">{usuario.rol}</span>
+                <span className="text-xs text-gray-700 font-medium">{usuario.rol}</span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-center">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
@@ -54,12 +78,12 @@ const UsersTable = ({ usuarios }) => {
                   {usuario.status}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-medium">
                 <div className="flex justify-end items-center gap-4">
                   <button className="text-blue-600 hover:text-blue-900" title="Ver detalles" onClick={() => setSelectedUser(usuario)} >
                     <FaEye size={18} />
                   </button>
-                  <button className="text-yellow-600 hover:text-blue-900" title="Editar">
+                  <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
                     <FaEdit size={18} />
                   </button>
                   <button className="text-red-600 hover:text-red-900" title="Eliminar">
@@ -72,13 +96,22 @@ const UsersTable = ({ usuarios }) => {
                     onClose={() => setSelectedUser(null)}
                   />
                 )}
+
               </td>
             </tr>
           ))}
         </tbody>
+        {usuarioSeleccionado && (
+          <EditUserModal
+            isOpen={modalAbierto}
+            onClose={() => setModalAbierto(false)}
+            userData={usuarioSeleccionado}
+            roles={mockRoles}
+            onSubmit={actualizarUsuario}
+          />
+        )}
       </table>
     </div>
-
   );
 };
 
