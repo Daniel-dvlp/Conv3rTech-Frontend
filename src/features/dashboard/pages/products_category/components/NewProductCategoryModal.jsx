@@ -63,7 +63,7 @@ const NewCategoryModal = ({ isOpen, onClose, onSave, existingCategories }) => {
 
     if (Object.keys(errors).length > 0) return;
 
-    onSave({ ...categoryData, id: `C-${Date.now()}` });
+    onSave({ ...categoryData, id: `CP-${Date.now()}` });
     setCategoryData(initialState);
     setErrors({});
     onClose();

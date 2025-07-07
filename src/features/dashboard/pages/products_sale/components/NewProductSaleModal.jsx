@@ -70,7 +70,8 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
         if (Object.keys(nuevosErrores).length === 0) {
             const nuevaVenta = {
                 numero: `V-${Date.now()}`,
-                cliente,
+                cliente: `${cliente.nombre} ${cliente.apellido}`, // para mostrar rápido en tablas
+                clienteData: cliente, // objeto completo del cliente
                 metodoPago,
                 productos: productosAgregados,
                 fechaHora: new Date().toLocaleString(),
@@ -84,6 +85,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
             onClose();
         }
     };
+
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>

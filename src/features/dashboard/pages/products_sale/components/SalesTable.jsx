@@ -3,7 +3,7 @@
 import React from 'react';
 import { FaEye, FaDownload, FaMinusCircle } from 'react-icons/fa';
 
-const SalesTable = ({ sales }) => {
+const SalesTable = ({ sales, onViewDetails, onDownloadPDF }) => {
   if (!sales || sales.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4 text-center">
@@ -62,10 +62,10 @@ const SalesTable = ({ sales }) => {
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
-                  <button className="text-blue-600 hover:text-gray-900" title="Ver detalle">
+                  <button className="text-blue-600 hover:text-gray-900" title="Ver detalle" onClick={() => onViewDetails(sale)}>
                     <FaEye size={16} />
                   </button>
-                  <button className="text-green-600 hover:text-green-800" title="Descargar factura">
+                  <button className="text-green-600 hover:text-green-800" title="Descargar factura" onClick={() => onDownloadPDF(sale)}>
                     <FaDownload size={16} />
                   </button>
                   <button className="text-red-600 hover:text-red-800" title="Anular venta">

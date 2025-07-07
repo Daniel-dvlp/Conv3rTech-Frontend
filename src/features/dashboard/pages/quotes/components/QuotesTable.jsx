@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaEye, FaMinusCircle, FaDownload, FaEdit } from 'react-icons/fa';
 
-const QuotesTable = ({ quotes }) => {
+const QuotesTable = ({ quotes, onViewDetails, onDownloadPDF }) => {
   const getEstadoStyle = (estado) => {
     switch (estado) {
       case 'Pendiente':
@@ -48,11 +48,14 @@ const QuotesTable = ({ quotes }) => {
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
-                  <button className="text-blue-600 hover:text-gray-900" title="Ver detalle">
+                  <button className="text-blue-600 hover:text-gray-900" title="Ver detalle" onClick={() => onViewDetails(quote)}>
                     <FaEye size={16} />
                   </button>
                   <button className="text-yellow-600 hover:text-blue-900" title="Editar">
                     <FaEdit size={16} />
+                  </button>
+                  <button className="text-green-600 hover:text-green-800" title="Descargar cotización" onClick={() => onDownloadPDF(quote)}>
+                    <FaDownload size={16} />
                   </button>
                   <button className="text-red-600 hover:text-red-800" title="Eliminar cotización">
                     <FaMinusCircle size={16} />

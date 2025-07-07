@@ -8,6 +8,7 @@ import { mockProductsCategory } from './data/ProductsCategory_data';
 import Pagination from '../../../../shared/components/Pagination';
 import NewProductCategoryModal from './components/NewProductCategoryModal';
 import ProductCategoryDetailModal from './components/ProductCategoryDetailModal';
+import ProductCategoryEditModal from './components/ProductCategoryEditModal'; 
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,6 +19,7 @@ const ProductsCategoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isEditing, setIsEditing] = useState(false); // ✅ Nuevo estado para edición
 
   useEffect(() => {
     setTimeout(() => {
@@ -27,15 +29,18 @@ const ProductsCategoryPage = () => {
   }, []);
 
   const normalize = (text) =>
-    text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
   const filteredProductsCategory = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
-    return categories.filter((cat) =>
-      normalize(cat.nombre).includes(normalizedSearch) ||
-      normalize(cat.descripcion).includes(normalizedSearch) ||
-      normalize(cat.estado.toString()).includes(normalizedSearch)
-    );
+    return categories.filter((cat) => {
+      const estadoLegible = cat.estado ? 'activo' : 'inactivo';
+      return (
+        normalize(cat.nombre).includes(normalizedSearch) ||
+        normalize(cat.descripcion).includes(normalizedSearch) ||
+        normalize(estadoLegible).startsWith(normalizedSearch)
+      );
+    });
   }, [categories, searchTerm]);
 
   const totalPages = Math.ceil(filteredProductsCategory.length / ITEMS_PER_PAGE);
@@ -50,6 +55,26 @@ const ProductsCategoryPage = () => {
     setShowNewModal(false);
   };
 
+  const handleEditCategory = (category) => {
+    setSelectedCategory(category);
+    setIsEditing(true);
+  };
+
+  const handleUpdateCategory = (updatedCategory) => {
+    setCategories(prev =>
+      prev.map(cat => (cat.id === updatedCategory.id ? updatedCategory : cat))
+    );
+    setIsEditing(false);
+    setSelectedCategory(null);
+  };
+
+  const handleDeleteCategory = (categoryId) => {
+  const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar esta categoría?");
+  if (!confirmDelete) return;
+
+  setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+};
+
   return (
     <div className="p-4 md:p-8 relative">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -58,7 +83,7 @@ const ProductsCategoryPage = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar por nombre, descripción o estado..."
+              placeholder="Buscar"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -101,6 +126,8 @@ const ProductsCategoryPage = () => {
           <ProductsCategoryTable
             categories={currentItems}
             onViewDetails={(cat) => setSelectedCategory(cat)}
+            onEditCategory={handleEditCategory}
+            onDeleteCategory={handleDeleteCategory}
           />
           {totalPages > 1 && (
             <Pagination
@@ -121,10 +148,23 @@ const ProductsCategoryPage = () => {
         />
       )}
 
-      {selectedCategory && (
+      {selectedCategory && !isEditing && (
         <ProductCategoryDetailModal
           category={selectedCategory}
           onClose={() => setSelectedCategory(null)}
+        />
+      )}
+
+      {selectedCategory && isEditing && (
+        <ProductCategoryEditModal
+          isOpen={isEditing}
+          onClose={() => {
+            setIsEditing(false);
+            setSelectedCategory(null);
+          }}
+          onSave={handleUpdateCategory}
+          categoryToEdit={selectedCategory}
+          existingCategories={categories}
         />
       )}
     </div>
