@@ -7,6 +7,64 @@ import Pagination from '../../../../shared/components/Pagination';
 import * as XLSX from 'xlsx';
 import CreatePaymentsModal from './components/CreatePaymentsModal';
 
+const mockPagosIntegrado = [
+    {
+      cliente: { id: 1, nombre: 'Juan', apellido: 'Valdez', documento: '123456' },
+      contratos: [
+        {
+          numero: '00001',
+          pagos: [
+            {
+              id: 1,
+              fecha: '02/03/2025',
+              montoTotal: 5000000,
+              montoAbonado: 1000000,
+              montoRestante: 4000000,
+              metodoPago: 'Tarjeta',
+              estado: 'Registrado',
+              concepto: 'Mantenimiento Cámaras'
+            }
+          ]
+        },
+        {
+          numero: 'VD-00001',
+          pagos: [
+            {
+              id: 2,
+              fecha: '05/03/2025',
+              montoTotal: 7000000,
+              montoAbonado: 2000000,
+              montoRestante: 5000000,
+              metodoPago: 'Transferencia',
+              estado: 'Registrado',
+              concepto: 'Revisión general'
+            }
+          ]
+        }
+      ]
+    },
+    {
+      cliente: { id: 2, nombre: 'Laura', apellido: 'Mejía', documento: '654321' },
+      contratos: [
+        {
+          numero: '00002',
+          pagos: [
+            {
+              id: 3,
+              fecha: '10/03/2025',
+              montoTotal: 3000000,
+              montoAbonado: 3000000,
+              montoRestante: 0,
+              metodoPago: 'Transferencia',
+              estado: 'Registrado',
+              concepto: 'Instalación DVR'
+            }
+          ]
+        }
+      ]
+    }
+  ];
+
 const ITEMS_PER_PAGE = 5;
 
 const Payments_InstallmentsPage = () => {
@@ -15,32 +73,22 @@ const Payments_InstallmentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
+  const [mockCargado, setMockCargado] = useState(false);
 
-  /* ──────────────── Datos simulados ──────────────── */
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setPagos(mockPagos);
+  const handleAddPago = (nuevosPagos) => {
+    setPagos(prev => [...prev, ...nuevosPagos]);
+    setCurrentPage(1);
+  };
+
+  const handleCargarMock = (pagosDelMock) => {
+    if (!mockCargado) {
+      setPagos(prev => [...prev, ...pagosDelMock]);
+      setMockCargado(true);
       setLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, []);
-
-  /* ──────────────── Exportar a Excel ──────────────── */
-  const handleExport = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredPagos);
-    const workbook  = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pagos y abonos');
-    XLSX.writeFile(workbook, 'ReporteDePagosYabonos.xlsx');
+    }
   };
 
-  /* ──────────────── Añadir pago desde el modal ──────────────── */
-  const handleAgregarPago = (nuevoPago) => {
-    setPagos(prev => [...prev, nuevoPago]);
-    setCurrentPage(1);            // volvemos a la primera página
-    window.scrollTo({ top: 0 });  // UX: el usuario ve el resultado
-  };
-
-  /* ──────────────── Filtros y paginación ──────────────── */
+  // Filtro y paginación
   const filteredPagos = useMemo(() =>
     pagos.filter(p =>
       p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -58,7 +106,13 @@ const Payments_InstallmentsPage = () => {
     return filteredPagos.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredPagos, currentPage]);
 
-  /* ──────────────── UI ──────────────── */
+  const handleExport = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredPagos);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pagos y abonos');
+    XLSX.writeFile(workbook, 'ReporteDePagosYabonos.xlsx');
+  };
+
   return (
     <div className="p-4 md:p-8">
       {/* Encabezado */}
@@ -68,7 +122,6 @@ const Payments_InstallmentsPage = () => {
         </h1>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* Buscador */}
           <div className="relative">
             <input
               type="text"
@@ -83,7 +136,6 @@ const Payments_InstallmentsPage = () => {
             <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
 
-          {/* Exportar */}
           <button
             onClick={handleExport}
             className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
@@ -91,7 +143,6 @@ const Payments_InstallmentsPage = () => {
             <FaFileExcel /> Exportar
           </button>
 
-          {/* Registrar pago */}
           <button
             onClick={() => setMostrarModalPago(true)}
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
@@ -107,8 +158,8 @@ const Payments_InstallmentsPage = () => {
           <table className="w-full text-center">
             <thead className="bg-gray-50">
               <tr>
-                {['Fecha','Número de Contrato','Nombre y Apellido','Monto Total','Monto Pagado','Método de Pago','Estado','Acciones']
-                  .map((h,i) => (
+                {['Fecha', 'Número de Contrato', 'Nombre y Apellido', 'Monto Total', 'Monto Pagado', 'Método de Pago', 'Estado', 'Acciones']
+                  .map((h, i) => (
                     <th key={i} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">
                       {h}
                     </th>
@@ -116,7 +167,7 @@ const Payments_InstallmentsPage = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...Array(ITEMS_PER_PAGE)].map((_,i) => <SkeletonRow key={i} />)}
+              {[...Array(ITEMS_PER_PAGE)].map((_, i) => <SkeletonRow key={i} />)}
             </tbody>
           </table>
         </div>
@@ -137,7 +188,10 @@ const Payments_InstallmentsPage = () => {
       <CreatePaymentsModal
         isOpen={mostrarModalPago}
         onClose={() => setMostrarModalPago(false)}
-        onAddPago={handleAgregarPago}
+        onAddPago={handleAddPago}
+        pagosAgregados={pagos}
+        onLoadMock={handleCargarMock}
+        mockPagosIntegrado={mockPagosIntegrado}
       />
     </div>
   );

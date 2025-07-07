@@ -6,6 +6,8 @@ import CreateUserModal from './components/CreateUserModal';
 import { mockUsuarios } from './data/User_data';
 import { mockRoles } from '../roles/data/Roles_data';
 import Pagination from '../../../../shared/components/Pagination';
+import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js'; // asegúrate de importar confirmDelete
+import { toast } from 'react-hot-toast'; // si usas toast
 
 const ITEMS_PER_PAGE = 5;
 
@@ -15,6 +17,22 @@ const UsuariosPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+
+  const handleEliminarUsuario = async (usuarioId) => {
+  const confirmed = await confirmDelete('¿Deseas eliminar este usuario?');
+
+  console.log('Intentando eliminar', usuarioId); // para verificar en consola
+
+  if (confirmed) {
+    setUsuarios(prev => {
+      const updated = prev.filter(u => u.id !== usuarioId);
+      console.log('Usuarios actualizados:', updated);
+      return updated;
+    });
+
+    toast.success('Usuario eliminado exitosamente');
+  }
+};
 
   useEffect(() => {
     setTimeout(() => {
@@ -36,12 +54,13 @@ const UsuariosPage = () => {
       fechaCreacion: fechaFormateada
     };
 
+
     setUsuarios((prev) => {
       const updated = [...prev, usuarioConFormato];
       setCurrentPage(Math.ceil(updated.length / ITEMS_PER_PAGE));
       return updated;
     });
-
+    showSuccess('Usuario creado correctamente');
     console.log("✅ Usuario creado:", usuarioConFormato);
   };
 
@@ -121,6 +140,7 @@ const UsuariosPage = () => {
             paginaActual={currentPage}
             itemsPorPagina={ITEMS_PER_PAGE}
             setUsuarios={setUsuarios}
+            onDelete={handleEliminarUsuario}
           />
           {totalPages > 1 && (
             <Pagination

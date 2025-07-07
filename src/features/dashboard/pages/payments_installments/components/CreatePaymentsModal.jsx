@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaTimes, FaPlus } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaFilePdf } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
+import { toast } from 'react-hot-toast';
 
 const inputBase = 'w-full p-2.5 border rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold';
 
-const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
-  /* ──────────────── Estados ──────────────── */
+const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], onLoadMock, mockPagosIntegrado }) => {
   const [clienteInput, setClienteInput] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [contratoSeleccionado, setContratoSeleccionado] = useState('');
@@ -15,71 +14,13 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
   const [monto, setMonto] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
   const [pagosContrato, setPagosContrato] = useState([]);
+  const [pagosPorGuardar, setPagosPorGuardar] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  const [pagosPorGuardar, setPagosPorGuardar] = useState([]);
+  const [mockEnviado, setMockEnviado] = useState(false);
 
+  
 
-  /* ──────────────── Mock de datos ──────────────── */
-  const mockPagosIntegrado = [
-    {
-      cliente: { id: 1, nombre: 'Juan', apellido: 'Valdez', documento: '123456' },
-      contratos: [
-        {
-          numero: '00001',
-          pagos: [
-            {
-              id: 1,
-              fecha: '02/03/2025',
-              montoTotal: 5000000,
-              montoAbonado: 1000000,
-              montoRestante: 4000000,
-              metodoPago: 'Tarjeta',
-              estado: 'En curso',
-              concepto: 'Mantenimiento Cámaras'
-            }
-          ]
-        },
-        {
-          numero: 'VD-00001',
-          pagos: [
-            {
-              id: 1,
-              fecha: '02/03/2025',
-              montoTotal: 5000000,
-              montoAbonado: 1000000,
-              montoRestante: 4000000,
-              metodoPago: 'Tarjeta',
-              estado: 'En curso',
-              concepto: 'Mantenimiento Cámaras'
-            }
-          ]
-        }
-      ]
-    },
-    {
-      cliente: { id: 2, nombre: 'Laura', apellido: 'Mejía', documento: '654321' },
-      contratos: [
-        {
-          numero: '00002',
-          pagos: [
-            {
-              id: 2,
-              fecha: '10/03/2025',
-              montoTotal: 3000000,
-              montoAbonado: 3000000,
-              montoRestante: 0,
-              metodoPago: 'Transferencia',
-              estado: 'Pagado',
-              concepto: 'Instalación DVR'
-            }
-          ]
-        }
-      ]
-    }
-  ];
-
-  /* ──────────────── Filtrado de clientes ──────────────── */
   const clientesFiltrados = mockPagosIntegrado.filter(p => {
     const busq = clienteInput.toLowerCase();
     return (
@@ -89,7 +30,6 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
     );
   });
 
-  /* ──────────────── Clic fuera del dropdown ──────────────── */
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -100,15 +40,19 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  /* ──────────────── Cargar pagos del contrato ──────────────── */
   useEffect(() => {
     if (clienteSeleccionado && contratoSeleccionado) {
       const contrato = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
-      setPagosContrato(contrato ? contrato.pagos : []);
+      
+
+      const pagosDelPadre = pagosAgregados.filter(p => p.numeroContrato === contratoSeleccionado);
+      const pagosLocales = pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado);
+
+      setPagosContrato([...pagosDelPadre, ...pagosLocales]);
     } else {
       setPagosContrato([]);
     }
-  }, [clienteSeleccionado, contratoSeleccionado]);
+  }, [clienteSeleccionado, contratoSeleccionado, pagosAgregados, pagosPorGuardar]);
 
   const [errores, setErrores] = useState({
     concepto: '',
@@ -116,42 +60,37 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
     metodoPago: ''
   });
 
-  // ──────────────── Descargar PDF ────────────────
- const handleDescargarPDF = () => {
-  if (!contratoSeleccionado || pagosContrato.length === 0) return;
+  const handleDescargarPDF = () => {
+    if (!contratoSeleccionado || pagosContrato.length === 0) return;
 
-  const doc = new jsPDF();
-  const cliente = clienteSeleccionado?.cliente;
+    const doc = new jsPDF();
+    const cliente = clienteSeleccionado?.cliente;
 
-  doc.setFontSize(16);
-  doc.text('Seguimiento de Pagos del Contrato', 14, 20);
+    doc.setFontSize(16);
+    doc.text('Seguimiento de Pagos del Contrato', 14, 20);
+    doc.setFontSize(12);
+    doc.text(`Cliente: ${cliente?.nombre} ${cliente?.apellido}`, 14, 30);
+    doc.text(`Documento: ${cliente?.documento}`, 14, 38);
+    doc.text(`Contrato: ${contratoSeleccionado}`, 14, 46);
 
-  doc.setFontSize(12);
-  doc.text(`Cliente: ${cliente?.nombre} ${cliente?.apellido}`, 14, 30);
-  doc.text(`Documento: ${cliente?.documento}`, 14, 38);
-  doc.text(`Contrato: ${contratoSeleccionado}`, 14, 46);
+    autoTable(doc, {
+      startY: 55,
+      head: [['Fecha', 'Monto Total', 'Abonado', 'Restante', 'Método', 'Estado', 'Concepto']],
+      body: pagosContrato.map(p => [
+        p.fecha,
+        `$${p.montoTotal.toLocaleString()}`,
+        `$${p.montoAbonado.toLocaleString()}`,
+        `$${p.montoRestante.toLocaleString()}`,
+        p.metodoPago,
+        p.estado,
+        p.concepto
+      ]),
+      styles: { fontSize: 10 }
+    });
 
-  autoTable(doc, {
-    startY: 55,
-    head: [['Fecha', 'Monto Total', 'Abonado', 'Restante', 'Método', 'Estado', 'Concepto']],
-    body: pagosContrato.map(p => [
-      p.fecha,
-      `$${p.montoTotal.toLocaleString()}`,
-      `$${p.montoAbonado.toLocaleString()}`,
-      `$${p.montoRestante.toLocaleString()}`,
-      p.metodoPago,
-      p.estado,
-      p.concepto
-    ]),
-    styles: { fontSize: 10 }
-  });
+    doc.save(`Pagos_${contratoSeleccionado}.pdf`);
+  };
 
-  doc.save(`Pagos_${contratoSeleccionado}.pdf`);
-};
-
-
-
-  /* ──────────────── Agregar abono a la lista local ──────────────── */
   const handleAgregarAbono = () => {
     const erroresVal = {
       concepto: !concepto ? 'Campo requerido' : '',
@@ -159,21 +98,23 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
       metodoPago: !metodoPago ? 'Campo requerido' : ''
     };
 
-    // Si hay errores, no continuar
     if (erroresVal.concepto || erroresVal.monto || erroresVal.metodoPago) {
       setErrores(erroresVal);
       return;
     }
 
-    // Obtener el contrato base
     const contratoBase = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
     const montoTotal = contratoBase?.pagos[0]?.montoTotal || 0;
 
-    // Calcular cuánto se ha abonado ya
-    const pagosDelContrato = [...contratoBase.pagos, ...pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado)];
-    const totalAbonado = pagosDelContrato.reduce((sum, pago) => sum + pago.montoAbonado, 0);
-    const restante = Math.max(montoTotal - totalAbonado, 0);
+    const pagosDelContrato = [
+      ...(contratoBase?.pagos || []),
+      ...pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado),
+      ...pagosAgregados.filter(p => p.numeroContrato === contratoSeleccionado)
+    ];
+
+    const totalAbonado = pagosDelContrato.reduce((sum, pago) => sum + Number(pago.montoAbonado), 0);
     const montoAbono = Number(monto);
+    const restante = Math.max(montoTotal - totalAbonado, 0);
 
     if (montoAbono > restante) {
       setErrores({ monto: `El monto excede el restante ($${restante.toLocaleString()})` });
@@ -186,24 +127,22 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
       numeroContrato: contratoSeleccionado,
       nombre: clienteSeleccionado.cliente.nombre,
       apellido: clienteSeleccionado.cliente.apellido,
-      montoTotal: montoTotal,
-      montoAbonado: montoAbono,
-      montoRestante: Math.max(restante - montoAbono, 0),
+      montoTotal: Number(montoTotal),
+      montoAbonado: Number(monto),
+      montoRestante: Math.max(montoTotal - totalAbonado - montoAbono, 0),
       metodoPago,
       estado: 'Registrado',
       concepto
     };
 
     setPagosPorGuardar(prev => [...prev, nuevo]);
-    setPagosContrato(prev => [...prev, nuevo]);
-
-    // Limpiar campos
-    setMonto('');
     setConcepto('');
+    setMonto('');
     setMetodoPago('');
     setErrores({});
+    toast.success('Abono agregado correctamente');
   };
-  /* Reset al cerrar el modal */
+
   useEffect(() => {
     if (!isOpen) {
       setClienteSeleccionado(null);
@@ -217,59 +156,52 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (isOpen && !mockEnviado) {
+      const pagosTransformados = [];
 
-  /* ──────────────── Guardar y enviar al padre ──────────────── */
-  const handleGuardar = () => {
-    if (pagosContrato.length === 0) return;
-
-    pagosContrato.forEach(p => {
-      onAddPago({
-        id: p.id,
-        fecha: p.fecha,
-        numeroContrato: contratoSeleccionado,
-        nombre: clienteSeleccionado.cliente.nombre,
-        apellido: clienteSeleccionado.cliente.apellido,
-        montoTotal: p.montoTotal,
-        montoAbonado: p.montoAbonado,
-        metodoPago: p.metodoPago,
-        estado: p.estado
+      mockPagosIntegrado.forEach(entry => {
+        const { cliente, contratos } = entry;
+        contratos.forEach(c => {
+          c.pagos.forEach(p => {
+            pagosTransformados.push({
+              ...p,
+              numeroContrato: c.numero,
+              nombre: cliente.nombre,
+              apellido: cliente.apellido,
+            });
+          });
+        });
       });
-    });
 
-    /* limpiar todo */
-    setClienteSeleccionado(null);
-    setContratoSeleccionado('');
-    setClienteInput('');
-    setPagosContrato([]);
-    setConcepto('');
-    setMonto('');
-    setMetodoPago('');
+      onLoadMock(pagosTransformados);
+      setMockEnviado(true);
+    }
+  }, [isOpen, mockEnviado, onLoadMock]);
+
+  const handleGuardar = () => {
+    if (pagosPorGuardar.length === 0) return;
+
+    onAddPago([...pagosPorGuardar]);
+    setPagosPorGuardar([]);
     onClose();
   };
 
-  /* ──────────────── Si no está abierto, no renderiza ──────────────── */
   if (!isOpen) return null;
 
-  /* ──────────────── UI ──────────────── */
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50">
       <div className="flex justify-center items-start p-6 pt-12 h-full overflow-auto">
-        <div
-          className="bg-white rounded-xl shadow-lg w-full max-w-5xl p-6"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="bg-white rounded-xl shadow-lg w-full max-w-5xl p-6" onClick={(e) => e.stopPropagation()}>
 
-          {/* Título */} {/* Header */}
+          {/* Título */}
           <div className="flex justify-between items-center border-b pb-4 mb-4">
             <h2 className="text-xl font-bold">Registrar Pagos o Abonos</h2>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl">
-              <FaTimes />
-            </button>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl"><FaTimes /></button>
           </div>
 
           {/* Cliente y contrato */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6" ref={dropdownRef}>
-            {/* Buscador de cliente */}
             <div className="relative">
               <label className="block text-sm font-medium mb-1">Buscar Cliente</label>
               <input
@@ -302,7 +234,6 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
               )}
             </div>
 
-            {/* Contratos */}
             <div>
               <label className="block text-sm font-medium mb-1">N° de Contrato</label>
               <select
@@ -318,7 +249,6 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
             </div>
           </div>
 
-          {/* Info cliente */}
           {clienteSeleccionado && (
             <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 mb-6 shadow-sm">
               <h3 className="text-blue-800 font-bold text-lg mb-2">Información del Cliente</h3>
@@ -330,7 +260,6 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
             </div>
           )}
 
-
           {/* Formulario de abono */}
           <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-4 items-end mb-4">
             <div>
@@ -341,23 +270,17 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
                 className={inputBase}
               />
               {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
-
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Monto a Abonar
-
-              </label>
-
+              <label className="block text-sm font-medium mb-1">Monto a Abonar</label>
               <input
                 type="number"
                 value={monto}
                 onChange={e => setMonto(e.target.value)}
                 className={inputBase}
               />
-
-              {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
-
+              {errores.monto && <p className="text-red-600 text-xs mt-1">{errores.monto}</p>}
             </div>
 
             <div>
@@ -380,22 +303,24 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
             <button
               type="button"
               onClick={handleAgregarAbono}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all"
             >
               <FaPlus /> Agregar
             </button>
           </div>
+
           {clienteSeleccionado && contratoSeleccionado && pagosContrato.length > 0 && (
             <div className="flex justify-end mt-4">
               <button
                 onClick={handleDescargarPDF}
-                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
+                className="inline-flex items-center gap-2 text-sm font-semibold text-conv3r-dark bg-blue-50 border border-blue-200 mb-3 px-4 py-2 rounded-lg shadow-sm hover:shadow-md"
               >
-                Descargar PDF del Contrato
+                <FaFilePdf size={14} /> Descargar PDF
               </button>
             </div>
           )}
-          {/* Tabla dentro del modal */}
+
+          {/* Tabla de pagos */}
           <div className="overflow-x-auto">
             <table className="min-w-full bg-white border border-gray-200 text-sm text-left">
               <thead className="bg-gray-100">
@@ -407,7 +332,6 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
               <tbody>
                 {pagosContrato.map(p => (
                   <tr key={p.id}>
-
                     <td className="p-2 border">{p.fecha}</td>
                     <td className="p-2 border">{contratoSeleccionado}</td>
                     <td className="p-2 border">{p.montoTotal.toLocaleString()}</td>
@@ -416,9 +340,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
                     <td className="p-2 border">{p.metodoPago}</td>
                     <td className="p-2 border">{p.estado}</td>
                     <td className="p-2 border">
-                      <button className='text-red-600 hover:text-red-800'>
-                        Cancelar
-                      </button>
+                      <button className='text-red-600 hover:text-red-800'>Cancelar</button>
                     </td>
                   </tr>
                 ))}
@@ -435,16 +357,11 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
               Cancelar
             </button>
             <button
-              onClick={() => {
-                pagosPorGuardar.forEach(pago => onAddPago(pago)); // Agrega al índice
-                setPagosPorGuardar([]); // Limpia la lista temporal
-                onClose(); // Cierra el modal
-              }}
+              onClick={handleGuardar}
               className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
             >
               Guardar
             </button>
-
           </div>
         </div>
       </div>
@@ -453,4 +370,3 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago }) => {
 };
 
 export default CreatePaymentsModal;
-// chat quito lineas 

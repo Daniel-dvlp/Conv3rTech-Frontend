@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 // Layout Principal
 import DashboardLayout from './shared/layout/DashboardLayout';
@@ -72,7 +73,9 @@ function App() {
 
         </Route>
       </Routes>
+      <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
     </BrowserRouter>
+    
   );
 }
 

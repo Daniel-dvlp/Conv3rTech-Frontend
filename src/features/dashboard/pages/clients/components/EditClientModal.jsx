@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
@@ -81,6 +82,7 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
 
         onSubmit(formData); // ✅
         console.log("Se actualizó cliente, cerrando modal...");
+        showSuccess('Cambios guardados correctamente');
         onClose();
         // onSubmit debe ser una función que maneje la actualización del cliente
        

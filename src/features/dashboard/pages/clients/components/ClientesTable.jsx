@@ -4,8 +4,11 @@ import ClientsDetailModal from './ClientsDetailModal';
 import { useState } from 'react';
 
 
-const ClientesTable = ({ clientes, onEdit }) => {
+
+const ClientesTable = ({ clientes, onEdit, onDelete }) => {
   const [selectedClient, setSelectedClient] = useState(null);
+
+
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
@@ -47,8 +50,9 @@ const ClientesTable = ({ clientes, onEdit }) => {
                   onClick={() => onEdit(cliente)}>
                     <FaEdit />
                   </button>
-                  <button className="text-red-600 hover:text-red-800" title="Eliminar">
+                  <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDelete(cliente.id)}>
                     <FaTrashAlt />
+
                   </button>
                 </div>
               </td>

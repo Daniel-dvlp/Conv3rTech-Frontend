@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
+import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
@@ -139,6 +140,7 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
 
     // onSubmit(datosFinales);
     onSubmit({ ...formData, id: userData.id });
+    showSuccess('Cambios guardados correctamente');
     onClose();
   };
 

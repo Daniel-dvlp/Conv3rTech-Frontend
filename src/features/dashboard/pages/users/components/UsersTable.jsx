@@ -5,7 +5,7 @@ import EditUserModal from './EditUserModal';
 import { mockRoles } from '../../roles/data/Roles_data';
 
 
-const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina, setUsuarios }) => {
+const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina, setUsuarios, onDelete }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
@@ -86,7 +86,7 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
                   <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
                     <FaEdit size={18} />
                   </button>
-                  <button className="text-red-600 hover:text-red-900" title="Eliminar">
+                  <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() =>onDelete(usuario.id)} >
                     <FaTrashAlt size={18} />
                   </button>
                 </div>
