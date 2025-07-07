@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FaTimes, FaPlus, FaFilePdf } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaFilePdf, FaMinusCircle } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'react-hot-toast';
+import { confirmDelete } from '../../../../../shared/utils/alerts';
+
 
 const inputBase = 'w-full p-2.5 border rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -19,7 +21,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
   const dropdownRef = useRef(null);
   const [mockEnviado, setMockEnviado] = useState(false);
 
-  
+
 
   const clientesFiltrados = mockPagosIntegrado.filter(p => {
     const busq = clienteInput.toLowerCase();
@@ -29,6 +31,31 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
       p.cliente.documento.includes(busq)
     );
   });
+
+
+  const handleCancelarPago = async (pagoId) => {
+    const confirm = await confirmDelete('¿Deseas cancelar este pago?');
+    console.log('Intentando cancelar pago', pagoId, 'Confirmado:', confirm);
+    if (!confirm) return;
+    console.log('Pago cancelado confirmado:', pagoId);
+    const nuevosPagos = pagosContrato.map(pago => {
+      if (pago.id === pagoId && pago.estado?.toLowerCase() === 'registrado') {
+        return {
+          ...pago,
+          estado: 'Cancelado',
+          montoRestante: pago.montoRestante + pago.montoAbonado,
+
+        };
+      }
+      return pago;
+    });
+
+    setPagosContrato(nuevosPagos);
+    toast.success('Pago cancelado exitosamente');
+  };
+
+
+
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -43,7 +70,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
   useEffect(() => {
     if (clienteSeleccionado && contratoSeleccionado) {
       const contrato = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
-      
+
 
       const pagosDelPadre = pagosAgregados.filter(p => p.numeroContrato === contratoSeleccionado);
       const pagosLocales = pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado);
@@ -91,57 +118,56 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
     doc.save(`Pagos_${contratoSeleccionado}.pdf`);
   };
 
-  const handleAgregarAbono = () => {
-    const erroresVal = {
-      concepto: !concepto ? 'Campo requerido' : '',
-      monto: !monto ? 'Campo requerido' : '',
-      metodoPago: !metodoPago ? 'Campo requerido' : ''
-    };
-
-    if (erroresVal.concepto || erroresVal.monto || erroresVal.metodoPago) {
-      setErrores(erroresVal);
-      return;
-    }
-
-    const contratoBase = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
-    const montoTotal = contratoBase?.pagos[0]?.montoTotal || 0;
-
-    const pagosDelContrato = [
-      ...(contratoBase?.pagos || []),
-      ...pagosPorGuardar.filter(p => p.numeroContrato === contratoSeleccionado),
-      ...pagosAgregados.filter(p => p.numeroContrato === contratoSeleccionado)
-    ];
-
-    const totalAbonado = pagosDelContrato.reduce((sum, pago) => sum + Number(pago.montoAbonado), 0);
-    const montoAbono = Number(monto);
-    const restante = Math.max(montoTotal - totalAbonado, 0);
-
-    if (montoAbono > restante) {
-      setErrores({ monto: `El monto excede el restante ($${restante.toLocaleString()})` });
-      return;
-    }
-
-    const nuevo = {
-      id: Date.now(),
-      fecha: new Date().toLocaleDateString(),
-      numeroContrato: contratoSeleccionado,
-      nombre: clienteSeleccionado.cliente.nombre,
-      apellido: clienteSeleccionado.cliente.apellido,
-      montoTotal: Number(montoTotal),
-      montoAbonado: Number(monto),
-      montoRestante: Math.max(montoTotal - totalAbonado - montoAbono, 0),
-      metodoPago,
-      estado: 'Registrado',
-      concepto
-    };
-
-    setPagosPorGuardar(prev => [...prev, nuevo]);
-    setConcepto('');
-    setMonto('');
-    setMetodoPago('');
-    setErrores({});
-    toast.success('Abono agregado correctamente');
+ const handleAgregarAbono = () => {
+  const erroresVal = {
+    concepto: !concepto ? 'Campo requerido' : '',
+    monto: !monto ? 'Campo requerido' : '',
+    metodoPago: !metodoPago ? 'Campo requerido' : ''
   };
+
+  if (erroresVal.concepto || erroresVal.monto || erroresVal.metodoPago) {
+    setErrores(erroresVal);
+    return;
+  }
+
+  const contratoBase = clienteSeleccionado.contratos.find(c => c.numero === contratoSeleccionado);
+  const montoTotal = contratoBase?.pagos[0]?.montoTotal || 0;
+  const montoAbono = Number(monto);
+
+  // 🟡 Usar los pagos visibles en la tabla actual, que sí incluyen los cancelados
+  const totalAbonado = pagosContrato
+    .filter(pago => pago.estado !== 'Cancelado')
+    .reduce((sum, pago) => sum + Number(pago.montoAbonado), 0);
+
+  const restante = Math.max(montoTotal - totalAbonado, 0);
+
+  if (montoAbono > restante) {
+    setErrores({ monto: `El monto excede el restante ($${restante.toLocaleString()})` });
+    return;
+  }
+
+  const nuevo = {
+    id: Date.now(),
+    fecha: new Date().toLocaleDateString(),
+    numeroContrato: contratoSeleccionado,
+    nombre: clienteSeleccionado.cliente.nombre,
+    apellido: clienteSeleccionado.cliente.apellido,
+    montoTotal: Number(montoTotal),
+    montoAbonado: Number(monto),
+    montoRestante: Math.max(montoTotal - totalAbonado - montoAbono, 0),
+    metodoPago,
+    estado: 'Registrado',
+    concepto
+  };
+
+  setPagosPorGuardar(prev => [...prev, nuevo]);
+  setConcepto('');
+  setMonto('');
+  setMetodoPago('');
+  setErrores({});
+  toast.success('Abono agregado correctamente');
+};
+
 
   useEffect(() => {
     if (!isOpen) {
@@ -180,12 +206,47 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
   }, [isOpen, mockEnviado, onLoadMock]);
 
   const handleGuardar = () => {
-    if (pagosPorGuardar.length === 0) return;
+    if (!clienteSeleccionado || !contratoSeleccionado) {
+      toast.error('Selecciona un cliente y un contrato.');
+      return;
+    }
 
-    onAddPago([...pagosPorGuardar]);
+    // 1. Obtener los pagos cancelados reales (cambios en pagosContrato)
+    const pagosCancelados = pagosContrato.filter(p =>
+      p.estado === 'Cancelado' &&
+      !pagosAgregados.some(pa => pa.id === p.id) &&
+      !pagosPorGuardar.some(pp => pp.id === p.id)
+    );
+
+    // 2. Unir sin duplicar
+    const pagosListos = [
+      ...pagosPorGuardar,
+      ...pagosContrato.filter(p => p.estado === 'Cancelado')
+    ];
+
+
+    if (pagosListos.length === 0) {
+      toast.error('No hay pagos por guardar.');
+      return;
+    }
+
+    // 3. Enviar al padre
+    onAddPago(pagosListos);
+
+    // 4. Limpieza
     setPagosPorGuardar([]);
+    setClienteSeleccionado(null);
+    setContratoSeleccionado('');
+    setConcepto('');
+    setMonto('');
+    setMetodoPago('');
+    toast.success('Pagos guardados correctamente');
+
+    // 5. Cerrar modal
     onClose();
   };
+
+
 
   if (!isOpen) return null;
 
@@ -321,26 +382,33 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
           )}
 
           {/* Tabla de pagos */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border border-gray-200 text-sm text-left">
-              <thead className="bg-gray-100">
+          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+            <table className="w-full text-center">
+              <thead className="bg-gray-50">
                 <tr>
                   {['Fecha', 'Contrato', 'Monto Total', 'Monto Abonado', 'Restante', 'Método', 'Estado', 'Acciones']
-                    .map(h => <th key={h} className="p-2 border">{h}</th>)}
+                    .map(h => <th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">{h}</th>)}
                 </tr>
               </thead>
-              <tbody>
+              <tbody className='divide-y divide-gray-200'>
                 {pagosContrato.map(p => (
-                  <tr key={p.id}>
-                    <td className="p-2 border">{p.fecha}</td>
-                    <td className="p-2 border">{contratoSeleccionado}</td>
-                    <td className="p-2 border">{p.montoTotal.toLocaleString()}</td>
-                    <td className="p-2 border">{p.montoAbonado.toLocaleString()}</td>
-                    <td className="p-2 border">{p.montoRestante.toLocaleString()}</td>
-                    <td className="p-2 border">{p.metodoPago}</td>
-                    <td className="p-2 border">{p.estado}</td>
-                    <td className="p-2 border">
-                      <button className='text-red-600 hover:text-red-800'>Cancelar</button>
+                  <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-2">{p.fecha}</td>
+                    <td className="px-4 py-2">{contratoSeleccionado}</td>
+                    <td className="px-4 py-2">{p.montoTotal.toLocaleString()}</td>
+                    <td className="px-4 py-2">{p.montoAbonado.toLocaleString()}</td>
+                    <td className="px-4 py-2">{p.montoRestante.toLocaleString()}</td>
+                    <td className="px-4 py-2">{p.metodoPago}</td>
+                    <td className="px-4 py-2">{p.estado}</td>
+                    <td className="px-4 py-2">
+                      {p.estado?.toLowerCase() === 'registrado' && (
+                        <button
+                          className="text-red-600 hover:text-red-800"
+                          onClick={() => handleCancelarPago(p.id)}
+                        >
+                          <FaMinusCircle size={16} />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -350,12 +418,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
 
           {/* Botones finales */}
           <div className="flex justify-end gap-4 mt-6">
-            <button
-              onClick={onClose}
-              className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300"
-            >
-              Cancelar
-            </button>
+            <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
             <button
               onClick={handleGuardar}
               className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
@@ -363,6 +426,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onAddPago, pagosAgregados = [], 
               Guardar
             </button>
           </div>
+
         </div>
       </div>
     </div>

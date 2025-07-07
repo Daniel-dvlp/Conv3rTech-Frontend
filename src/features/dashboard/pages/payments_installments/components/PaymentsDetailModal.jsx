@@ -16,9 +16,9 @@ const PaymentsDetailModal = ({ pago, onClose }) => {
   if (!pago) return null;
 
   const getStatusClass = (estado) =>
-    estado === 'Finalizado'
+    estado === 'Registrado'
       ? 'bg-green-100 text-green-800'
-      : 'bg-yellow-100 text-yellow-800';
+      : 'bg-red-100 text-red-800';
 
   return (
     <div className="fixed inset-0 bg-black/10 flex justify-center items-center z-50 p-4" onClick={onClose}>
@@ -66,7 +66,9 @@ const PaymentsDetailModal = ({ pago, onClose }) => {
             <div className="flex items-center gap-2">
               <FaToggleOn className="text-indigo-500" />
               <span className="font-medium text-gray-600">Estado:</span>
-              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(pago.estado)}`}>{pago.estado}</span>
+              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(pago.estado)} 
+              `}>
+                {pago.estado}</span>
             </div>
           </div>
 

@@ -75,10 +75,29 @@ const Payments_InstallmentsPage = () => {
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
   const [mockCargado, setMockCargado] = useState(false);
 
-  const handleAddPago = (nuevosPagos) => {
-    setPagos(prev => [...prev, ...nuevosPagos]);
-    setCurrentPage(1);
-  };
+  
+
+ const handleAddPago = (nuevosPagos) => {
+  setPagos(prev => {
+    const actualizados = [...prev];
+
+    nuevosPagos.forEach(pagoNuevo => {
+      const index = actualizados.findIndex(p => p.id === pagoNuevo.id);
+      if (index !== -1) {
+        // 🔄 Si ya existe, actualízalo
+        actualizados[index] = pagoNuevo;
+      } else {
+        // ➕ Si es nuevo, agrégalo
+        actualizados.push(pagoNuevo);
+      }
+    });
+
+    return actualizados;
+  });
+
+  setCurrentPage(1); // Puedes dejar esto si quieres volver a la página 1
+};
+
 
   const handleCargarMock = (pagosDelMock) => {
     if (!mockCargado) {
