@@ -4,7 +4,7 @@ import UsersTable from './components/UsersTable';
 import SkeletonRow from './components/SkeletonRow';
 import CreateUserModal from './components/CreateUserModal';
 import { mockUsuarios } from './data/User_data';
-import { mockRoles } from '../Roles/data/Roles_data';
+import { mockRoles } from '../roles/data/Roles_data';
 import Pagination from '../../../../shared/components/Pagination';
 
 const ITEMS_PER_PAGE = 5;

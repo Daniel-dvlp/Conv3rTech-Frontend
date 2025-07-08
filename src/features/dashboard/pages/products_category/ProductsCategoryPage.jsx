@@ -58,7 +58,7 @@ const ProductsCategoryPage = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar por nombre, descripción o estado..."
+              placeholder="Buscar"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
