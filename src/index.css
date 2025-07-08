@@ -4,13 +4,28 @@
 
 
 /* Oculta completamente el scroll */
-.invisible-scrollbar {
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE y Edge */
   scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE 10+ */
 }
 
-.invisible-scrollbar::-webkit-scrollbar {
-  display: none; /* Chrome, Safari */
+/* Barra de scroll estética */
+.custom-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* tailwind gray-300 */
+  border-radius: 4px;
+}
+.custom-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 /* Clases personalizadas para el efecto de volteo 3D */

@@ -33,14 +33,8 @@ const ModalHeader = ({ role, onClose, onEdit }) => (
     </div>
     <div className="flex gap-2 items-center">
       <button
-        onClick={onEdit} // Llama a la función del padre para abrir el modal de edición
+        onClick={onClose} // Llama a la función del padre para abrir el modal de edición
         className="flex items-center gap-2 px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold rounded-lg text-sm transition-colors shadow-sm"
-      >
-        <FaPencilAlt /> Editar
-      </button>
-      <button
-        onClick={onClose}
-        className="text-gray-400 hover:text-gray-700 text-2xl p-2 rounded-full transition-colors hover:bg-gray-100"
       >
         <FaTimes />
       </button>

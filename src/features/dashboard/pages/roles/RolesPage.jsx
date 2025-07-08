@@ -11,7 +11,7 @@ import RoleDetailModal from './components/RoleDetailModal';
 // 1. IMPORTAMOS todas las funciones CRUD que necesitamos de nuestro archivo de datos
 import { getRoles, createRole, updateRole, deleteRole } from './data/Roles_data'; 
 
-const ITEMS_PER_PAGE = 7;
+const ITEMS_PER_PAGE = 5;
 
 const RolesPage = () => {
   const [roles, setRoles] = useState([]);
@@ -39,6 +39,13 @@ const RolesPage = () => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return roles.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [roles, currentPage]);
+
+  // Reset to first page when roles change
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [roles, currentPage, totalPages]);
 
   const handleSaveRole = (newRoleData) => {
     createRole(newRoleData);
@@ -107,7 +114,15 @@ const RolesPage = () => {
         />
       )}
       
-      {/* ... tu paginador no cambia ... */}
+      {/* Paginación siempre visible - igual diseño que proyectos pero siempre presente */}
+      {!loading && (
+        <Pagination 
+          currentPage={currentPage}
+          totalPages={Math.max(1, totalPages)}
+          onPageChange={setCurrentPage}
+        />
+      )}
+      
 
       {/* Los modales ahora reciben las funciones correctas */}
       <NewRoleModal 

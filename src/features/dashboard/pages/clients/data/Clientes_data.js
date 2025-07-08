@@ -8,16 +8,16 @@ export const mockClientes = [
     email: 'contacto@andina.com',
     celular: '31700001',
     credito: false,
-    estado: 'Inactivo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Sede Principal',
-        direccion: 'Cra 10 #12-34, Bogotá',
+        direccion: 'Cra 10 #12-34',
         ciudad: 'Bogotá',
       },
       {
         nombre: 'Sucursal Norte',
-        direccion: 'Av 19 #120-45, Bogotá',
+        direccion: 'Av 19 #120-45',
         ciudad: 'Bogotá',
       },
     ],
@@ -31,11 +31,11 @@ export const mockClientes = [
     email: 'ventas@elsol.com',
     celular: '31700002',
     credito: true,
-    estado: 'Activo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Sede Principal',
-        direccion: 'Calle 45 #23-78, Medellín',
+        direccion: 'Calle 45 #23-78',
         ciudad: 'Medellín',
       },
     ],
@@ -49,16 +49,16 @@ export const mockClientes = [
     email: 'soporte@tecnoglobal.com',
     celular: '31700003',
     credito: true,
-    estado: 'Activo',
+    estado: false,
     direcciones: [
       {
         nombre: 'Sede Central',
-        direccion: 'Av. El Dorado #90-50, Bogotá',
+        direccion: 'Av. El Dorado #90-50',
         ciudad: 'Bogotá',
       },
       {
         nombre: 'Sucursal Cali',
-        direccion: 'Cra 15 #10-20, Cali',
+        direccion: 'Cra 15 #10-20',
         ciudad: 'Cali',
       },
     ],
@@ -72,11 +72,11 @@ export const mockClientes = [
     email: 'logistica@express.com',
     celular: '31700004',
     credito: true,
-    estado: 'Inactivo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Oficina Central',
-        direccion: 'Cl 80 #55-10, Medellín',
+        direccion: 'Cl 80 #55-10',
         ciudad: 'Medellín',
       },
     ],
@@ -90,18 +90,39 @@ export const mockClientes = [
     email: 'info@servint.com',
     celular: '31700005',
     credito: true,
-    estado: 'Activo',
+    estado: true,
     direcciones: [
       {
         nombre: 'Sede Principal',
-        direccion: 'Cra 8 #25-30, Barranquilla',
+        direccion: 'Cra 8 #25-30',
         ciudad: 'Barranquilla',
       },
       {
         nombre: 'Sucursal Cartagena',
-        direccion: 'Cl 30 #45-12, Cartagena',
+        direccion: 'Cl 30 #45-12',
         ciudad: 'Cartagena',
       },
     ],
   },
+  {id: 6,
+    documento: '800987654',
+    tipoDocumento: 'NIT',
+    nombre: 'Tecnología Global',
+    apellido: '',
+    email: 'soporte@tecnoglobal.com',
+    celular: '31700003',
+    credito: true,
+    estado: true,
+    direcciones: [
+      {
+        nombre: 'Sede Central',
+        direccion: 'Av. El Dorado #90-50',
+        ciudad: 'Bogotá',
+      },
+      {
+        nombre: 'Sucursal Cali',
+        direccion: 'Cra 15 #10-20',
+        ciudad: 'Cali',
+      },
+    ],}
 ];

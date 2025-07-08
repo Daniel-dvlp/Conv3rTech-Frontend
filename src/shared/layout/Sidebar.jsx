@@ -4,11 +4,13 @@ import {
   FaTachometerAlt, FaDollarSign, FaClipboardList, FaCalendarAlt,
   FaConciergeBell, FaCog, FaSignOutAlt
 } from 'react-icons/fa';
+import { usePermissions } from '../hooks/usePermissions';
 
 const Sidebar = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [openMenus, setOpenMenus] = useState({});
   const location = useLocation();
+  const { filterMenuItems, userRole } = usePermissions();
 
   const isChildActive = (children) => {
     return children?.some(child => location.pathname === child.path);
@@ -63,12 +65,16 @@ const Sidebar = () => {
       name: 'Configuración',
       icon: <FaCog />,
       children: [
-        { name: 'Editar mi Perfil', path: '/dashboard/perfil' },
+        { name: 'Editar mi Perfil', path: '/dashboard/profile' },
         { name: 'Gestión de Roles', path: '/dashboard/roles' }
       ]
     },
     { name: 'Cerrar Sesión', icon: <FaSignOutAlt />, path: '/logout' }
   ];
+
+  // Filtrar menús según permisos del usuario
+  const filteredMainMenuItems = filterMenuItems(mainMenuItems);
+  const filteredBottomMenuItems = filterMenuItems(bottomMenuItems);
 
   const handleLogout = (e) => {
     e.preventDefault();
@@ -112,10 +118,17 @@ const Sidebar = () => {
         )}
       </div>
 
+      {/* Indicador de rol */}
+      {isExpanded && userRole && (
+        <div className="px-4 py-2 mb-4 bg-yellow-600/20 rounded-lg border border-yellow-600/30">
+          <p className="text-xs text-yellow-400 font-medium">Rol: {userRole}</p>
+        </div>
+      )}
+
       {/* MENÚ PRINCIPAL */}
-      <nav className="flex-grow overflow-y-auto">
+      <nav className="flex-grow overflow-y-auto scrollbar-hide">
         <ul className="pl-0">
-          {mainMenuItems.map((item) => {
+          {filteredMainMenuItems.map((item) => {
             const isActiveParent = location.pathname === item.path || isChildActive(item.children);
             return (
               <li key={item.name} className="mb-2 relative " >
@@ -177,7 +190,7 @@ const Sidebar = () => {
       {/* MENÚ INFERIOR */}
       <div className="border-t border-gray-700 pt-4 pr-0">
         <ul className="pl-0 pr-0">
-          {bottomMenuItems.map((item) => {
+          {filteredBottomMenuItems.map((item) => {
             const isActiveParent = location.pathname === item.path || isChildActive(item.children);
             return (
               <li key={item.name} className="mb-2 relative">
@@ -216,17 +229,20 @@ const Sidebar = () => {
                     )}
                   </>
                 ) : (
-                  <button
-                    onClick={handleLogout}
-                    className={`w-full flex items-center p-2 rounded-lg ${getBubbleClasses(isActiveParent)} ${isExpanded ? 'justify-start' : 'justify-center'}`}
+                  <Link
+                    to={item.path}
+                    className={`no-underline flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${getBubbleClasses(isActiveParent)}`}
+                    onClick={item.name === 'Cerrar Sesión' ? handleLogout : undefined}
                   >
-                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`}>
+                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`} style={getActiveTextColor(isActiveParent)}>
                       {item.icon}
                     </div>
                     {isExpanded && (
-                      <span className="ml-4 font-semibold whitespace-nowrap">{item.name}</span>
+                      <span className="ml-4 font-semibold whitespace-nowrap" style={getActiveTextColor(isActiveParent)}>
+                        {item.name}
+                      </span>
                     )}
-                  </button>
+                  </Link>
                 )}
               </li>
             );

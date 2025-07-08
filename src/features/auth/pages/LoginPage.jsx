@@ -3,6 +3,7 @@ import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import Lottie from 'lottie-react';
 import loginAnimation from '../../../assets/animations/login-animation.json';
+import { mockUsuarios } from '../../dashboard/pages/users/data/User_data.js';
 
 // --- Componentes Internos ---
 
@@ -74,8 +75,6 @@ const LoginPage = () => {
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
 
-  const MOCK_USER = { email: 'admin@conv3rtech.com', password: 'password123' };
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -98,14 +97,33 @@ const LoginPage = () => {
       setIsLoading(false);
       return;
     }
-    if (formData.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
-      setIsLoading(false);
-      return;
-    }
-    if (formData.email === MOCK_USER.email && formData.password === MOCK_USER.password) {
-      // --- CORRECCIÓN AQUÍ ---
-      // Navegamos a la RUTA '/dashboard', no al nombre del archivo del componente.
+
+    // Buscar usuario en los datos reales
+    const user = mockUsuarios.find(u => 
+      u.email.toLowerCase() === formData.email.toLowerCase() && 
+      u.contrasena === formData.password
+    );
+
+    if (user) {
+      // Guardar información del usuario en localStorage
+      const userInfo = {
+        id: user.id,
+        name: user.nombre,
+        lastName: user.apellido,
+        email: user.email,
+        role: user.rol,
+        status: user.status,
+        avatarSeed: user.nombre + user.apellido,
+        documento: user.documento,
+        tipoDocumento: user.tipoDocumento,
+        celular: user.celular,
+        fechaCreacion: user.fechaCreacion
+      };
+      
+      localStorage.setItem('user', JSON.stringify(userInfo));
+      localStorage.setItem('isAuthenticated', 'true');
+      
+      // Navegar al dashboard
       navigate('/dashboard');
     } else {
       setError('Correo o contraseña incorrectos.');
@@ -212,17 +230,8 @@ const LoginPage = () => {
                       onChange={(e) => setRememberMe(e.target.checked)} 
                       className="sr-only"
                     />
-                    <div className={`w-5 h-5 rounded-md border-2 transition-all duration-300 ${rememberMe ? 'bg-yellow-400 border-yellow-400' : 'border-gray-300 group-hover:border-yellow-400'}`}>
-                      {rememberMe && (
-                        <svg className="w-3 h-3 text-gray-800 absolute top-0.5 left-0.5" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
                   </div>
-                  <span className="ml-3 text-sm text-gray-700 font-medium group-hover:text-gray-900 transition-colors">Recordarme</span>
                 </label>
-                
                 <button type="button" className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition-colors duration-300 hover:underline">
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -253,16 +262,37 @@ const LoginPage = () => {
                   </div>
                 )}
               </button>
-              
-              <div className="text-center pt-2">
-                <p className="text-sm text-gray-600">
-                  ¿No tienes una cuenta?{' '}
-                  <button type="button" className="font-bold text-yellow-600 hover:text-yellow-700 transition-colors duration-300 hover:underline">
-                    Regístrate aquí
-                  </button>
-                </p>
-              </div>
             </form>
+
+            {/* Información de usuarios de prueba */}
+            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+              <h3 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2">
+                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                Usuarios de prueba disponibles:
+              </h3>
+              <div className="text-xs text-yellow-700 space-y-2">
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <p className="font-medium">👑 Administrador</p>
+                  <p>mariaalvarez@gmail.com / 123456</p>
+                </div>
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <p className="font-medium">🔧 Técnico</p>
+                  <p>RamirezC@gmail.com / 123456</p>
+                </div>
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <p className="font-medium">📞 Recepcionista</p>
+                  <p>laura.gomez@gmail.com / 123456</p>
+                </div>
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <p className="font-medium">👨‍💼 Supervisor</p>
+                  <p>andres.torres@hotmail.com / 123456</p>
+                </div>
+                <div className="p-2 bg-white/50 rounded-lg">
+                  <p className="font-medium">🔧 Técnico</p>
+                  <p>camila.rdz@gmail.com / 123456</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 // src/features/dashboard/pages/roles/data/Roles_data.js
 
-export let mockRoles = [
+// Datos iniciales por defecto
+const defaultRoles = [
   {
     id: 1,
     name: 'Administrador',
@@ -69,13 +70,45 @@ export let mockRoles = [
   }
 ];
 
+// Clave para localStorage
+const ROLES_STORAGE_KEY = 'conv3rtech_roles';
+
+// Función para obtener roles desde localStorage
+const getRolesFromStorage = () => {
+  try {
+    const stored = localStorage.getItem(ROLES_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : defaultRoles;
+  } catch (error) {
+    console.error('Error al cargar roles desde localStorage:', error);
+    return defaultRoles;
+  }
+};
+
+// Función para guardar roles en localStorage
+const saveRolesToStorage = (roles) => {
+  try {
+    localStorage.setItem(ROLES_STORAGE_KEY, JSON.stringify(roles));
+  } catch (error) {
+    console.error('Error al guardar roles en localStorage:', error);
+  }
+};
+
+// Variable para mantener los roles en memoria
+let mockRoles = getRolesFromStorage();
+
+// Exportar mockRoles para compatibilidad con otros archivos
+export { mockRoles };
+
 // Función para obtener el siguiente ID disponible
 const getNextId = () => {
-  return Math.max(...mockRoles.map(role => role.id)) + 1;
+  const roles = getRolesFromStorage();
+  return Math.max(...roles.map(role => role.id), 0) + 1;
 };
 
 // Función para crear un nuevo rol
 export const createRole = (roleData) => {
+  const roles = getRolesFromStorage();
+  
   // Generar permisos simplificados para mantener compatibilidad
   const permisos = [];
   Object.keys(roleData.permissions || {}).forEach(key => {
@@ -100,37 +133,98 @@ export const createRole = (roleData) => {
     permissions: roleData.permissions || {}
   };
   
-  mockRoles.unshift(newRole); // Añadir al principio del array
+  // Añadir al principio del array
+  roles.unshift(newRole);
+  
+  // Guardar en localStorage
+  saveRolesToStorage(roles);
+  
+  // Actualizar la variable en memoria y exportada
+  mockRoles = roles;
+  
   return newRole;
 };
 
 // Función para obtener todos los roles
 export const getRoles = () => {
-  return [...mockRoles];
+  const roles = getRolesFromStorage();
+  mockRoles = roles; // Actualizar la variable exportada
+  return [...roles];
 };
 
 // Función para obtener un rol por ID
 export const getRoleById = (id) => {
-  return mockRoles.find(role => role.id === id);
+  const roles = getRolesFromStorage();
+  return roles.find(role => role.id === id);
 };
 
 // Función para actualizar un rol
 export const updateRole = (id, updatedData) => {
-  const index = mockRoles.findIndex(role => role.id === id);
+  const roles = getRolesFromStorage();
+  const index = roles.findIndex(role => role.id === id);
+  
   if (index !== -1) {
-    mockRoles[index] = { ...mockRoles[index], ...updatedData };
-    return mockRoles[index];
+    // Generar permisos simplificados si se actualizan los permisos
+    if (updatedData.permissions) {
+      const permisos = [];
+      Object.keys(updatedData.permissions).forEach(key => {
+        if (key.includes('.')) {
+          const [module] = key.split('.');
+          if (!permisos.includes(module)) {
+            permisos.push(module);
+          }
+        } else {
+          if (!permisos.includes(key)) {
+            permisos.push(key);
+          }
+        }
+      });
+      updatedData.permisos = permisos;
+    }
+    
+    roles[index] = { ...roles[index], ...updatedData };
+    
+    // Guardar en localStorage
+    saveRolesToStorage(roles);
+    
+    // Actualizar la variable en memoria y exportada
+    mockRoles = roles;
+    
+    return roles[index];
   }
   return null;
 };
 
 // Función para eliminar un rol
 export const deleteRole = (id) => {
-  const index = mockRoles.findIndex(role => role.id === id);
+  const roles = getRolesFromStorage();
+  const index = roles.findIndex(role => role.id === id);
+  
   if (index !== -1) {
-    const deletedRole = mockRoles[index];
-    mockRoles.splice(index, 1);
+    const deletedRole = roles[index];
+    roles.splice(index, 1);
+    
+    // Guardar en localStorage
+    saveRolesToStorage(roles);
+    
+    // Actualizar la variable en memoria y exportada
+    mockRoles = roles;
+    
     return deletedRole;
   }
   return null;
+};
+
+// Función para resetear los datos a los valores por defecto
+export const resetRolesToDefault = () => {
+  saveRolesToStorage(defaultRoles);
+  mockRoles = defaultRoles;
+  return defaultRoles;
+};
+
+// Función para limpiar todos los datos
+export const clearAllRoles = () => {
+  localStorage.removeItem(ROLES_STORAGE_KEY);
+  mockRoles = [];
+  return [];
 };

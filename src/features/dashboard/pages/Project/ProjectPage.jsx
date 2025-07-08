@@ -12,7 +12,7 @@ import EditProjectModal from './components/EditProjectModal';
 import * as XLSX from 'xlsx';
 
 // --- CONSTANTE PARA EL NÚMERO DE ELEMENTOS POR PÁGINA ---
-const ITEMS_PER_PAGE = 7;
+const ITEMS_PER_PAGE = 5;
 
 const ProjectPage = () => {
   // --- TODA TU LÓGICA DE ESTADO Y FUNCIONES PERMANECE EXACTAMENTE IGUAL ---
