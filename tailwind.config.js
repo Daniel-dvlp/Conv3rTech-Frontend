@@ -6,7 +6,7 @@ export default {
   theme: {
     extend: {
       animation: {
-        "fade-in": "fadeIn 0.3s ease-out",
+        "fade-in": "fadeIn 0.25s ease-in-out",
       },
       keyframes: {
         fadeIn: {
@@ -21,7 +21,25 @@ export default {
         "conv3r-text-primary": "#FFFFFF",
         "conv3r-text-secondary": "#A0AEC0",
       },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+      },
+      transformStyle: {
+        'preserve-3d': 'preserve-3d',
+      },
+      backfaceVisibility: {
+        'hidden': 'hidden',
+      },
+      rotate: {
+        'y-180': 'rotateY(180deg)',
+      },
+      perspective: {
+        '1000': '1000px',
+      },
     },
   },
-  plugins: [tailwindScrollbar],
+  plugins: [
+    require('tailwind-scrollbar'),
+    require('@tailwindcss/forms'),
+  ],
 };

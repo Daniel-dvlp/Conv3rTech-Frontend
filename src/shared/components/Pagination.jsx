@@ -9,7 +9,7 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 // onPageChange: La función que se debe llamar cuando el usuario hace clic en un botón.
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   // No mostramos nada si solo hay una página o menos.
-  if (totalPages <= 1) {
+  if (totalPages <= 0 ) {
     return null;
   }
 

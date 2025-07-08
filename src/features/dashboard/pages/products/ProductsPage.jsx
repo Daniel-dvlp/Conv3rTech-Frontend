@@ -1,13 +1,13 @@
-// src/features/dashboard/pages/productos/ProductosPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaPlus, FaSearch } from 'react-icons/fa';
+import { FaPlus, FaFileExcel, FaSearch } from 'react-icons/fa';
 import ProductsTable from './components/ProductsTable';
 import SkeletonRow from './components/SkeletonRow';
-import { mockProducts } from './data/Products_data';
 import Pagination from '../../../../shared/components/Pagination';
-import { mockProductsCategory } from '../products_category/data/ProductsCategory_data';
 import NewProductModal from './components/NewProductModal';
+import ProductDetailModal from './components/ProductDetailModal';
+import { mockProducts } from './data/Products_data';
+import {mockProductsCategory} from '../products_category/data/ProductsCategory_data';
+import * as XLSX from 'xlsx';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -17,28 +17,25 @@ const ProductsPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [categories, setCategories] = useState([]);
 
   useEffect(() => {
     setTimeout(() => {
       setProducts(mockProducts);
+      setCategories(mockProductsCategory);
       setLoading(false);
     }, 1500);
   }, []);
 
-  const normalize = (text) =>
-    text?.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() || '';
+  const normalize = (text) => (text || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
-    return products.filter((p) =>
-      normalize(p.nombre ?? "").includes(normalizedSearch) ||
-      normalize(p.descripcion ?? "").includes(normalizedSearch) ||
-      normalize(p.modelo ?? "").includes(normalizedSearch) ||
-      normalize(p.categoria ?? "").includes(normalizedSearch) ||
-      normalize(p.unidad ?? "").includes(normalizedSearch) ||
-      normalize(String(p.precio) ?? "").includes(normalizedSearch) ||
-      normalize(String(p.stock) ?? "").includes(normalizedSearch) ||
-      normalize(p.estado?.toString() ?? "").includes(normalizedSearch)
+    return products.filter((product) =>
+      normalize(product.producto).includes(normalizedSearch) ||
+      normalize(product.modelo).includes(normalizedSearch) ||
+      normalize(product.estado).includes(normalizedSearch)
     );
   }, [products, searchTerm]);
 
@@ -50,8 +47,15 @@ const ProductsPage = () => {
   }, [filteredProducts, currentPage]);
 
   const handleAddProduct = (newProduct) => {
-    setProducts(prev => [newProduct, ...prev]);
+    setProducts((prev) => [newProduct, ...prev]);
     setShowNewModal(false);
+  };
+
+  const handleExport = () => {
+    const worksheet = XLSX.utils.json_to_sheet(filteredProducts);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Productos');
+    XLSX.writeFile(workbook, 'ReporteProductos.xlsx');
   };
 
   return (
@@ -59,10 +63,10 @@ const ProductsPage = () => {
       <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Productos</h1>
         <div className="flex items-center gap-4 w-full sm:w-auto">
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full sm:w-80">
             <input
               type="text"
-              placeholder="Buscar por nombre, modelo, categoria..."
+              placeholder="Buscar"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
@@ -72,13 +76,19 @@ const ProductsPage = () => {
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
+          >
+            <FaFileExcel />
+            Exportar
+          </button>
           <button
             onClick={() => setShowNewModal(true)}
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
           >
             <FaPlus />
-            Nuevo Producto
+            Nuevo producto
           </button>
         </div>
       </div>
@@ -88,10 +98,10 @@ const ProductsPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                {['Foto', 'Nombre', 'Modelo', 'Categoría', 'Unidad', 'Precio', 'Stock', 'Estado', 'Acciones'].map((header) => (
+                {['Producto', 'Modelo', 'Estado', 'Acciones'].map((header) => (
                   <th
                     key={header}
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"
+                    className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
                   >
                     {header}
                   </th>
@@ -107,7 +117,11 @@ const ProductsPage = () => {
         </div>
       ) : (
         <>
-          <ProductsTable products={currentItems} categories={mockProductsCategory} />
+          <ProductsTable
+            products={currentItems}
+            categories={categories}
+            onViewDetails={(product) => setSelectedProduct(product)}
+          />
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -118,13 +132,16 @@ const ProductsPage = () => {
         </>
       )}
 
-      {showNewModal && (
-        <NewProductModal
-          isOpen={showNewModal}
-          onClose={() => setShowNewModal(false)}
-          onSave={handleAddProduct}
-          existingProducts={products}
-          categories={mockProductsCategory}
+      <NewProductModal
+        isOpen={showNewModal}
+        onClose={() => setShowNewModal(false)}
+        onSave={handleAddProduct}
+      />
+
+      {selectedProduct && (
+        <ProductDetailModal
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)}
         />
       )}
     </div>

@@ -20,7 +20,7 @@ const normalizeText = (text) => text?.normalize('NFD').replace(/[̀-ͯ]/g, '').t
 const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts }) => {
     const initialState = {
         fotos: [], nombre: '', modelo: '', categoria: '', unidad: '',
-        precio: '', stock: '', garantia: '', codigos: [], especificaciones_tecnicas: [], estado: true,
+        precio: '', stock: '', garantia: '', codigoBarra: '', especificaciones_tecnicas: [], estado: true,
     };
 
     const [productData, setProductData] = useState(initialState);
@@ -67,21 +67,6 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         }
     };
 
-    const handleAddCode = () => {
-        setProductData((prev) => ({ ...prev, codigos: [...prev.codigos, { codigo: '' }] }));
-    };
-
-    const handleCodeChange = (index, value) => {
-        const updated = [...productData.codigos];
-        updated[index].codigo = value;
-        setProductData((prev) => ({ ...prev, codigos: updated }));
-    };
-
-    const handleRemoveCode = (index) => {
-        const updated = [...productData.codigos];
-        updated.splice(index, 1);
-        setProductData((prev) => ({ ...prev, codigos: updated }));
-    };
 
     const handleAddEspecification = () => {
         setProductData((prev) => ({
@@ -103,14 +88,24 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
     };
 
     const handleSubmit = (e) => {
-        e.preventDefault();
-        validateDuplicate();
-        if (errors.duplicate || (productData.garantia && productData.garantia < 12)) return;
-        onSave({ ...productData, id: Date.now(), categoria: Number(productData.categoria) });
-        setProductData(initialState);
-        setErrors({});
-        onClose();
+    e.preventDefault();
+    validateDuplicate();
+    if (errors.duplicate || (productData.garantia && productData.garantia < 12)) return;
+
+    const codigoFinal = productData.codigoBarra?.trim() || "N/A";
+
+    const nuevoProducto = {
+        ...productData,
+        codigoBarra: codigoFinal,
+        id: Date.now(),
+        categoria: Number(productData.categoria),
     };
+
+    onSave(nuevoProducto);
+    setProductData(initialState);
+    setErrors({});
+    onClose();
+};
 
     if (!isOpen) return null;
 
@@ -214,9 +209,8 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     required
                                 >
                                     <option value="">Seleccione la categoría</option>
-                                    {categories?.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                                    ))}
+                                    <option value="seguridad">Seguridad</option>
+                                    
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                                     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -274,7 +268,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                             </div>
                             <div>
                                 <FormLabel htmlFor="codigoBarra">Código de barra:</FormLabel>
-                                <input type="text" id="codigoBarra" name="codigoBarra" value={productData.codigoBarra} onChange={handleChange} className={inputBaseStyle} />
+                                <input type="text" id="codigoBarra" name="codigoBarra" value={productData.codigoBarra} onChange={handleChange} placeholder="N/A" className={inputBaseStyle} />
                             </div>
                         </div>
                     </FormSection>

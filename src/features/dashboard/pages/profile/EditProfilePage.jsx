@@ -1,131 +1,463 @@
-// src/features/dashboard/pages/profile/EditProfilePage.jsx
-
 import React, { useState, useEffect } from 'react';
-import { FaUser, FaLock, FaSave } from 'react-icons/fa';
+import {
+  FaUser,
+  FaLock,
+  FaSave,
+  FaCamera,
+  FaEnvelope,
+  FaPhone,
+  FaUserEdit,
+  FaShieldAlt,
+  FaIdCard,
+  FaCheckCircle,
+  FaEye,
+  FaEyeSlash,
+} from 'react-icons/fa';
 
-// Componente reutilizable para las tarjetas de perfil
-const ProfileCard = ({ title, icon, children }) => (
-  <div className="bg-white rounded-lg shadow-md">
-    <header className="flex items-center gap-3 p-4 border-b border-gray-200">
-      <div className="text-gray-500">{icon}</div>
-      <h2 className="text-lg font-bold text-gray-800">{title}</h2>
+// Mock data
+const mockUsuarios = [
+  {
+    id: 1,
+    nombre: 'Juan Carlos',
+    apellido: 'Pérez García',
+    email: 'juan.perez@email.com',
+    celular: '300 123 4567',
+    documento: '1234567890',
+    tipoDocumento: 'CC',
+    rol: 'Administrador',
+    status: 'Activo',
+    fechaCreacion: '15/03/2024'
+  }
+];
+
+const ProfileCard = ({ title, icon, children, className = '' }) => (
+  <div className={`bg-white rounded-xl shadow-md border border-gray-100 ${className}`}>
+    <header className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+      <div className="text-yellow-600 text-sm">{icon}</div>
+      <h2 className="text-sm font-bold text-gray-800">{title}</h2>
     </header>
-    <div className="p-6 space-y-4">
-      {children}
-    </div>
+    <div className="p-4">{children}</div>
   </div>
 );
 
-// Componente para una fila de formulario (Label + Input)
-const FormRow = ({ label, id, children }) => (
-  <div>
-    <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-1">
+const FormRow = ({ label, id, children, error, className = '' }) => (
+  <div className={`space-y-1 ${className}`}>
+    <label htmlFor={id} className="block text-xs font-semibold text-gray-700 uppercase tracking-wide">
       {label}
     </label>
     {children}
+    {error && (
+      <span className="text-xs text-red-500 flex items-center gap-1">
+        <div className="w-1 h-1 bg-red-500 rounded-full"></div>
+        {error}
+      </span>
+    )}
   </div>
 );
 
 const EditProfilePage = () => {
-  // --- ESTADO Y DATOS ---
-  // En una aplicación real, estos datos vendrían de una API o un contexto de autenticación.
   const [currentUser, setCurrentUser] = useState(null);
+  const [form, setForm] = useState({
+    nombre: '',
+    apellido: '',
+    email: '',
+    celular: '',
+    documento: '',
+    tipoDocumento: 'CC'
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [passwords, setPasswords] = useState({
+    current: '',
+    new: '',
+    confirm: ''
+  });
+  const [passwordErrors, setPasswordErrors] = useState({});
+  const [successMsg, setSuccessMsg] = useState('');
+  const [passwordMsg, setPasswordMsg] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
 
-  // Simulamos la carga de los datos del usuario actual
   useEffect(() => {
     setTimeout(() => {
-      setCurrentUser({
-        name: 'Daniela V.',
-        lastName: 'Velasquez',
-        email: 'daniela.v@conv3rtech.com',
-        phone: '300 123 4567',
-        avatarSeed: 'Daniela',
+      const user = mockUsuarios[0];
+      setCurrentUser(user);
+      setForm({
+        nombre: user.nombre,
+        apellido: user.apellido,
+        email: user.email,
+        celular: user.celular,
+        documento: user.documento,
+        tipoDocumento: user.tipoDocumento
       });
-    }, 500);
+    }, 800);
   }, []);
 
-  const handleInfoSubmit = (e) => {
-    e.preventDefault();
-    // TODO: Aquí iría la lógica para enviar la información personal actualizada a la API.
-    alert('Información personal guardada (simulación).');
+  const handleInfoChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    if (formErrors[name]) {
+      setFormErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    if (successMsg) setSuccessMsg('');
   };
 
-  const handlePasswordSubmit = (e) => {
-    e.preventDefault();
-    // TODO: Aquí iría la lógica para enviar el cambio de contraseña a la API.
-    alert('Contraseña actualizada (simulación).');
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswords(prev => ({ ...prev, [name]: value }));
+    if (passwordErrors[name]) {
+      setPasswordErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    if (passwordMsg) setPasswordMsg('');
   };
 
-  // --- RENDERIZADO ---
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
+
+  const validateInfoForm = () => {
+    const errors = {};
+    if (!form.nombre.trim()) errors.nombre = 'Campo requerido';
+    if (!form.apellido.trim()) errors.apellido = 'Campo requerido';
+    if (!form.email.trim()) errors.email = 'Campo requerido';
+    if (!form.celular.trim()) errors.celular = 'Campo requerido';
+    if (!form.documento.trim()) errors.documento = 'Campo requerido';
+    
+    if (form.email && !/\S+@\S+\.\S+/.test(form.email)) {
+      errors.email = 'Email inválido';
+    }
+    
+    setFormErrors(errors);
+    return errors;
+  };
+
+  const validatePasswordForm = () => {
+    const errors = {};
+    if (!passwords.current) errors.current = 'Campo requerido';
+    if (!passwords.new) errors.new = 'Campo requerido';
+    if (!passwords.confirm) errors.confirm = 'Campo requerido';
+    
+    if (passwords.new && passwords.new.length < 6) {
+      errors.new = 'Mínimo 6 caracteres';
+    }
+    
+    if (passwords.new && passwords.confirm && passwords.new !== passwords.confirm) {
+      errors.confirm = 'Las contraseñas no coinciden';
+    }
+    
+    setPasswordErrors(errors);
+    return errors;
+  };
+
+  const handleInfoSubmit = async () => {
+    const errors = validateInfoForm();
+    if (Object.keys(errors).length > 0) return;
+    
+    setIsLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setCurrentUser(prev => ({ ...prev, ...form }));
+    setSuccessMsg('¡Información actualizada exitosamente!');
+    setIsLoading(false);
+    setTimeout(() => setSuccessMsg(''), 4000);
+  };
+
+  const handlePasswordSubmit = async () => {
+    const errors = validatePasswordForm();
+    if (Object.keys(errors).length > 0) return;
+    
+    setIsPasswordLoading(true);
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setPasswordMsg('¡Contraseña actualizada exitosamente!');
+    setPasswords({ current: '', new: '', confirm: '' });
+    setIsPasswordLoading(false);
+    setTimeout(() => setPasswordMsg(''), 4000);
+  };
+
   if (!currentUser) {
-    // Puedes reemplazar esto con tu componente TableSkeleton si lo deseas
-    return <div className="p-8">Cargando perfil...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-600 border-t-transparent mx-auto mb-4"></div>
+          <p className="text-gray-600 text-sm font-medium">Cargando perfil...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="p-4 md:p-8">
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Editar mi Perfil</h1>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* --- COLUMNA IZQUIERDA: AVATAR --- */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-8 flex flex-col items-center text-center">
-            <img
-              className="h-32 w-32 rounded-full mb-4 ring-4 ring-offset-2 ring-conv3r-gold"
-              src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.avatarSeed}`}
-              alt="Avatar del usuario"
-            />
-            <h2 className="text-2xl font-bold text-gray-900">{currentUser.name} {currentUser.lastName}</h2>
-            <p className="text-md text-gray-500">{currentUser.email}</p>
-            <button className="mt-6 w-full bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">
-              Cambiar Foto
-            </button>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Header */}
+        <div className="mb-6 text-center">
+          <h1 className="text-2xl font-bold text-gray-800 mb-1">Mi Perfil</h1>
+          <p className="text-sm text-gray-600">Gestiona tu información personal y configuración de cuenta</p>
         </div>
 
-        {/* --- COLUMNA DERECHA: FORMULARIOS --- */}
-        <div className="lg:col-span-2 space-y-8">
-          <ProfileCard title="Información Personal" icon={<FaUser />}>
-            <form onSubmit={handleInfoSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <FormRow label="Nombre(s)" id="name">
-                <input type="text" id="name" defaultValue={currentUser.name} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold"/>
-              </FormRow>
-              <FormRow label="Apellido(s)" id="lastName">
-                <input type="text" id="lastName" defaultValue={currentUser.lastName} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold"/>
-              </FormRow>
-              <FormRow label="Correo Electrónico" id="email">
-                <input type="email" id="email" defaultValue={currentUser.email} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold"/>
-              </FormRow>
-              <FormRow label="Teléfono Celular" id="phone">
-                <input type="tel" id="phone" defaultValue={currentUser.phone} className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold"/>
-              </FormRow>
-              <div className="md:col-span-2 text-right">
-                <button type="submit" className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95">
-                  <FaSave /> Guardar Cambios
+        {/* Grid principal */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Columna 1: Avatar e info básica */}
+          <div className="lg:col-span-3 space-y-4">
+            {/* Avatar */}
+            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 text-center">
+              <div className="relative inline-block mb-3">
+                <img
+                  className="h-20 w-20 rounded-full ring-4 ring-yellow-600 ring-offset-2 shadow-lg"
+                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.nombre}${currentUser.apellido}&backgroundColor=ffd700&textColor=1a1a1a`}
+                  alt="Avatar"
+                />
+                <button className="absolute bottom-0 right-0 bg-yellow-600 text-white p-1.5 rounded-full shadow-lg hover:bg-yellow-700 transition-all duration-200 hover:scale-110">
+                  <FaCamera className="w-3 h-3" />
                 </button>
               </div>
-            </form>
-          </ProfileCard>
+              <h2 className="text-sm font-bold text-gray-800 mb-1">{currentUser.nombre} {currentUser.apellido}</h2>
+              <p className="text-yellow-600 font-bold text-xs mb-1">{currentUser.rol}</p>
+              <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                currentUser.status === 'Activo' ? 'bg-green-100 text-green-700' :
+                currentUser.status === 'Inactivo' ? 'bg-red-100 text-red-700' :
+                'bg-yellow-100 text-yellow-700'
+              }`}>
+                {currentUser.status}
+              </span>
+            </div>
 
-          <ProfileCard title="Cambiar Contraseña" icon={<FaLock />}>
-             <form onSubmit={handlePasswordSubmit} className="space-y-4">
-              <FormRow label="Contraseña Actual" id="currentPassword">
-                 <input type="password" id="currentPassword" placeholder="••••••••" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold"/>
-              </FormRow>
-              <FormRow label="Nueva Contraseña" id="newPassword">
-                 <input type="password" id="newPassword" placeholder="••••••••" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold"/>
-              </FormRow>
-              <FormRow label="Confirmar Nueva Contraseña" id="confirmPassword">
-                 <input type="password" id="confirmPassword" placeholder="••••••••" className="mt-1 block w-full border-gray-300 rounded-md shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold"/>
-              </FormRow>
-               <div className="text-right pt-2">
-                <button type="submit" className="flex items-center gap-2 bg-gray-800 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-gray-900">
-                  Actualizar Contraseña
-                </button>
+            {/* Info de contacto */}
+            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+              <h3 className="text-xs font-bold text-gray-800 mb-3 flex items-center gap-2 uppercase tracking-wide">
+                <FaShieldAlt className="text-yellow-600" />
+                Información de Contacto
+              </h3>
+              <div className="text-xs space-y-2">
+                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                  <FaEnvelope className="text-gray-400 w-3 h-3 flex-shrink-0" />
+                  <span className="text-gray-700 truncate">{currentUser.email}</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                  <FaPhone className="text-gray-400 w-3 h-3 flex-shrink-0" />
+                  <span className="text-gray-700">{currentUser.celular}</span>
+                </div>
+                <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
+                  <FaIdCard className="text-gray-400 w-3 h-3 flex-shrink-0" />
+                  <span className="text-gray-700">{currentUser.tipoDocumento} {currentUser.documento}</span>
+                </div>
               </div>
-            </form>
-          </ProfileCard>
+            </div>
+          </div>
+
+          {/* Columna 2: Información Personal */}
+          <div className="lg:col-span-5">
+            <ProfileCard title="Información Personal" icon={<FaUserEdit />}>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormRow label="Nombre" id="nombre" error={formErrors.nombre}>
+                    <input
+                      type="text"
+                      id="nombre"
+                      name="nombre"
+                      value={form.nombre}
+                      onChange={handleInfoChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                      placeholder="Tu nombre"
+                    />
+                  </FormRow>
+                  
+                  <FormRow label="Apellido" id="apellido" error={formErrors.apellido}>
+                    <input
+                      type="text"
+                      id="apellido"
+                      name="apellido"
+                      value={form.apellido}
+                      onChange={handleInfoChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                      placeholder="Tu apellido"
+                    />
+                  </FormRow>
+                </div>
+                
+                <FormRow label="Correo Electrónico" id="email" error={formErrors.email}>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleInfoChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                    placeholder="tu@email.com"
+                  />
+                </FormRow>
+                
+                <FormRow label="Celular" id="celular" error={formErrors.celular}>
+                  <input
+                    type="tel"
+                    id="celular"
+                    name="celular"
+                    value={form.celular}
+                    onChange={handleInfoChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                    placeholder="300 123 4567"
+                  />
+                </FormRow>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormRow label="Tipo Documento" id="tipoDocumento">
+                    <select
+                      id="tipoDocumento"
+                      name="tipoDocumento"
+                      value={form.tipoDocumento}
+                      onChange={handleInfoChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                    >
+                      <option value="CC">Cédula de Ciudadanía</option>
+                      <option value="CE">Cédula de Extranjería</option>
+                      <option value="TI">Tarjeta de Identidad</option>
+                      <option value="PP">Pasaporte</option>
+                    </select>
+                  </FormRow>
+                  
+                  <FormRow label="Número Documento" id="documento" error={formErrors.documento}>
+                    <input
+                      type="text"
+                      id="documento"
+                      name="documento"
+                      value={form.documento}
+                      onChange={handleInfoChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                      placeholder="1234567890"
+                    />
+                  </FormRow>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-gray-200 gap-3">
+                  {successMsg && (
+                    <div className="text-green-600 text-sm font-medium flex items-center gap-2">
+                      <FaCheckCircle className="w-4 h-4" />
+                      {successMsg}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleInfoSubmit}
+                    disabled={isLoading}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:shadow-lg"
+                  >
+                    {isLoading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <FaSave className="w-4 h-4" />
+                    )}
+                    {isLoading ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
+                </div>
+              </div>
+            </ProfileCard>
+          </div>
+
+          {/* Columna 3: Cambiar Contraseña */}
+          <div className="lg:col-span-4">
+            <ProfileCard title="Cambiar Contraseña" icon={<FaLock />}>
+              <div className="space-y-4">
+                <FormRow label="Contraseña Actual" id="current" error={passwordErrors.current}>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.current ? "text" : "password"}
+                      id="current"
+                      name="current"
+                      value={passwords.current}
+                      onChange={handlePasswordChange}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('current')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showPasswords.current ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </FormRow>
+                
+                <FormRow label="Nueva Contraseña" id="new" error={passwordErrors.new}>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.new ? "text" : "password"}
+                      id="new"
+                      name="new"
+                      value={passwords.new}
+                      onChange={handlePasswordChange}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('new')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showPasswords.new ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </FormRow>
+                
+                <FormRow label="Confirmar Nueva Contraseña" id="confirm" error={passwordErrors.confirm}>
+                  <div className="relative">
+                    <input
+                      type={showPasswords.confirm ? "text" : "password"}
+                      id="confirm"
+                      name="confirm"
+                      value={passwords.confirm}
+                      onChange={handlePasswordChange}
+                      className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => togglePasswordVisibility('confirm')}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                    >
+                      {showPasswords.confirm ? <FaEyeSlash className="w-4 h-4" /> : <FaEye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </FormRow>
+
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 text-xs text-yellow-800">
+                  <p className="font-medium mb-1">Requisitos de contraseña:</p>
+                  <ul className="space-y-1">
+                    <li>• Mínimo 6 caracteres</li>
+                    <li>• Se recomienda incluir números y símbolos</li>
+                  </ul>
+                </div>
+                
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t border-gray-200 gap-3">
+                  {passwordMsg && (
+                    <div className="text-green-600 text-sm font-medium flex items-center gap-2">
+                      <FaCheckCircle className="w-4 h-4" />
+                      {passwordMsg}
+                    </div>
+                  )}
+                  <button
+                    onClick={handlePasswordSubmit}
+                    disabled={isPasswordLoading}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-900 text-white font-semibold py-2 px-4 rounded-lg shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm hover:shadow-lg"
+                  >
+                    {isPasswordLoading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <FaLock className="w-4 h-4" />
+                    )}
+                    {isPasswordLoading ? 'Actualizando...' : 'Actualizar Contraseña'}
+                  </button>
+                </div>
+              </div>
+            </ProfileCard>
+          </div>
         </div>
       </div>
     </div>

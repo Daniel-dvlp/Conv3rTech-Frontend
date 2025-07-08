@@ -76,19 +76,18 @@ const ProductsSalePage = () => {
           </div>
 
           <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-          >
-            <FaPlus />
-            Nueva venta
-          </button>
-
-          <button
             onClick={handleExport}
             className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
           >
             <FaFileExcel />
             Exportar
+          </button>
+          <button
+            onClick={() => setShowNewModal(true)}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+          >
+            <FaPlus />
+            Nueva venta
           </button>
         </div>
       </div>
