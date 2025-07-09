@@ -99,7 +99,7 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`bg-[#00012A] text-white h-screen pl-3 rounded-r-xl flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}
+      className={`bg-[#00012A] text-white h-screen pl-3 rounded-r-xl  flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
