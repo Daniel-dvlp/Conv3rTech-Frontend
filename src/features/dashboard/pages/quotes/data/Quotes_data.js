@@ -15,7 +15,7 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-001',
-    monto: 2032000, // total final (subtotal + IVA)
+    monto: 2142000,
     fechaVencimiento: '14/03/2025',
     estado: 'Pendiente',
     detalleOrden: {
@@ -30,17 +30,17 @@ export const mockQuotes = [
       ],
       productos: [
         {
-          producto: 'Cámara de seguridad',
+          nombre: 'Cámara de seguridad',
           descripcion: 'HD 1080p visión nocturna',
           cantidad: 10,
           precioUnitario: 120000,
-          total: 1200000, // 10 cámaras a 120000 cada una
+          total: 1200000,
         }
       ],
+      subtotalServicios: 600000,
       subtotalProductos: 1200000,
-      subtotalServicios: 1121052.63, // 2 servicios de instalación a 300000 cada uno
-      iva: 232000, // 19% de 1221052.63 aprox.
-      total: 2032000,
+      iva: 342000, // 19% de 1800000
+      total: 2142000
     }
   },
   {
@@ -59,14 +59,14 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-002',
-    monto: 1500000,
+    monto: 1487500,
     fechaVencimiento: '24/03/2025',
     estado: 'Aprobada',
     detalleOrden: {
       servicios: [],
       productos: [
         {
-          producto: 'Sensor de movimiento',
+          nombre: 'Sensor de movimiento',
           descripcion: 'Interior/exterior',
           cantidad: 5,
           precioUnitario: 250000,
@@ -74,9 +74,9 @@ export const mockQuotes = [
         }
       ],
       subtotalProductos: 1250000,
-      subtotalServicios: 1121052.63, // 2 servicios de instalación a 300000 cada uno
-      iva: 250000,
-      total: 1500000,
+      subtotalServicios: 0,
+      iva: 237500, // 19% de 1250000
+      total: 1487500
     }
   },
   {
@@ -95,24 +95,24 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-003',
-    monto: 1800000,
+    monto: 1190000,
     fechaVencimiento: '20/03/2025',
     estado: 'Rechazada',
     detalleOrden: {
       servicios: [
         {
-          nombre: 'Mantenimiento',
+          servicio: 'Mantenimiento',
           descripcion: 'Red de vigilancia',
           cantidad: 1,
-          precio: 1000000,
+          precioUnitario: 1000000,
           total: 1000000,
         }
       ],
       productos: [],
-      subtotalProductos: 1000000,
-      subtotalServicios: 1121052.63, // 2 servicios de instalación a 300000 cada uno
-      iva: 190000,
-      total: 1800000,
+      subtotalProductos: 0,
+      subtotalServicios: 1000000,
+      iva: 190000, // 19% de 1000000
+      total: 1190000
     }
   },
   {
@@ -131,7 +131,7 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-004',
-    monto: 1500000,
+    monto: 1487500,
     fechaVencimiento: '26/03/2025',
     estado: 'Aprobada',
     detalleOrden: {
@@ -141,14 +141,14 @@ export const mockQuotes = [
           nombre: 'Sensor de movimiento',
           descripcion: 'Interior/exterior',
           cantidad: 5,
-          precio: 250000,
+          precioUnitario: 250000,
           total: 1250000,
         }
       ],
       subtotalProductos: 1250000,
-      subtotalServicios: 1121052.63, // 2 servicios de instalación a 300000 cada uno
-      iva: 250000,
-      total: 1500000,
+      subtotalServicios: 0,
+      iva: 237500,
+      total: 1487500
     }
   },
   {
@@ -167,7 +167,7 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-005',
-    monto: 1500000,
+    monto: 1487500,
     fechaVencimiento: '26/03/2025',
     estado: 'Aprobada',
     detalleOrden: {
@@ -177,19 +177,19 @@ export const mockQuotes = [
           nombre: 'Sensor de movimiento',
           descripcion: 'Interior/exterior',
           cantidad: 5,
-          precio: 250000,
+          precioUnitario: 250000,
           total: 1250000,
         }
       ],
       subtotalProductos: 1250000,
-      subtotalServicios: 1121052.63, 
-      iva: 250000,
-      total: 1500000,
+      subtotalServicios: 0,
+      iva: 237500,
+      total: 1487500
     }
   },
   {
     id: 6,
-    cliente: 'Daniela Gómez',
+    cliente: 'Pablo Gómez',
     clienteData: {
       id: 6,
       tipoDocumento: 'PPT',
@@ -203,7 +203,7 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-006',
-    monto: 1500000,
+    monto: 1487500,
     fechaVencimiento: '26/03/2025',
     estado: 'Aprobada',
     detalleOrden: {
@@ -213,14 +213,14 @@ export const mockQuotes = [
           nombre: 'Sensor de movimiento',
           descripcion: 'Interior/exterior',
           cantidad: 5,
-          precio: 250000,
+          precioUnitario: 250000,
           total: 1250000,
         }
       ],
       subtotalProductos: 1250000,
-      subtotalServicios: 1121052.63, 
-      iva: 250000,
-      total: 1500000,
+      subtotalServicios: 0,
+      iva: 237500,
+      total: 1487500
     }
   },
 ];

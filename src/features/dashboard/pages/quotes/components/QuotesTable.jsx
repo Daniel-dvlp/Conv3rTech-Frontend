@@ -57,7 +57,7 @@ const QuotesTable = ({ quotes, onViewDetails, onDownloadPDF }) => {
                   <button className="text-green-600 hover:text-green-800" title="Descargar cotización" onClick={() => onDownloadPDF(quote)}>
                     <FaDownload size={16} />
                   </button>
-                  <button className="text-red-600 hover:text-red-800" title="Eliminar cotización">
+                  <button className="text-red-600 hover:text-red-800" title="Anular cotización">
                     <FaMinusCircle size={16} />
                   </button>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaTrash, FaTimes } from 'react-icons/fa';
 import { mockProducts } from '../../products/data/Products_data';
 import { mockClientes } from '../../clients/data/Clientes_data';
@@ -14,7 +14,7 @@ const FormLabel = ({ htmlFor, children }) => (
     <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
 );
 
-const inputBaseStyle = 'block w-full text-sm text-gray-500 border border-gray-300 rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
+const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
 const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
     const [documentoCliente, setDocumentoCliente] = useState('');
@@ -26,26 +26,62 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
     const [metodoPago, setMetodoPago] = useState('');
     const [errores, setErrores] = useState({});
 
+    // 🔍 Buscar cliente automáticamente
+    useEffect(() => {
+        if (documentoCliente.trim() === '') {
+            setCliente(null);
+            return;
+        }
+
+        const encontrado = mockClientes.find(c => c.documento === documentoCliente.trim());
+        setCliente(encontrado || null);
+        setErrores(prev => ({
+            ...prev,
+            cliente: encontrado ? null : 'Cliente no encontrado',
+        }));
+    }, [documentoCliente]);
+
+    // 🔍 Buscar producto automáticamente
+    useEffect(() => {
+        if (codigoProducto.trim() === '') {
+            setProductoSeleccionado(null);
+            return;
+        }
+
+        const encontrado = mockProducts.find(p => p.codigo === codigoProducto.trim());
+        setProductoSeleccionado(encontrado || null);
+        setErrores(prev => ({
+            ...prev,
+            producto: encontrado ? null : 'Producto no encontrado',
+        }));
+    }, [codigoProducto]);
+
     if (!isOpen) return null;
 
-    const handleBuscarCliente = () => {
-        const encontrado = mockClientes.find(c => c.documento === documentoCliente);
-        setCliente(encontrado || null);
-    };
-
-    const handleBuscarProducto = () => {
-        const encontrado = mockProducts.find(p => p.codigo === codigoProducto);
-        setProductoSeleccionado(encontrado || null);
-    };
 
     const handleAgregarProducto = () => {
         if (productoSeleccionado && cantidad > 0) {
-            const nuevo = {
-                ...productoSeleccionado,
-                cantidad: Number(cantidad),
-                subtotal: productoSeleccionado.precio * cantidad,
-            };
-            setProductosAgregados(prev => [...prev, nuevo]);
+            const indexExistente = productosAgregados.findIndex(p => p.codigo === productoSeleccionado.codigo);
+
+            if (indexExistente !== -1) {
+                const copia = [...productosAgregados];
+                const productoExistente = copia[indexExistente];
+                const nuevaCantidad = productoExistente.cantidad + Number(cantidad);
+                copia[indexExistente] = {
+                    ...productoExistente,
+                    cantidad: nuevaCantidad,
+                    subtotal: nuevaCantidad * productoExistente.precio,
+                };
+                setProductosAgregados(copia);
+            } else {
+                const nuevo = {
+                    ...productoSeleccionado,
+                    cantidad: Number(cantidad),
+                    subtotal: productoSeleccionado.precio * cantidad,
+                };
+                setProductosAgregados(prev => [...prev, nuevo]);
+            }
+
             setCodigoProducto('');
             setProductoSeleccionado(null);
             setCantidad('');
@@ -54,6 +90,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
             setErrores(prev => ({ ...prev, producto: 'Completa todos los campos del producto' }));
         }
     };
+
 
     const subtotal = productosAgregados.reduce((acc, p) => acc + p.subtotal, 0);
     const iva = subtotal * 0.19;
@@ -70,8 +107,8 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
         if (Object.keys(nuevosErrores).length === 0) {
             const nuevaVenta = {
                 numero: `V-${Date.now()}`,
-                cliente: `${cliente.nombre} ${cliente.apellido}`, // para mostrar rápido en tablas
-                clienteData: cliente, // objeto completo del cliente
+                cliente: `${cliente.nombre} ${cliente.apellido}`,
+                clienteData: cliente,
                 metodoPago,
                 productos: productosAgregados,
                 fechaHora: new Date().toLocaleString(),
@@ -86,7 +123,6 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
         }
     };
 
-
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scroll" onClick={(e) => e.stopPropagation()}>
@@ -99,25 +135,17 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
 
                 <form className="p-6 space-y-6">
                     <FormSection title="Cliente">
-                        <div className="flex gap-4 items-end">
-                            <div className="flex-1">
-                                <FormLabel htmlFor="documento">Número de identificación:</FormLabel>
-                                <input
-                                    type="text"
-                                    id="documento"
-                                    value={documentoCliente}
-                                    onChange={(e) => setDocumentoCliente(e.target.value)}
-                                    className={inputBaseStyle}
-                                />
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleBuscarCliente}
-                                className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                Buscar
-                            </button>
-                        </div>
+                        <FormLabel htmlFor="documento">Número de identificación:</FormLabel>
+                        <input
+                            type="text"
+                            id="documento"
+                            value={documentoCliente}
+                            onChange={(e) => {
+                                setDocumentoCliente(e.target.value);
+                                setErrores(prev => ({ ...prev, cliente: null }));
+                            }}
+                            className={`${inputBaseStyle} ${errores.cliente ? 'border-red-500' : 'border-gray-300'}`}
+                        />
                         {cliente && (
                             <div className="mt-2 text-sm text-gray-600">
                                 <p><strong>Nombre:</strong> {cliente.nombre}</p>
@@ -136,8 +164,11 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
                                     type="text"
                                     id="codigo"
                                     value={codigoProducto}
-                                    onChange={(e) => setCodigoProducto(e.target.value)}
-                                    className={inputBaseStyle}
+                                    onChange={(e) => {
+                                        setCodigoProducto(e.target.value);
+                                        setErrores(prev => ({ ...prev, producto: null }));
+                                    }}
+                                    className={`${inputBaseStyle} ${errores.producto ? 'border-red-500' : 'border-gray-300'}`}
                                 />
                             </div>
                             <div>
@@ -146,17 +177,20 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
                                     type="number"
                                     id="cantidad"
                                     value={cantidad}
-                                    onChange={(e) => setCantidad(e.target.value)}
-                                    className={inputBaseStyle}
+                                    onChange={(e) => {
+                                        setCantidad(e.target.value);
+                                        setErrores(prev => ({ ...prev, producto: null }));
+                                    }}
+                                    className={`${inputBaseStyle} ${errores.producto ? 'border-red-500' : 'border-gray-300'}`}
                                 />
                             </div>
                             <div className="flex items-end">
                                 <button
                                     type="button"
-                                    onClick={handleBuscarProducto}
-                                    className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
+                                    onClick={handleAgregarProducto}
+                                    className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    Buscar Producto
+                                    Agregar producto
                                 </button>
                             </div>
                         </div>
@@ -168,14 +202,6 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
                                 <p><strong>Precio:</strong> ${productoSeleccionado.precio.toLocaleString()}</p>
                             </div>
                         )}
-
-                        <button
-                            type="button"
-                            onClick={handleAgregarProducto}
-                            className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg  shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
-                        >
-                            Agregar producto
-                        </button>
 
                         <div className="overflow-x-auto mt-6">
                             <table className="w-full text-sm text-center border">
@@ -215,6 +241,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
                                 </tbody>
                             </table>
                             {errores.productos && <p className="text-red-500 text-sm mt-2">{errores.productos}</p>}
+                            {errores.producto && <p className="text-red-500 text-sm mt-2">{errores.producto}</p>}
                         </div>
                     </FormSection>
 
@@ -222,16 +249,16 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
                         <div className="relative">
                             <select
                                 value={metodoPago}
-                                onChange={(e) => setMetodoPago(e.target.value)}
-                                className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
-                                required
+                                onChange={(e) => {
+                                    setMetodoPago(e.target.value);
+                                    setErrores(prev => ({ ...prev, metodoPago: null }));
+                                }}
+                                className={`${inputBaseStyle} appearance-none pr-10 ${errores.metodoPago ? 'border-red-500' : 'border-gray-300'}`}
                             >
                                 <option value="">Seleccionar método</option>
                                 <option value="efectivo">Efectivo</option>
                                 <option value="transferencia">Transferencia</option>
                             </select>
-
-                            {/* Icono de flecha */}
                             <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                                 <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                                     <path
@@ -242,12 +269,8 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave }) => {
                                 </svg>
                             </div>
                         </div>
-
-                        {errores.metodoPago && (
-                            <p className="text-red-500 text-sm mt-1">{errores.metodoPago}</p>
-                        )}
+                        {errores.metodoPago && <p className="text-red-500 text-sm mt-1">{errores.metodoPago}</p>}
                     </FormSection>
-
 
                     <FormSection title="Resumen">
                         <p>Subtotal productos: <span className="font-semibold">${subtotal.toLocaleString()}</span></p>
