@@ -56,7 +56,7 @@ const SuppliersPage = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar por NIT, encargado, empresa..."
+              placeholder="Buscar"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);

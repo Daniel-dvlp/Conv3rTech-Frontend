@@ -2,6 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
+
 /* Oculta completamente el scroll */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
@@ -25,4 +26,22 @@
 .custom-scroll {
   scrollbar-width: thin;
   scrollbar-color: #cbd5e1 transparent;
+}
+
+/* Clases personalizadas para el efecto de volteo 3D */
+.transform-style-preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Asegurar que el gradiente radial funcione correctamente */
+.bg-gradient-radial {
+  background: radial-gradient(var(--tw-gradient-stops));
 }

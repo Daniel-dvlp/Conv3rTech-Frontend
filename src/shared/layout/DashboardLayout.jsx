@@ -8,11 +8,11 @@ const DashboardLayout = () => {
   // NO hay estado aquí. El layout es "tonto" y solo organiza.
   return (
 
-    <div className="flex bg-gray-100 min-h-screen w-screen">
+    <div className="flex bg-gray-100 h-screen w-screen ">
       <Sidebar />
       <div className="flex flex-col flex-grow min-h-screen">
         <Header />
-        <main className="flex-grow p-8 bg-white">
+        <main className="flex-grow p-4 bg-white overflow-y-auto">
           <Outlet />
         </main>
       </div>
