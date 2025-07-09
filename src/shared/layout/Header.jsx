@@ -102,7 +102,8 @@ const Header = () => {
               />
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
-            <div className="hidden md:block text-left">
+            <div className="hidden md:block text-left p-2">
+
               <p className="text-sm font-semibold text-gray-800">{currentUser.name} {currentUser.lastName}</p>
               <p className="text-xs text-gray-500">{currentUser.role}</p>
             </div>

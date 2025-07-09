@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 // Layout Principal
 import DashboardLayout from './shared/layout/DashboardLayout';
@@ -151,7 +152,9 @@ function App() {
           <Route path="profile" element={<EditProfilePage />} />
         </Route>
       </Routes>
+      <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
     </BrowserRouter>
+    
   );
 }
 

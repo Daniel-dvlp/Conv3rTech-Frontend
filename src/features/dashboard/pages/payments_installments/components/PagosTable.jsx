@@ -29,11 +29,12 @@ const PagosTable = ({ pagos }) => {
               <td className="px-4 py-2">{Number(p.montoAbonado).toLocaleString('es-CO')}</td>
               <td className="px-4 py-2">{p.metodoPago}</td>
               <td className="px-4 py-2">
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                  p.estado === 'Pagado'
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                 ${
+                  p.estado === 'Registrado'
                     ? 'bg-green-100 text-green-800'
                     : p.estado === 'Cancelado'
-                      ? 'bg-yellow-100 text-red-800'
+                      ? 'bg-red-100 text-red-800'
                       : 'bg-yellow-100 text-yellow-800'
                 }`}>
                   {p.estado}
