@@ -302,22 +302,22 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
               <thead className="bg-gray-50">
                 <tr>
                   {['Fecha', 'Concepto', 'Monto Total', 'Monto Abono', 'Restante (Contrato)', 'Método', 'Estado', 'Acciones']
-                    .map(h => <th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">{h}</th>)}
+                    .map(h => <th key={h} className="px-2 py-2 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">{h}</th>)}
                 </tr>
               </thead>
               <tbody className='divide-y divide-gray-200'>
                 {contractData.contrato.pagos.length > 0 ? (
                   contractData.contrato.pagos.map(p => (
                     <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-2 whitespace-nowrap">{p.fecha}</td>
-                      <td className="px-4 py-2 text-left">{p.concepto}</td>
-                      <td className="px-4 py-2 whitespace-nowrap">{formatCurrency(p.montoTotal)}</td> {/* Monto total del contrato */}
-                      <td className="px-4 py-2 whitespace-nowrap">{formatCurrency(p.montoAbonado)}</td> {/* Monto de ESTE abono */}
-                      <td className="px-4 py-2 whitespace-nowrap">{formatCurrency(p.montoRestante)}</td> {/* Restante del contrato DESPUÉS de este abono */}
-                      <td className="px-4 py-2">{p.metodoPago}</td>
-                      <td className="px-4 py-2">{p.estado}</td>
-                      <td className="px-4 py-2">
-                        {p.estado?.toLowerCase() === 'registrado' && (
+                      <td className="px-2 py-2 whitespace-nowrap">{p.fecha}</td>
+                      <td className="px-2 py-2 text-left">{p.concepto}</td>
+                      <td className="px-2 py-2 whitespace-nowrap">{formatCurrency(p.montoTotal)}</td> {/* Monto total del contrato */}
+                      <td className="px-2 py-2 whitespace-nowrap">{formatCurrency(p.montoAbonado)}</td> {/* Monto de ESTE abono */}
+                      <td className="px-2 py-2 whitespace-nowrap">{formatCurrency(p.montoRestante)}</td> {/* Restante del contrato DESPUÉS de este abono */}
+                      <td className="px-2 py-2">{p.metodoPago}</td>
+                      <td className="px-2 py-2">{p.estado}</td>
+                      <td className="px-2 py-2">
+                        {/* {p.estado?.toLowerCase() === 'registrado' && ( */}
                           <button
                             className="text-red-600 hover:text-red-800"
                             onClick={() => handleCancelPaymentInModal(p.id)}
@@ -325,7 +325,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
                           >
                             <FaMinusCircle size={16} />
                           </button>
-                        )}
+                        
                       </td>
                     </tr>
                   ))

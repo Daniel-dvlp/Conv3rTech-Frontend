@@ -4,6 +4,7 @@ import PagosTable from './components/PagosTable';
 import CreatePaymentsModal from './components/CreatePaymentsModal';
 import Pagination from '../../../../shared/components/Pagination'; // Asegúrate de que esta ruta sea correcta
 import toast from 'react-hot-toast'; // Importar react-hot-toast
+import PaymentsDetailModal from './components/PaymentsDetailModal'; // Importa el nuevo modal de detalles
 
 // Mock de datos mejorado para simular la estructura real
 const mockPagosIntegrado = [
@@ -112,7 +113,9 @@ const Payments_InstallmentsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
-  const [modalContractData, setModalContractData] = useState(null); // Data completa del contrato para el modal
+  const [modalContractData, setModalContractData] = useState(null);
+  const [showDetailModal, setShowDetailModal] = useState(false); // Data completa del contrato para el modal
+  const [detailContractData, setDetailContractData] = useState(null);
 
   // Aplanar los datos para la tabla principal
   const flatPaymentsData = useMemo(() => {
@@ -203,6 +206,53 @@ const Payments_InstallmentsPage = () => {
   const handleOpenGlobalRegisterPayment = () => {
     setModalContractData(null); // No precarga nada, el modal lo gestionará
     setMostrarModalPago(true);
+  };
+
+  // Manejador para abrir el modal de detalles del contrato
+const handleOpenPaymentDetails = (contractNumber, clientId) => {
+    // Aquí buscarías el contrato completo con sus pagos
+    // en tu fuente de datos (ej. clientesConContratosYPagos)
+    const clienteFound = clientesConContratosYPagos.find(c => c.cliente.id === clientId);
+    if (!clienteFound) {
+      toast.error('Cliente no encontrado.');
+      return;
+    }
+    const contratoFound = clienteFound.contratos.find(c => c.numero === contractNumber);
+    if (!contratoFound) {
+      toast.error('Contrato no encontrado.');
+      return;
+    }
+
+    // Calcular montos totales, abonados y restantes del contrato si no los tienes ya calculados
+    const montoTotalContrato = contratoFound.pagos[0]?.montoTotal || 0; // Asumiendo que montoTotal es el mismo para todo el contrato
+    const montoAbonadoContrato = contratoFound.pagos
+      .filter(p => p.estado !== 'Cancelado')
+      .reduce((sum, p) => sum + p.montoAbonado, 0);
+    const montoRestanteContrato = Math.max(0, montoTotalContrato - montoAbonadoContrato);
+
+
+    setDetailContractData({
+      cliente: {
+        id: clienteFound.cliente.id,
+        nombre: clienteFound.cliente.nombre,
+        apellido: clienteFound.cliente.apellido,
+        documento: clienteFound.cliente.documento,
+      },
+      contrato: {
+        numero: contratoFound.numero,
+        fechaInicio: contratoFound.fechaInicio, // Asegúrate de que esto exista en tus datos
+        montoTotal: montoTotalContrato,
+        montoAbonado: montoAbonadoContrato,
+        montoRestante: montoRestanteContrato,
+        pagos: contratoFound.pagos, // Pasamos el array completo de pagos
+      },
+    });
+    setShowDetailModal(true);
+  };
+
+  const handleCloseDetailModal = () => {
+    setShowDetailModal(false);
+    setDetailContractData(null); // Limpiar datos al cerrar
   };
 
   // Manejador para añadir un nuevo abono a la data principal
@@ -343,7 +393,19 @@ const Payments_InstallmentsPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-center mb-2">
         <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestión de Pagos e Cuotas</h1>
         <div className="flex space-x-3">
-          
+          <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Resetear a la primera página al buscar
+            }}
+            className="w-full p-2.5 pl-10 border border-gray-300 rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold"
+          />
+          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        </div>
           <button
             onClick={handleExport}
             className="flex items-center gap-2 bg-green-400 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-all"
@@ -355,19 +417,7 @@ const Payments_InstallmentsPage = () => {
 
       {/* Barra de búsqueda */}
       <div className="mb-6">
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Buscar por cliente, contrato, estado, etc."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1); // Resetear a la primera página al buscar
-            }}
-            className="w-full p-2.5 pl-10 border border-gray-300 rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold"
-          />
-          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-        </div>
+        
       </div>
 
       {/* Tabla de Pagos */}
@@ -383,7 +433,8 @@ const Payments_InstallmentsPage = () => {
         <>
           <PagosTable
             pagos={paginatedPagos}
-            onRegisterNewAbono={handleOpenRegisterPaymentForContract} // Pasa la nueva función
+            onRegisterNewAbono={handleOpenRegisterPaymentForContract}
+            handleOpenPaymentDetails={handleOpenPaymentDetails} // Pasa la función para abrir el modal de detalles
           />
           {totalPages > 1 && (
             <Pagination
@@ -405,6 +456,12 @@ const Payments_InstallmentsPage = () => {
         onSaveNewAbono={handleAddPagoToData}
         contractData={modalContractData} // Pasa la data completa del contrato
         onCancelPayment={handleCancelPayment} // Pasa la función para cancelar
+      />
+
+      {/* Modal de Detalles del Contrato */}
+        <PaymentsDetailModal
+        contractData={detailContractData}
+        onClose={handleCloseDetailModal}
       />
     </div>
   );

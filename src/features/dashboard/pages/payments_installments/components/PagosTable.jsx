@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaEye, FaPlusCircle } from 'react-icons/fa'; // Importa FaPlusCircle para el nuevo botón
+import { FaEye, FaPlus } from 'react-icons/fa'; // Importa FaPlusCircle para el nuevo botón
 import PaymentsDetailModal from './PaymentsDetailModal';
 
 // Helper para formatear montos a moneda local (COP)
@@ -13,7 +13,7 @@ const formatCurrency = (amount) => {
 };
 
 // Asegúrate de que este componente reciba la prop 'onRegisterNewAbono'
-const PagosTable = ({ pagos, onRegisterNewAbono }) => { // Agrega onRegisterNewAbono a las props
+const PagosTable = ({ pagos, onRegisterNewAbono, handleOpenPaymentDetails  }) => { // Agrega onRegisterNewAbono a las props
   const [selectedPayment, setSelectedPayment] = useState(null);
 
   return (
@@ -39,8 +39,7 @@ const PagosTable = ({ pagos, onRegisterNewAbono }) => { // Agrega onRegisterNewA
               <td className="px-4 py-2">{p.metodoPago}</td>
               <td className="px-4 py-2">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                  ${
-                  p.estado === 'Registrado'
+                  ${p.estado === 'Registrado'
                     ? 'bg-green-100 text-green-800'
                     : p.estado === 'Cancelado'
                       ? 'bg-red-100 text-red-800'
@@ -54,23 +53,20 @@ const PagosTable = ({ pagos, onRegisterNewAbono }) => { // Agrega onRegisterNewA
               <td className="px-4 py-2">
                 <div className="flex items-center justify-center gap-2"> {/* Contenedor para los botones */}
                   {/* Botón Ver Detalles */}
-                  <button
-                    className="text-blue-600 hover:text-blue-800"
-                    onClick={() => setSelectedPayment(p)}
-                    title="Ver detalles"
-                  >
+                  <button className='text-blue-600 hover:text-blue-800' onClick={() => handleOpenPaymentDetails(p.numeroContrato, p.clienteId)}>
                     <FaEye />
                   </button>
                   {/* Nuevo Botón para Registrar Abono */}
-                  {p.estado !== 'Completado' && p.estado !== 'Cancelado' && ( // Solo si no está completado/cancelado
+                  {/* {p.estado !== 'Completado' && p.estado !== 'Cancelado' && ( // Solo si no está completado/cancelado */}
                     <button
-                      className="text-green-600 hover:text-green-800"
+                      // Deshabilitado si ya está completado o cancelado
+                      className="text-conv3rge-drak hover:text-conv3ge-dark-800"
                       onClick={() => onRegisterNewAbono(p)} // Llama a la función del padre y pasa el pago actual
                       title="Registrar Abono"
                     >
-                      <FaPlusCircle />
+                      <FaPlus />
                     </button>
-                  )}
+                  
                 </div>
               </td>
             </tr>
@@ -79,12 +75,7 @@ const PagosTable = ({ pagos, onRegisterNewAbono }) => { // Agrega onRegisterNewA
       </table>
 
       {/* Modal de detalle */}
-      {selectedPayment && (
-        <PaymentsDetailModal
-          pago={selectedPayment}
-          onClose={() => setSelectedPayment(null)}
-        />
-      )}
+      
     </div>
   );
 };
