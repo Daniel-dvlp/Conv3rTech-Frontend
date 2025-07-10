@@ -1,5 +1,3 @@
-// src/features/dashboard/pages/service_orders/ServiceOrdersPage.jsx
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import ServiceOrdersTable from './components/Service_ordersTable';
@@ -8,6 +6,7 @@ import { mockServiceOrders } from './data/Service_orders_data';
 import Pagination from '../../../../../src/shared/components/Pagination';
 import ServiceOrderDetailModal from './components/Service_ordersDetailModal';
 import NewServiceOrderModal from './components/NewService_ordersModal';
+import EditServiceOrderModal from './components/EditService_ordersModal';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,6 +17,7 @@ const ServiceOrdersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderToEdit, setOrderToEdit] = useState(null);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
 
   useEffect(() => {
@@ -33,14 +33,23 @@ const ServiceOrdersPage = () => {
   const filteredOrders = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
 
-    return orders.filter((order) =>
-      normalize(order.orderId).includes(normalizedSearch) ||
-      normalize(order.quoteId).includes(normalizedSearch) ||
-      normalize(order.clientName).includes(normalizedSearch) ||
-      normalize(order.contact).includes(normalizedSearch) ||
-      normalize(order.requestDate).includes(normalizedSearch) ||
-      normalize(order.status).includes(normalizedSearch)
-    );
+    if (!normalizedSearch) return orders;
+
+    return orders.filter((order) => {
+      const searchFields = [
+        order.orderId,
+        order.quoteId,
+        order.clientName,
+        order.contact,
+        order.projectName,
+        order.status,
+        order.requestDate
+      ];
+
+      return searchFields.some(field => 
+        normalize(field).includes(normalizedSearch)
+      );
+    });
   }, [orders, searchTerm]);
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
@@ -49,6 +58,15 @@ const ServiceOrdersPage = () => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredOrders, currentPage]);
+
+  const handleEditOrder = (updatedOrder) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === updatedOrder.id ? updatedOrder : order
+      )
+    );
+    setOrderToEdit(null);
+  };
 
   return (
     <div className="p-4 md:p-8">
@@ -59,13 +77,13 @@ const ServiceOrdersPage = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar por número, cliente, fecha o estado..."
+              placeholder="Buscar"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
               aria-label="Buscar orden de servicio"
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -105,7 +123,11 @@ const ServiceOrdersPage = () => {
         </div>
       ) : (
         <>
-          <ServiceOrdersTable orders={currentItems} onView={(order) => setSelectedOrder(order)} />
+          <ServiceOrdersTable 
+            orders={currentItems} 
+            onView={(order) => setSelectedOrder(order)}
+            onEdit={(order) => setOrderToEdit(order)}
+          />
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -122,6 +144,12 @@ const ServiceOrdersPage = () => {
         isOpen={isNewOrderModalOpen}
         onClose={() => setIsNewOrderModalOpen(false)}
         onSave={(newOrder) => setOrders((prev) => [newOrder, ...prev])}
+      />
+      <EditServiceOrderModal
+        isOpen={!!orderToEdit}
+        onClose={() => setOrderToEdit(null)}
+        onSave={handleEditOrder}
+        orderId={orderToEdit?.id}
       />
     </div>
   );

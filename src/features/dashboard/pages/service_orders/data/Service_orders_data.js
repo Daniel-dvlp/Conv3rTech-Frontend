@@ -1,4 +1,39 @@
-// src/features/dashboard/pages/service_orders/_mock/service_orders.data.js
+export const mockProductos = [
+  { id: 1, nombre: 'Filtro industrial', precio: 10000 },
+  { id: 2, nombre: 'Tornillo de acero', precio: 200 },
+  { id: 3, nombre: 'Válvula de seguridad', precio: 20000 },
+  { id: 4, nombre: 'Sensor de presión', precio: 12000 },
+  { id: 5, nombre: 'Bomba hidráulica', precio: 50000 },
+  { id: 6, nombre: 'Kit de inspección', precio: 20000 },
+  { id: 7, nombre: 'Cable de acero', precio: 8000 },
+  { id: 8, nombre: 'Lubricante especial', precio: 5000 },
+  { id: 9, nombre: 'Motor eléctrico', precio: 100000 },
+  { id: 10, nombre: 'Lámpara LED', precio: 10000 },
+  { id: 11, nombre: 'Banda transportadora', precio: 50000 },
+  { id: 12, nombre: 'Panel eléctrico', precio: 50000 },
+];
+
+export const mockServicios = [
+  { id: 1, nombre: 'Mantenimiento preventivo', precio: 30000 },
+  { id: 2, nombre: 'Instalación de equipos', precio: 50000 },
+  { id: 3, nombre: 'Revisión de caldera', precio: 50000 },
+  { id: 4, nombre: 'Diagnóstico de sistema', precio: 60000 },
+  { id: 5, nombre: 'Instalación de bomba', precio: 200000 },
+  { id: 6, nombre: 'Inspección técnica', precio: 40000 },
+  { id: 7, nombre: 'Revisión de ascensores', precio: 50000 },
+  { id: 8, nombre: 'Mantenimiento correctivo', precio: 200000 },
+  { id: 9, nombre: 'Cambio de luminarias', precio: 20000 },
+  { id: 10, nombre: 'Ajuste de bandas transportadoras', precio: 300000 },
+  { id: 11, nombre: 'Puesta a punto de sistemas', precio: 150000 },
+];
+
+export const mockCotizaciones = [
+  { id: '001', fecha: '2025-07-01' },
+  { id: '002', fecha: '2025-07-02' },
+  { id: '003', fecha: '2025-07-03' },
+  { id: '004', fecha: '2025-07-04' },
+  { id: '005', fecha: '2025-07-05' },
+];
 
 export const mockServiceOrders = [
   {
@@ -7,39 +42,37 @@ export const mockServiceOrders = [
     quoteId: '001',
     clientName: 'Cliente Corporativo S.A.',
     contact: '312-456-7890',
-    identifier: 'Instalación de CCTV corporativo',
+    projectName: 'Instalación de CCTV corporativo',
     status: 'Pendiente',
     services: [
-      { service: 'Mantenimiento preventivo', quantity: 2, price: 30000 },
-      { service: 'Instalación de equipos', quantity: 1, price: 50000 },
+      { serviceId: 1, quantity: 2 },
+      { serviceId: 2, quantity: 1 },
     ],
     products: [
-      { product: 'Filtro industrial', quantity: 3, price: 10000 },
-      { product: 'Tornillo de acero', quantity: 50, price: 200 },
+      { productId: 1, quantity: 3 },
+      { productId: 2, quantity: 50 },
     ],
-    subtotal: 150000,
-    iva: 28500,
-    total: 178500,
     observations: 'Se requiere visita adicional para la instalación final.',
+    requestDate: '2025-07-01',
+    isActividad: true
   },
   {
     id: 2,
     orderId: 'OS-1002',
-    quoteId: 'S/N',
+    quoteId: null,
     clientName: 'Residencial Los Pinos',
     contact: '315-678-9012',
-    identifier: 'Revisión de caldera residencial',
+    projectName: 'Revisión de caldera residencial',
     status: 'En proceso',
     services: [
-      { service: 'Revisión de caldera', quantity: 1, price: 50000 },
+      { serviceId: 3, quantity: 1 },
     ],
     products: [
-      { product: 'Válvula de seguridad', quantity: 2, price: 20000 },
+      { productId: 3, quantity: 2 },
     ],
-    subtotal: 90000,
-    iva: 17100,
-    total: 107100,
     observations: '',
+    requestDate: '2025-07-02',
+    isActividad: true
   },
   {
     id: 3,
@@ -47,37 +80,35 @@ export const mockServiceOrders = [
     quoteId: '002',
     clientName: 'Empresa Industrial XYZ',
     contact: '310-987-6543',
-    identifier: 'Diagnóstico sistema industrial',
+    projectName: 'Diagnóstico sistema industrial',
     status: 'Esperando repuestos',
     services: [
-      { service: 'Diagnóstico de sistema', quantity: 1, price: 60000 },
+      { serviceId: 4, quantity: 1 },
     ],
     products: [
-      { product: 'Sensor de presión', quantity: 5, price: 12000 },
+      { productId: 4, quantity: 5 },
     ],
-    subtotal: 120000,
-    iva: 22800,
-    total: 142800,
     observations: 'Esperando llegada del sensor especial.',
+    requestDate: '2025-07-03',
+    isActividad: true
   },
   {
     id: 4,
     orderId: 'OS-1004',
-    quoteId: 'S/N',
+    quoteId: null,
     clientName: 'Condominio Altomira',
     contact: '320-789-1234',
-    identifier: 'Instalación bomba hidrosanitaria',
+    projectName: 'Instalación bomba hidrosanitaria',
     status: 'Completado',
     services: [
-      { service: 'Instalación de bomba', quantity: 1, price: 200000 },
+      { serviceId: 5, quantity: 1 },
     ],
     products: [
-      { product: 'Bomba hidráulica', quantity: 1, price: 50000 },
+      { productId: 5, quantity: 1 },
     ],
-    subtotal: 250000,
-    iva: 47500,
-    total: 297500,
     observations: 'Trabajo finalizado con éxito.',
+    requestDate: '2025-07-04',
+    isActividad: true
   },
   {
     id: 5,
@@ -85,38 +116,36 @@ export const mockServiceOrders = [
     quoteId: '003',
     clientName: 'Corporación Delta',
     contact: '311-234-5678',
-    identifier: 'Inspección técnica planta industrial',
+    projectName: 'Inspección técnica planta industrial',
     status: 'Pendiente',
     services: [
-      { service: 'Inspección técnica', quantity: 3, price: 40000 },
+      { serviceId: 6, quantity: 3 },
     ],
     products: [
-      { product: 'Kit de inspección', quantity: 3, price: 20000 },
+      { productId: 6, quantity: 3 },
     ],
-    subtotal: 180000,
-    iva: 34200,
-    total: 214200,
     observations: 'Requiere autorización del cliente.',
+    requestDate: '2025-07-05',
+    isActividad: true
   },
   {
     id: 6,
     orderId: 'OS-1006',
-    quoteId: 'S/N',
+    quoteId: null,
     clientName: 'Edificio Mirador',
     contact: '313-345-6789',
-    identifier: 'Revisión de ascensores edificio',
+    projectName: 'Revisión de ascensores edificio',
     status: 'En proceso',
     services: [
-      { service: 'Revisión de ascensores', quantity: 2, price: 50000 },
+      { serviceId: 7, quantity: 2 },
     ],
     products: [
-      { product: 'Cable de acero', quantity: 10, price: 8000 },
-      { product: 'Lubricante especial', quantity: 2, price: 5000 },
+      { productId: 7, quantity: 10 },
+      { productId: 8, quantity: 2 },
     ],
-    subtotal: 220000,
-    iva: 41800,
-    total: 261800,
     observations: '',
+    requestDate: '2025-07-06',
+    isActividad: true
   },
   {
     id: 7,
@@ -124,37 +153,35 @@ export const mockServiceOrders = [
     quoteId: '004',
     clientName: 'Servicios Integrales Ltda.',
     contact: '316-456-7890',
-    identifier: 'Mantenimiento correctivo motor',
+    projectName: 'Mantenimiento correctivo motor',
     status: 'Esperando repuestos',
     services: [
-      { service: 'Mantenimiento correctivo', quantity: 1, price: 200000 },
+      { serviceId: 8, quantity: 1 },
     ],
     products: [
-      { product: 'Motor eléctrico', quantity: 1, price: 100000 },
+      { productId: 9, quantity: 1 },
     ],
-    subtotal: 300000,
-    iva: 57000,
-    total: 357000,
     observations: 'Se programará instalación al recibir el repuesto.',
+    requestDate: '2025-07-07',
+    isActividad: true
   },
   {
     id: 8,
     orderId: 'OS-1008',
-    quoteId: 'S/N',
+    quoteId: null,
     clientName: 'Residencial La Campiña',
     contact: '317-567-8901',
-    identifier: 'Cambio de luminarias comunes',
+    projectName: 'Cambio de luminarias comunes',
     status: 'Completado',
     services: [
-      { service: 'Cambio de luminarias', quantity: 15, price: 20000 },
+      { serviceId: 9, quantity: 15 },
     ],
     products: [
-      { product: 'Lámpara LED', quantity: 15, price: 10000 },
+      { productId: 10, quantity: 15 },
     ],
-    subtotal: 450000,
-    iva: 85500,
-    total: 535500,
     observations: '',
+    requestDate: '2025-07-08',
+    isActividad: true
   },
   {
     id: 9,
@@ -162,36 +189,53 @@ export const mockServiceOrders = [
     quoteId: '005',
     clientName: 'Logística Express S.A.',
     contact: '318-678-9012',
-    identifier: 'Ajuste banda transportadora',
+    projectName: 'Ajuste banda transportadora',
     status: 'Pendiente',
     services: [
-      { service: 'Ajuste de bandas transportadoras', quantity: 1, price: 300000 },
+      { serviceId: 10, quantity: 1 },
     ],
     products: [
-      { product: 'Banda transportadora', quantity: 1, price: 50000 },
+      { productId: 11, quantity: 1 },
     ],
-    subtotal: 350000,
-    iva: 66500,
-    total: 416500,
     observations: 'Cliente solicitó repuesto original.',
+    requestDate: '2025-07-09',
+    isActividad: true
   },
   {
     id: 10,
     orderId: 'OS-1010',
-    quoteId: 'S/N',
+    quoteId: null,
     clientName: 'Urbanización El Lago',
     contact: '319-789-0123',
-    identifier: 'Puesta a punto sistemas eléctricos',
+    projectName: 'Puesta a punto sistemas eléctricos',
     status: 'En proceso',
     services: [
-      { service: 'Puesta a punto de sistemas', quantity: 2, price: 150000 },
+      { serviceId: 11, quantity: 2 },
     ],
     products: [
-      { product: 'Panel eléctrico', quantity: 2, price: 50000 },
+      { productId: 12, quantity: 2 },
     ],
-    subtotal: 400000,
-    iva: 76000,
-    total: 476000,
     observations: '',
+    requestDate: '2025-07-10',
+    isActividad: true
   },
+  // Ejemplo de una orden inactiva para pruebas
+  {
+    id: 11,
+    orderId: 'OS-1011',
+    quoteId: null,
+    clientName: 'Pruebas Inactividad S.A.',
+    contact: '300-111-2222',
+    projectName: 'Prueba de sistema de actividad',
+    status: 'Inactiva',
+    services: [
+      { serviceId: 1, quantity: 1 },
+    ],
+    products: [
+      { productId: 1, quantity: 1 },
+    ],
+    observations: 'Orden de prueba para verificar estado inactivo',
+    requestDate: '2025-07-11',
+    isActividad: false
+  }
 ];

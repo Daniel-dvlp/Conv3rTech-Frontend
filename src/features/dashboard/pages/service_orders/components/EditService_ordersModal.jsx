@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { FaTimes, FaPlus, FaTrash, FaSearch, FaUserPlus, FaEdit } from 'react-icons/fa';
 import { mockProductos, mockServicios, mockServiceOrders } from '../data/Service_orders_data';
 import { useNavigate } from 'react-router-dom';
 
-// Componentes reutilizables del diseño estándar
+// Componentes reutilizables
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
     <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
@@ -17,7 +17,7 @@ const FormLabel = ({ htmlFor, children }) => (
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border border-gray-300 rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
-const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
+const EditServiceOrderModal = ({ isOpen, onClose, onSave, orderToEdit }) => {
   const navigate = useNavigate();
   const formRef = useRef();
   const clientSearchRef = useRef();
@@ -25,7 +25,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
   const contactRef = useRef();
   const serviceSelectRef = useRef();
 
-  // Extraer clientes de las órdenes existentes
+  // Obtener lista de clientes
   const getClientsFromOrders = () => {
     const clients = [];
     const clientMap = new Map();
@@ -44,8 +44,10 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     return clients;
   };
 
+  // Estado inicial
   const initialState = {
-    orderId: `OS-${Math.floor(1000 + Math.random() * 9000)}`,
+    id: '',
+    orderId: '',
     clientId: '',
     clientName: '',
     contact: '',
@@ -59,8 +61,11 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     iva: 0,
     total: 0,
     observations: '',
+    quoteId: null,
+    isActividad: true
   };
 
+  // Estados del componente
   const [orderData, setOrderData] = useState(initialState);
   const [selectedService, setSelectedService] = useState('');
   const [serviceQuantity, setServiceQuantity] = useState(1);
@@ -68,29 +73,69 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
   const [productQuantity, setProductQuantity] = useState(1);
   const [clientSearch, setClientSearch] = useState('');
   const [showClientDropdown, setShowClientDropdown] = useState(false);
-  const [clients, setClients] = useState(getClientsFromOrders());
-  const [filteredClients, setFilteredClients] = useState(clients);
+  const [clients] = useState(getClientsFromOrders());
+  const [filteredClients, setFilteredClients] = useState([]);
   const [errors, setErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
   const [editingServiceIndex, setEditingServiceIndex] = useState(null);
   const [editingProductIndex, setEditingProductIndex] = useState(null);
 
-  // Efectos
+  // Cargar datos de la orden a editar
+  useEffect(() => {
+    if (orderToEdit && isOpen) {
+      // Mapear servicios con detalles completos
+      const servicesWithDetails = orderToEdit.services.map(service => {
+        const serviceDetails = mockServicios.find(s => s.id === service.serviceId);
+        return {
+          serviceId: service.serviceId,
+          name: serviceDetails?.nombre || `Servicio #${service.serviceId}`,
+          quantity: service.quantity,
+          price: serviceDetails?.precio || 0
+        };
+      });
+
+      // Mapear productos con detalles completos
+      const productsWithDetails = orderToEdit.products?.map(product => {
+        const productDetails = mockProductos.find(p => p.id === product.productId);
+        return {
+          productId: product.productId,
+          name: productDetails?.nombre || `Producto #${product.productId}`,
+          quantity: product.quantity,
+          price: productDetails?.precio || 0
+        };
+      }) || [];
+
+      setOrderData({
+        ...orderToEdit,
+        services: servicesWithDetails,
+        products: productsWithDetails
+      });
+
+      setClientSearch(orderToEdit.clientName || '');
+    } else {
+      // Resetear el formulario si no hay orden para editar
+      setOrderData(initialState);
+      setClientSearch('');
+    }
+  }, [orderToEdit, isOpen]);
+
+  // Filtrar clientes
   useEffect(() => {
     if (clientSearch.trim() === '') {
       setFilteredClients(clients);
     } else {
       const searchTerm = clientSearch.toLowerCase();
       setFilteredClients(
-        clients.filter(client =>
+        clients.filter(client => 
           client.name.toLowerCase().includes(searchTerm) ||
-          client.contact.includes(clientSearch)
+          (client.contact && client.contact.toLowerCase().includes(searchTerm))
         )
       );
     }
   }, [clientSearch, clients]);
 
-  useEffect(() => {
+  // Calcular resumen financiero
+  const financialSummary = useMemo(() => {
     const subtotalProducts = orderData.products.reduce(
       (sum, p) => sum + (p.price * p.quantity), 0);
     
@@ -100,15 +145,21 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     const iva = subtotalProducts * 0.19;
     const total = subtotalProducts + subtotalServices + iva;
     
-    setOrderData(prev => ({
-      ...prev,
-      subtotalProducts,
-      subtotalServices,
-      iva,
-      total
-    }));
+    return { subtotalProducts, subtotalServices, iva, total };
   }, [orderData.products, orderData.services]);
 
+  // Actualizar datos con resumen financiero
+  useEffect(() => {
+    setOrderData(prev => ({
+      ...prev,
+      subtotalProducts: financialSummary.subtotalProducts,
+      subtotalServices: financialSummary.subtotalServices,
+      iva: financialSummary.iva,
+      total: financialSummary.total
+    }));
+  }, [financialSummary]);
+
+  // Manejadores de eventos
   const handleContactChange = (e) => {
     const { value } = e.target;
     const filteredValue = value.replace(/[^0-9\s+\-()]/g, '');
@@ -145,35 +196,22 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
 
   const handleBlur = (fieldName) => {
     setTouchedFields(prev => ({ ...prev, [fieldName]: true }));
-    
-    switch (fieldName) {
-      case 'clientId':
-        validateField('clientId', orderData.clientId);
-        break;
-      case 'projectName':
-        validateField('projectName', orderData.projectName);
-        break;
-      case 'contact':
-        validateField('contact', orderData.contact);
-        break;
-      default:
-        break;
-    }
+    validateField(fieldName, orderData[fieldName]);
   };
 
   const scrollToError = () => {
     if (errors.client) {
-      clientSearchRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      clientSearchRef.current.focus();
+      clientSearchRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      clientSearchRef.current?.focus();
     } else if (errors.projectName) {
-      projectNameRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      projectNameRef.current.focus();
+      projectNameRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      projectNameRef.current?.focus();
     } else if (errors.contact) {
-      contactRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      contactRef.current.focus();
+      contactRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      contactRef.current?.focus();
     } else if (errors.services) {
-      serviceSelectRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      serviceSelectRef.current.focus();
+      serviceSelectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      serviceSelectRef.current?.focus();
     }
   };
 
@@ -351,7 +389,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
       return;
     }
     
-    const newOrder = {
+    const updatedOrder = {
       ...orderData,
       services: orderData.services.map(s => ({
         serviceId: s.serviceId,
@@ -363,16 +401,12 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
       }))
     };
     
-    onSave(newOrder);
-    resetForm();
+    onSave(updatedOrder);
     onClose();
   };
 
   const resetForm = () => {
-    setOrderData({
-      ...initialState,
-      orderId: `OS-${Math.floor(1000 + Math.random() * 9000)}`
-    });
+    setOrderData(initialState);
     setSelectedService('');
     setServiceQuantity(1);
     setSelectedProduct('');
@@ -394,7 +428,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
         ref={formRef}
       >
         <header className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-3xl font-bold text-gray-800">Nueva Orden de Servicio</h2>
+          <h2 className="text-3xl font-bold text-gray-800">Editar Orden de Servicio {orderData.orderId}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
             <FaTimes />
           </button>
@@ -526,7 +560,35 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
                   <option value="En proceso">En proceso</option>
                   <option value="Completado">Completado</option>
                   <option value="Esperando repuestos">Esperando repuestos</option>
+                  <option value="Inactiva">Inactiva</option>
                 </select>
+              </div>
+
+              <div>
+                <FormLabel htmlFor="quoteId">ID Cotización (Opcional)</FormLabel>
+                <input
+                  id="quoteId"
+                  type="text"
+                  name="quoteId"
+                  value={orderData.quoteId || ''}
+                  onChange={handleChange}
+                  className={inputBaseStyle}
+                  placeholder="Ej: 001"
+                />
+              </div>
+
+              <div className="flex items-center">
+                <input
+                  id="isActividad"
+                  type="checkbox"
+                  name="isActividad"
+                  checked={orderData.isActividad || false}
+                  onChange={(e) => setOrderData(prev => ({ ...prev, isActividad: e.target.checked }))}
+                  className="h-4 w-4 text-conv3r-gold focus:ring-conv3r-gold border-gray-300 rounded"
+                />
+                <label htmlFor="isActividad" className="ml-2 block text-sm text-gray-700">
+                  Mostrar como actividad
+                </label>
               </div>
             </div>
           </FormSection>
@@ -764,7 +826,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
           <FormSection title="Observaciones">
             <textarea
               name="observations"
-              value={orderData.observations}
+              value={orderData.observations || ''}
               onChange={handleChange}
               rows={3}
               className={inputBaseStyle}
@@ -787,7 +849,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
               type="submit"
               className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-6 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
             >
-              Guardar Orden
+              Guardar Cambios
             </button>
           </div>
         </form>
@@ -796,4 +858,4 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-export default NewServiceOrderModal;
+export default EditServiceOrderModal;
