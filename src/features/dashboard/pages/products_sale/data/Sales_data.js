@@ -18,17 +18,17 @@ export const mockSales = [
     fechaHora: '05/03/2025 10:30 AM',
     metodoPago: 'Tarjeta',
     estado: 'Registrada',
-    subtotal: 168067,
-    iva: 31933,
-    monto: 200000,
+    subtotal: 200000,
+    iva: 38000,
+    monto: 238000,
     productos: [
       {
         nombre: 'Cámara de Seguridad',
         modelo: 'CS-100',
         cantidad: 2,
         unidad: 'unidad',
-        precio: 84033,
-        subtotal: 168067
+        precio: 100000,
+        subtotal: 200000
       }
     ]
   },
@@ -51,25 +51,25 @@ export const mockSales = [
     fechaHora: '05/03/2025 03:15 PM',
     metodoPago: 'Tarjeta',
     estado: 'Anulada',
-    subtotal: 126050,
-    iva: 23950,
-    monto: 150000,
+    subtotal: 180000,
+    iva: 34200,
+    monto: 214200,
     productos: [
       {
         nombre: 'Sensor de Movimiento',
         modelo: 'SM-300',
         cantidad: 1,
         unidad: 'unidad',
-        precio: 67227,
-        subtotal: 67227
+        precio: 100000,
+        subtotal: 100000
       },
       {
         nombre: 'Alarma de Seguridad',
         modelo: 'AS-400',
         cantidad: 1,
         unidad: 'unidad',
-        precio: 58823,
-        subtotal: 58823
+        precio: 80000,
+        subtotal: 80000
       }
     ]
   },
@@ -92,17 +92,17 @@ export const mockSales = [
     fechaHora: '06/03/2025 09:20 AM',
     metodoPago: 'Efectivo',
     estado: 'Registrada',
-    subtotal: 155462,
-    iva: 29438,
-    monto: 185000,
+    subtotal: 150000,
+    iva: 28500,
+    monto: 178500,
     productos: [
       {
         nombre: 'Cámara de video',
         modelo: 'CV-200',
         cantidad: 1,
         unidad: 'metro',
-        precio: 155462,
-        subtotal: 155462
+        precio: 150000,
+        subtotal: 150000
       }
     ]
   },
@@ -125,17 +125,17 @@ export const mockSales = [
     fechaHora: '06/03/2025 01:05 PM',
     metodoPago: 'Transferencia',
     estado: 'Registrada',
-    subtotal: 184874,
-    iva: 35126,
-    monto: 220000,
+    subtotal: 250000,
+    iva: 47500,
+    monto: 297500,
     productos: [
       {
         nombre: 'Control de Acceso',
         modelo: 'CA-500',
         cantidad: 1,
         unidad: 'unidad',
-        precio: 184874,
-        subtotal: 184874
+        precio: 250000,
+        subtotal: 250000
       }
     ]
   },
@@ -158,25 +158,25 @@ export const mockSales = [
     fechaHora: '07/03/2025 04:40 PM',
     metodoPago: 'Tarjeta',
     estado: 'Registrada',
-    subtotal: 147059,
-    iva: 27941,
-    monto: 175000,
+    subtotal: 180000,
+    iva: 34200,
+    monto: 214200,
     productos: [
       {
         nombre: 'Cámara de Seguridad',
         modelo: 'CS-100',
         cantidad: 1,
         unidad: 'unidad',
-        precio: 84034,
-        subtotal: 84034
+        precio: 100000,
+        subtotal: 100000
       },
       {
         nombre: 'Sensor de Movimiento',
         modelo: 'SM-300',
         cantidad: 1,
         unidad: 'unidad',
-        precio: 63025,
-        subtotal: 63025
+        precio: 80000,
+        subtotal: 80000
       }
     ]
   }

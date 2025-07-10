@@ -41,7 +41,6 @@ const Sidebar = () => {
       icon: <FaConciergeBell />,
       children: [
         { name: 'Categoría de Servicios', path: '/dashboard/categoria_servicios' },
-        { name: 'Órdenes de Servicio', path: '/dashboard/ordenes_servicios' },
         { name: 'Programación laboral', path: '/dashboard/programacion_laboral' },
       ]
     },

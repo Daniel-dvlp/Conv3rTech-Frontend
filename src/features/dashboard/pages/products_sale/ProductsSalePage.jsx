@@ -10,6 +10,8 @@ import { mockClientes } from '../clients/data/Clientes_data';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+
 
 const ITEMS_PER_PAGE = 5;
 
@@ -54,8 +56,15 @@ const ProductsSalePage = () => {
   }, [filteredSales, currentPage]);
 
   const handleAddSale = (newSale) => {
-    setSales((prev) => [newSale, ...prev]);
-    setShowNewModal(false);
+    try {
+      setSales((prev) => [newSale, ...prev]);
+      showSuccess('Venta registrada exitosamente');
+    } catch (error) {
+      console.error(error);
+      showError('Ocurrió un error al guardar la venta');
+    } finally {
+      setShowNewModal(false);
+    }
   };
 
   const handleExport = () => {
@@ -139,6 +148,29 @@ const ProductsSalePage = () => {
     doc.save(`Factura_${venta.numero}.pdf`);
   };
 
+  const handleCancelSale = async (venta) => {
+    try {
+      if (venta.estado === 'Anulada') {
+        showInfo('Esta venta ya se encuentra anulada');
+        return;
+      }
+
+      const confirmed = await confirmDelete(
+        '¿Estás segura de que deseas anular esta venta?',
+        'Esta acción no se puede deshacer.'
+      );
+
+      if (!confirmed) return;
+
+      const updated = { ...venta, estado: 'Anulada' };
+      setSales((prev) => prev.map((v) => (v.id === venta.id ? updated : v)));
+
+      showSuccess('Venta anulada exitosamente');
+    } catch (error) {
+      console.error(error);
+      showError('Ocurrió un error al anular la venta');
+    }
+  };
 
 
   return (
@@ -206,6 +238,7 @@ const ProductsSalePage = () => {
             clients={clients}
             onViewDetails={(sale) => setSelectedProductSale(sale)}
             onDownloadPDF={handleDownloadPDF}
+            onCancel={handleCancelSale}
           />
           {totalPages > 1 && (
             <Pagination

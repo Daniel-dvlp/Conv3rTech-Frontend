@@ -8,7 +8,9 @@ import { mockProductsCategory } from './data/ProductsCategory_data';
 import Pagination from '../../../../shared/components/Pagination';
 import NewProductCategoryModal from './components/NewProductCategoryModal';
 import ProductCategoryDetailModal from './components/ProductCategoryDetailModal';
-import ProductCategoryEditModal from './components/ProductCategoryEditModal'; 
+import ProductCategoryEditModal from './components/ProductCategoryEditModal';
+import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+
 
 const ITEMS_PER_PAGE = 5;
 
@@ -51,8 +53,14 @@ const ProductsCategoryPage = () => {
   }, [filteredProductsCategory, currentPage]);
 
   const handleAddCategory = (newCategory) => {
-    setCategories(prev => [newCategory, ...prev]);
-    setShowNewModal(false);
+    try {
+      setCategories(prev => [newCategory, ...prev]);
+      showSuccess('Categoría creada exitosamente');
+    } catch (error) {
+      showError('Error al crear la categoría');
+    } finally {
+      setShowNewModal(false);
+    }
   };
 
   const handleEditCategory = (category) => {
@@ -61,19 +69,30 @@ const ProductsCategoryPage = () => {
   };
 
   const handleUpdateCategory = (updatedCategory) => {
-    setCategories(prev =>
-      prev.map(cat => (cat.id === updatedCategory.id ? updatedCategory : cat))
-    );
-    setIsEditing(false);
-    setSelectedCategory(null);
+    try {
+      setCategories(prev =>
+        prev.map(cat => (cat.id === updatedCategory.id ? updatedCategory : cat))
+      );
+      showSuccess('Categoría actualizada exitosamente');
+    } catch (error) {
+      showError('Error al actualizar la categoría');
+    } finally {
+      setIsEditing(false);
+      setSelectedCategory(null);
+    }
   };
 
-  const handleDeleteCategory = (categoryId) => {
-  const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar esta categoría?");
-  if (!confirmDelete) return;
+  const handleDeleteCategory = async (categoryId) => {
+    const confirmed = await confirmDelete('¿Estás seguro de eliminar esta categoría?');
+    if (!confirmed) return;
 
-  setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-};
+    try {
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      showSuccess('Categoría eliminada exitosamente');
+    } catch (error) {
+      showError('Error al eliminar la categoría');
+    }
+  };
 
   return (
     <div className="p-4 md:p-8 relative">

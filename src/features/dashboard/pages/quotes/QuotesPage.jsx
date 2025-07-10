@@ -5,9 +5,12 @@ import SkeletonRow from './components/SkeletonRow';
 import { mockQuotes } from './data/Quotes_data';
 import Pagination from '../../../../shared/components/Pagination';
 import QuoteDetailModal from './components/QuoteDetailModal';
+import QuoteEditModal from './components/QuoteEditModal';
+import { mockProducts } from '../products/data/Products_data.js';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -17,27 +20,33 @@ const QuotesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedQuote, setSelectedQuote] = useState(null);
+  const [quoteToEdit, setQuoteToEdit] = useState(null);
+  const [products, setProducts] = useState([]);
 
   useEffect(() => {
     setTimeout(() => {
       setQuotes(mockQuotes);
+      setProducts(mockProducts)
       setLoading(false);
     }, 1500);
   }, []);
 
+  const mockServices = [
+    { nombre: 'Instalación', descripcion: 'Servicio de instalación básica', precio: 50000 },
+    { nombre: 'Mantenimiento', descripcion: 'Servicio de mantenimiento general', precio: 70000 },
+    { nombre: 'Revisión', descripcion: 'Revisión técnica del equipo', precio: 30000 },
+  ];
   const normalize = (text) =>
     text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 
   const filteredQuotes = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
-
     return quotes.filter((quote) =>
       normalize(quote.cliente).includes(normalizedSearch) ||
       normalize(quote.estado).includes(normalizedSearch) ||
       normalize(quote.ordenServicio).includes(normalizedSearch)
     );
   }, [quotes, searchTerm]);
-
 
   const totalPages = Math.ceil(filteredQuotes.length / ITEMS_PER_PAGE);
 
@@ -46,68 +55,84 @@ const QuotesPage = () => {
     return filteredQuotes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredQuotes, currentPage]);
 
+  const handleSaveQuoteChanges = (updatedQuote) => {
+    try {
+      setQuotes((prev) =>
+        prev.map((q) => (q.id === updatedQuote.id ? updatedQuote : q))
+      );
+      showSuccess('Cotización actualizada exitosamente');
+    } catch (error) {
+      console.error(error);
+      showError('Ocurrió un error al actualizar la cotización');
+    } finally {
+      setQuoteToEdit(null);
+    }
+  };
 
   const handleExport = (quotes) => {
-    if (!Array.isArray(quotes) || quotes.length === 0) {
-      alert('No hay cotizaciones para exportar');
-      return;
+    try {
+      if (!Array.isArray(quotes) || quotes.length === 0) {
+        showInfo('No hay cotizaciones para exportar');
+        return;
+      }
+
+      const exportData = [];
+
+      quotes.forEach((quote) => {
+        const base = {
+          'ID Cotización': quote.id,
+          'Orden de Servicio': quote.ordenServicio,
+          'Cliente': `${quote.clienteData.nombre} ${quote.clienteData.apellido}`,
+          'Documento': quote.clienteData.documento,
+          'Correo electrónico': quote.clienteData.email,
+          'Estado': quote.estado,
+          'Fecha de Vencimiento': quote.fechaVencimiento,
+          'Subtotal Productos': quote.detalleOrden.subtotalProductos,
+          'Subtotal Servicios': quote.detalleOrden.subtotalServicios,
+          'IVA': quote.detalleOrden.iva,
+          'Total Cotización': quote.detalleOrden.total,
+        };
+
+        quote.detalleOrden.productos.forEach((p) => {
+          exportData.push({
+            ...base,
+            Tipo: 'Producto',
+            Nombre: p.nombre,
+            Descripción: p.descripcion,
+            Cantidad: p.cantidad,
+            'Precio Unitario': p.precio,
+            Total: p.total,
+          });
+        });
+
+        quote.detalleOrden.servicios.forEach((s) => {
+          exportData.push({
+            ...base,
+            Tipo: 'Servicio',
+            Nombre: s.servicio,
+            Descripción: s.descripcion,
+            Cantidad: s.cantidad,
+            'Precio Unitario': s.precio,
+            Total: s.total,
+          });
+        });
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Cotizaciones');
+      XLSX.writeFile(workbook, 'ReporteCotizaciones.xlsx');
+
+      showSuccess('Archivo Excel exportado exitosamente');
+    } catch (error) {
+      console.error(error);
+      showError('Ocurrió un error al exportar las cotizaciones');
     }
-
-    const exportData = [];
-
-    quotes.forEach((quote) => {
-      const base = {
-        'ID Cotización': quote.id,
-        'Orden de Servicio': quote.ordenServicio,
-        'Cliente': `${quote.clienteData.nombre} ${quote.clienteData.apellido}`,
-        'Documento': quote.clienteData.documento,
-        'Correo electrónico': quote.clienteData.email,
-        'Estado': quote.estado,
-        'Fecha de Vencimiento': quote.fechaVencimiento,
-        'Subtotal Productos': quote.detalleOrden.subtotalProductos,
-        'Subtotal Servicios': quote.detalleOrden.subtotalServicios,
-        'IVA': quote.detalleOrden.iva,
-        'Total Cotización': quote.detalleOrden.total,
-      };
-
-      // Productos
-      quote.detalleOrden.productos.forEach((p) => {
-        exportData.push({
-          ...base,
-          Tipo: 'Producto',
-          Nombre: p.nombre,
-          Descripción: p.descripcion,
-          Cantidad: p.cantidad,
-          'Precio Unitario': p.precio,
-          Total: p.total,
-        });
-      });
-
-      // Servicios
-      quote.detalleOrden.servicios.forEach((s) => {
-        exportData.push({
-          ...base,
-          Tipo: 'Servicio',
-          Nombre: s.nombre,
-          Descripción: s.descripcion,
-          Cantidad: s.cantidad,
-          'Precio Unitario': s.precio,
-          Total: s.total,
-        });
-      });
-    });
-
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Cotizaciones');
-    XLSX.writeFile(workbook, 'ResporteCotizaciones.xlsx');
   };
 
 
   const handleDownloadPDF = (cotizacion) => {
     const doc = new jsPDF();
-
-    // Encabezado principal
     doc.setFontSize(16);
     doc.text(`Cotización - ${cotizacion.ordenServicio}`, 14, 20);
 
@@ -120,7 +145,6 @@ const QuotesPage = () => {
 
     const detalle = [];
 
-    // Agregar productos
     if (cotizacion.detalleOrden.productos.length > 0) {
       detalle.push([
         { content: 'Productos', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
@@ -128,7 +152,7 @@ const QuotesPage = () => {
       detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
       cotizacion.detalleOrden.productos.forEach((p) => {
         detalle.push([
-          p.producto,
+          p.nombre,
           p.descripcion,
           p.cantidad,
           `$${p.precioUnitario.toLocaleString()}`,
@@ -138,7 +162,6 @@ const QuotesPage = () => {
       });
     }
 
-    // Agregar servicios
     if (cotizacion.detalleOrden.servicios.length > 0) {
       detalle.push([
         { content: 'Servicios', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
@@ -177,11 +200,36 @@ const QuotesPage = () => {
     doc.save(`Cotizacion_${cotizacion.ordenServicio}.pdf`);
   };
 
+  const handleCancelQuote = async (quote) => {
+    try {
+      if (quote.estado === 'Anulada') {
+        showInfo('Esta cotización ya se encuentra anulada');
+        return;
+      }
+
+      const confirmed = await confirmDelete(
+        '¿Estás segura de que deseas anular esta cotización?',
+        'Esta acción no se puede deshacer.'
+      );
+
+      if (!confirmed) return;
+
+      const updatedQuote = { ...quote, estado: 'Anulada' };
+      setQuotes((prevQuotes) =>
+        prevQuotes.map((q) => (q.id === quote.id ? updatedQuote : q))
+      );
+
+      showSuccess('Cotización anulada exitosamente');
+    } catch (error) {
+      console.error(error);
+      showError('Ocurrió un error al anular la cotización');
+    }
+  };
+
 
 
   return (
     <div className="p-4 md:p-8">
-      {/* Encabezado del módulo con buscador */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Cotizaciones</h1>
         <div className="flex flex-wrap items-center gap-2">
@@ -208,7 +256,6 @@ const QuotesPage = () => {
         </div>
       </div>
 
-      {/* Tabla con Skeleton mientras carga */}
       {loading ? (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <table className="w-full">
@@ -236,6 +283,8 @@ const QuotesPage = () => {
             quotes={currentItems}
             onViewDetails={(quote) => setSelectedQuote(quote)}
             onDownloadPDF={handleDownloadPDF}
+            onEdit={(quote) => setQuoteToEdit(quote)}
+            onCancel={handleCancelQuote}
           />
           {totalPages > 1 && (
             <Pagination
@@ -244,14 +293,25 @@ const QuotesPage = () => {
               onPageChange={(page) => setCurrentPage(page)}
             />
           )}
-
-          {selectedQuote && (
-            <QuoteDetailModal
-              quote={selectedQuote}
-              onClose={() => setSelectedQuote(null)}
-            />
-          )}
         </>
+      )}
+
+      {selectedQuote && (
+        <QuoteDetailModal
+          quote={selectedQuote}
+          onClose={() => setSelectedQuote(null)}
+        />
+      )}
+
+      {quoteToEdit && (
+        <QuoteEditModal
+          isOpen={!!quoteToEdit}
+          onClose={() => setQuoteToEdit(null)}
+          onSave={handleSaveQuoteChanges}
+          quoteToEdit={quoteToEdit}
+          products={products}
+          services={mockServices}
+        />
       )}
     </div>
   );

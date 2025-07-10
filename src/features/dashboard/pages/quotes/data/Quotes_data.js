@@ -15,7 +15,6 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-001',
-    monto: 2142000,
     fechaVencimiento: '14/03/2025',
     estado: 'Pendiente',
     detalleOrden: {
@@ -59,7 +58,6 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-002',
-    monto: 1487500,
     fechaVencimiento: '24/03/2025',
     estado: 'Aprobada',
     detalleOrden: {
@@ -95,7 +93,6 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-003',
-    monto: 1190000,
     fechaVencimiento: '20/03/2025',
     estado: 'Rechazada',
     detalleOrden: {
@@ -131,7 +128,6 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-004',
-    monto: 1487500,
     fechaVencimiento: '26/03/2025',
     estado: 'Aprobada',
     detalleOrden: {
@@ -167,7 +163,6 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-005',
-    monto: 1487500,
     fechaVencimiento: '26/03/2025',
     estado: 'Aprobada',
     detalleOrden: {
@@ -203,7 +198,6 @@ export const mockQuotes = [
       direcciones: []
     },
     ordenServicio: 'OS-006',
-    monto: 1487500,
     fechaVencimiento: '26/03/2025',
     estado: 'Aprobada',
     detalleOrden: {

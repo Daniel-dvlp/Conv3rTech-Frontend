@@ -197,9 +197,15 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
                                     required
                                 >
-                                    <option value="">Seleccione la categoría</option>
-                                    <option value="seguridad">Seguridad</option>
-                                    
+                                    {categories?.length > 0 ? (
+                                        categories.map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.nombre}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No hay categorías</option>
+                                    )}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                                     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">

@@ -1,9 +1,8 @@
-// src/features/dashboard/pages/ventas/components/SalesTable.jsx
-
 import React from 'react';
 import { FaEye, FaDownload, FaMinusCircle } from 'react-icons/fa';
+import {showError} from '../../../../../shared/utils/alerts';
 
-const SalesTable = ({ sales, onViewDetails, onDownloadPDF }) => {
+const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
   if (!sales || sales.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4 text-center">
@@ -11,7 +10,7 @@ const SalesTable = ({ sales, onViewDetails, onDownloadPDF }) => {
       </div>
     );
   }
-  
+
   const getEstadoStyle = (estado) => {
     switch (estado) {
       case 'Pendiente':
@@ -20,7 +19,13 @@ const SalesTable = ({ sales, onViewDetails, onDownloadPDF }) => {
         return 'bg-green-100 text-green-800';
       case 'Anulada':
         return 'bg-gray-200 text-gray-700';
+      default:
+        return '';
     }
+  };
+
+  const handleDisabledAction = () => {
+    showError('No se puede realizar esta acción porque la venta ya está anulada.');
   };
 
   return (
@@ -62,13 +67,33 @@ const SalesTable = ({ sales, onViewDetails, onDownloadPDF }) => {
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
-                  <button className="text-blue-600 hover:text-gray-900" title="Ver detalle" onClick={() => onViewDetails(sale)}>
+                  <button
+                    className="text-blue-600 hover:text-gray-900"
+                    title="Ver detalle"
+                    onClick={() => onViewDetails(sale)}
+                  >
                     <FaEye size={16} />
                   </button>
-                  <button className="text-green-600 hover:text-green-800" title="Descargar factura" onClick={() => onDownloadPDF(sale)}>
+
+                  <button
+                    className="text-green-600 hover:text-green-800"
+                    title="Descargar factura"
+                    onClick={() => onDownloadPDF(sale)}
+                  >
                     <FaDownload size={16} />
                   </button>
-                  <button className="text-red-600 hover:text-red-800" title="Anular venta">
+
+                  <button
+                    title="Anular venta"
+                    onClick={() =>
+                      sale.estado !== 'Anulada' ? onCancel(sale) : handleDisabledAction()
+                    }
+                    className={
+                      sale.estado !== 'Anulada'
+                        ? 'text-red-600 hover:text-red-800'
+                        : 'text-gray-400 cursor-not-allowed'
+                    }
+                  >
                     <FaMinusCircle size={16} />
                   </button>
                 </div>

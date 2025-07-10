@@ -8,6 +8,7 @@ import ProductDetailModal from './components/ProductDetailModal';
 import { mockProducts } from './data/Products_data';
 import { mockProductsCategory } from '../products_category/data/ProductsCategory_data';
 import ProductEditModal from './components/ProductEditModal';
+import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
 import * as XLSX from 'xlsx';
 
 const ITEMS_PER_PAGE = 5;
@@ -58,6 +59,7 @@ const ProductsPage = () => {
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
     setShowNewModal(false);
+    showSuccess('Producto agregado exitosamente');
   };
 
   const handleExport = () => {
@@ -92,6 +94,7 @@ const ProductsPage = () => {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Productos');
     XLSX.writeFile(workbook, 'ReporteProductos.xlsx');
+    showSuccess('Los productos han sido exportados exitosamente');
   };
 
   const handleUpdateProduct = (updatedProduct) => {
@@ -100,14 +103,21 @@ const ProductsPage = () => {
     );
     setIsEditing(false);
     setSelectedProduct(null);
+    showSuccess('Producto actualizado exitosamente');
   };
 
-  const handleDeleteProduct = (productId) => {
-    const confirmDelete = window.confirm("¿Estás seguro de que deseas eliminar este producto?");
-    if (!confirmDelete) return;
+const handleDeleteProduct = async (productId) => {
+  const confirmed = await confirmDelete(
+    '¿Estás segura de eliminar este producto?',
+    'Esta acción no se puede deshacer'
+  );
 
-    setProducts(prev => prev.filter(cat => cat.id !== productId));
-  };
+  if (!confirmed) return;
+
+  setProducts(prev => prev.filter(prod => prod.id !== productId));
+  showSuccess('Producto eliminado exitosamente');
+};
+
 
   return (
     <div className="p-4 md:p-8 relative">
@@ -221,7 +231,6 @@ const ProductsPage = () => {
           categories={categories}
         />
       )}
-
     </div>
   );
 };
