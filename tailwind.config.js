@@ -1,4 +1,3 @@
-import tailwindScrollbar from "tailwind-scrollbar";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -39,7 +38,7 @@ export default {
     },
   },
   plugins: [
-    require('tailwind-scrollbar'),
-    require('@tailwindcss/forms'),
+    ('tailwind-scrollbar'),
+    ('@tailwindcss/forms'),
   ],
 };

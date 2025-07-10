@@ -69,7 +69,7 @@ const Header = () => {
   // Si no hay usuario, mostrar loading
   if (!currentUser) {
     return (
-      <header className="w-full h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
+      <header className="w-full h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
           <h1 className="text-xl font-bold text-gray-800">Conv3rTech</h1>
         </div>
