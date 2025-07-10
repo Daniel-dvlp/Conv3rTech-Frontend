@@ -1,198 +1,390 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { FaPlus, FaFileExcel, FaSearch } from 'react-icons/fa';
+import React, { useState, useMemo, useEffect } from 'react';
+import { FaPlus, FaSearch, FaDownload } from 'react-icons/fa';
 import PagosTable from './components/PagosTable';
-import SkeletonRow from './components/SkeletonRow';
-import { mockPagos } from './data/Pagos_data';
-import Pagination from '../../../../shared/components/Pagination';
-import * as XLSX from 'xlsx';
 import CreatePaymentsModal from './components/CreatePaymentsModal';
+import Pagination from '../../../../shared/components/Pagination'; // Asegúrate de que esta ruta sea correcta
+import toast from 'react-hot-toast'; // Importar react-hot-toast
 
+// Mock de datos mejorado para simular la estructura real
 const mockPagosIntegrado = [
-    {
-      cliente: { id: 1, nombre: 'Juan', apellido: 'Valdez', documento: '123456' },
-      contratos: [
-        {
-          numero: '00001',
-          pagos: [
-            {
-              id: 1,
-              fecha: '02/03/2025',
-              montoTotal: 5000000,
-              montoAbonado: 1000000,
-              montoRestante: 4000000,
-              metodoPago: 'Tarjeta',
-              estado: 'Registrado',
-              concepto: 'Mantenimiento Cámaras'
-            }
-          ]
-        },
-        {
-          numero: 'VD-00001',
-          pagos: [
-            {
-              id: 2,
-              fecha: '05/03/2025',
-              montoTotal: 7000000,
-              montoAbonado: 2000000,
-              montoRestante: 5000000,
-              metodoPago: 'Transferencia',
-              estado: 'Registrado',
-              concepto: 'Revisión general'
-            }
-          ]
-        }
-      ]
-    },
-    {
-      cliente: { id: 2, nombre: 'Laura', apellido: 'Mejía', documento: '654321' },
-      contratos: [
-        {
-          numero: '00002',
-          pagos: [
-            {
-              id: 3,
-              fecha: '10/03/2025',
-              montoTotal: 3000000,
-              montoAbonado: 3000000,
-              montoRestante: 0,
-              metodoPago: 'Transferencia',
-              estado: 'Registrado',
-              concepto: 'Instalación DVR'
-            }
-          ]
-        }
-      ]
-    }
-  ];
+  {
+    cliente: { id: 1, nombre: 'Juan', apellido: 'Pérez', documento: '1012345678' },
+    contratos: [
+      {
+        numero: 'CON-001',
+        pagos: [
+          {
+            id: 1,
+            fecha: '2024-01-15',
+            montoTotal: 1000000, // Monto total del contrato
+            montoAbonado: 250000, // Monto de este pago/abono
+            montoRestante: 750000, // Restante del contrato después de este pago
+            metodoPago: 'Transferencia',
+            estado: 'Registrado',
+            concepto: 'Abono inicial contrato CON-001',
+          },
+          {
+            id: 2,
+            fecha: '2024-02-10',
+            montoTotal: 1000000,
+            montoAbonado: 150000,
+            montoRestante: 600000,
+            metodoPago: 'Efectivo',
+            estado: 'Registrado',
+            concepto: 'Abono cuota febrero CON-001',
+          },
+        ],
+      },
+      {
+        numero: 'CON-002',
+        pagos: [
+          {
+            id: 3,
+            fecha: '2024-03-01',
+            montoTotal: 500000,
+            montoAbonado: 500000,
+            montoRestante: 0,
+            metodoPago: 'PSE',
+            estado: 'Completado',
+            concepto: 'Pago completo contrato CON-002',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    cliente: { id: 2, nombre: 'María', apellido: 'González', documento: '2023456789' },
+    contratos: [
+      {
+        numero: 'CON-003',
+        pagos: [
+          {
+            id: 4,
+            fecha: '2024-04-05',
+            montoTotal: 1200000,
+            montoAbonado: 300000,
+            montoRestante: 900000,
+            metodoPago: 'Tarjeta',
+            estado: 'Registrado',
+            concepto: 'Abono inicial contrato CON-003',
+          },
+          {
+            id: 5,
+            fecha: '2024-05-20',
+            montoTotal: 1200000,
+            montoAbonado: 200000,
+            montoRestante: 700000,
+            metodoPago: 'Transferencia',
+            estado: 'Cancelado', // Ejemplo de pago cancelado
+            concepto: 'Abono cuota mayo CON-003 (cancelado)',
+          },
+        ],
+      },
+    ],
+  },
+  {
+    cliente: { id: 3, nombre: 'Pedro', apellido: 'Ramírez', documento: '3034567890' },
+    contratos: [
+      {
+        numero: 'CON-004',
+        pagos: [
+          {
+            id: 6,
+            fecha: '2024-06-10',
+            montoTotal: 800000,
+            montoAbonado: 800000,
+            montoRestante: 0,
+            metodoPago: 'Efectivo',
+            estado: 'Completado',
+            concepto: 'Pago final contrato CON-004',
+          },
+        ],
+      },
+    ],
+  },
+];
 
 const ITEMS_PER_PAGE = 5;
 
 const Payments_InstallmentsPage = () => {
-  const [pagos, setPagos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [clientesConContratosYPagos, setClientesConContratosYPagos] = useState(JSON.parse(JSON.stringify(mockPagosIntegrado)));
+  const [loading, setLoading] = useState(false); // Podrías usarlo para estados de carga reales
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
-  const [mockCargado, setMockCargado] = useState(false);
+  const [modalContractData, setModalContractData] = useState(null); // Data completa del contrato para el modal
 
-  
-
- const handleAddPago = (nuevosPagos) => {
-  setPagos(prev => {
-    const actualizados = [...prev];
-
-    nuevosPagos.forEach(pagoNuevo => {
-      const index = actualizados.findIndex(p => p.id === pagoNuevo.id);
-      if (index !== -1) {
-        // 🔄 Si ya existe, actualízalo
-        actualizados[index] = pagoNuevo;
-      } else {
-        // ➕ Si es nuevo, agrégalo
-        actualizados.push(pagoNuevo);
-      }
+  // Aplanar los datos para la tabla principal
+  const flatPaymentsData = useMemo(() => {
+    const allFlatPayments = [];
+    clientesConContratosYPagos.forEach(clienteEntry => {
+      const { cliente, contratos } = clienteEntry;
+      contratos.forEach(contrato => {
+        contrato.pagos.forEach(pago => {
+          allFlatPayments.push({
+            ...pago,
+            numeroContrato: contrato.numero,
+            nombre: cliente.nombre,
+            apellido: cliente.apellido,
+            clienteId: cliente.id,
+            contratoNumero: contrato.numero, // Redundante pero útil para consistencia
+          });
+        });
+      });
     });
+    return allFlatPayments;
+  }, [clientesConContratosYPagos]);
 
-    return actualizados;
-  });
-
-  setCurrentPage(1); // Puedes dejar esto si quieres volver a la página 1
-};
-
-
-  const handleCargarMock = (pagosDelMock) => {
-    if (!mockCargado) {
-      setPagos(prev => [...prev, ...pagosDelMock]);
-      setMockCargado(true);
-      setLoading(false);
-    }
-  };
-
-  // Filtro y paginación
+  // Filtrar los pagos según el término de búsqueda
   const filteredPagos = useMemo(() =>
-    pagos.filter(p =>
+    flatPaymentsData.filter(p =>
       p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.fecha.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.numeroContrato.toString().includes(searchTerm) ||
       p.metodoPago.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.estado.toLowerCase().includes(searchTerm.toLowerCase())
-    ), [pagos, searchTerm]);
+      p.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.concepto.toLowerCase().includes(searchTerm.toLowerCase())
+    ), [flatPaymentsData, searchTerm]);
 
+  // Calcular total de páginas para la paginación
   const totalPages = Math.ceil(filteredPagos.length / ITEMS_PER_PAGE);
 
+  // Obtener los pagos para la página actual
   const paginatedPagos = useMemo(() => {
     const start = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredPagos.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredPagos, currentPage]);
 
-  const handleExport = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredPagos);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Pagos y abonos');
-    XLSX.writeFile(workbook, 'ReporteDePagosYabonos.xlsx');
+  // Manejador para abrir el modal de registro de pago para un contrato específico
+  const handleOpenRegisterPaymentForContract = (pagoDeLaFila) => {
+    // 1. Encontrar el cliente y el contrato en la estructura anidada
+    const clienteFound = clientesConContratosYPagos.find(c => c.cliente.id === pagoDeLaFila.clienteId);
+    if (!clienteFound) {
+      console.error('Cliente no encontrado para el pago seleccionado.');
+      toast.error('Error: Cliente no encontrado para el contrato.');
+      return;
+    }
+
+    const contratoFound = clienteFound.contratos.find(c => c.numero === pagoDeLaFila.numeroContrato);
+    if (!contratoFound) {
+      console.error('Contrato no encontrado para el pago seleccionado.');
+      toast.error('Error: Contrato no encontrado.');
+      return;
+    }
+
+    // 2. Calcular los montos totales y abonados del CONTRATO completo
+    // Asumimos que el montoTotal del contrato es el mismo en todos sus pagos.
+    // Tomamos el primero si existe, si no, es 0.
+    const montoTotalContrato = contratoFound.pagos[0]?.montoTotal || 0;
+
+    // Sumar solo los `montoAbonado` de pagos NO cancelados
+    const montoAbonadoContrato = contratoFound.pagos
+      .filter(p => p.estado !== 'Cancelado')
+      .reduce((sum, p) => sum + p.montoAbonado, 0);
+
+    const montoRestanteContrato = Math.max(0, montoTotalContrato - montoAbonadoContrato);
+
+    // 3. Preparar la data completa para el modal
+    setModalContractData({
+      cliente: clienteFound.cliente,
+      contrato: {
+        numero: contratoFound.numero,
+        pagos: contratoFound.pagos, // Pasamos TODOS los pagos del contrato
+        montoTotal: montoTotalContrato,
+        montoAbonado: montoAbonadoContrato,
+        montoRestante: montoRestanteContrato,
+      },
+    });
+    setMostrarModalPago(true);
   };
+
+  // Manejador para abrir el modal de registro de pago sin datos preestablecidos (si lo quieres mantener)
+  const handleOpenGlobalRegisterPayment = () => {
+    setModalContractData(null); // No precarga nada, el modal lo gestionará
+    setMostrarModalPago(true);
+  };
+
+  // Manejador para añadir un nuevo abono a la data principal
+  const handleAddPagoToData = (newAbonoInfo) => {
+    console.log('Recibido en el padre para guardar (nuevo abono):', newAbonoInfo);
+
+    setClientesConContratosYPagos(prevClientesData => {
+      const updatedClientes = JSON.parse(JSON.stringify(prevClientesData)); // Copia profunda
+
+      const clienteIndex = updatedClientes.findIndex(c => c.cliente.id === newAbonoInfo.clienteId);
+      if (clienteIndex === -1) {
+        console.error('Cliente no encontrado para el nuevo abono.');
+        toast.error('Error al guardar: Cliente no encontrado.');
+        return prevClientesData;
+      }
+      const cliente = updatedClientes[clienteIndex];
+
+      const contratoIndex = cliente.contratos.findIndex(c => c.numero === newAbonoInfo.numeroContrato);
+      if (contratoIndex === -1) {
+        console.error('Contrato no encontrado para el nuevo abono.');
+        toast.error('Error al guardar: Contrato no encontrado.');
+        return prevClientesData;
+      }
+      const contrato = cliente.contratos[contratoIndex];
+
+      // Calcular el nuevo ID para el abono
+      let newId = 1;
+      if (flatPaymentsData.length > 0) {
+        newId = Math.max(...flatPaymentsData.map(p => p.id)) + 1;
+      }
+
+      // Crear el nuevo registro de abono
+      const newAbonoRecord = {
+        id: newId,
+        fecha: newAbonoInfo.fecha,
+        montoTotal: newAbonoInfo.montoTotalContrato, // El monto total del contrato original
+        montoAbonado: newAbonoInfo.montoAbonado, // El monto de ESTE abono
+        montoRestante: newAbonoInfo.montoRestanteCalculado, // El restante después de este abono
+        metodoPago: newAbonoInfo.metodoPago,
+        estado: 'Registrado', // Nuevo abono siempre inicia como 'Registrado'
+        concepto: newAbonoInfo.concepto,
+      };
+
+      contrato.pagos.push(newAbonoRecord); // Añadir el nuevo abono a la lista de pagos del contrato
+
+      // Opcional: Actualizar el estado del pago principal si lo modelaras como un solo pago principal
+      // y abonos como sub-registros. En tu modelo actual, cada abono es un pago.
+      // El estado del contrato como "pagado/parcial" se refleja en el montoRestante.
+
+      // Después de añadir el abono, actualizamos la `modalContractData` para que el modal se refresque
+      // con el historial y los montos actualizados.
+      const updatedMontoAbonadoContrato = contrato.pagos
+        .filter(p => p.estado !== 'Cancelado')
+        .reduce((sum, p) => sum + p.montoAbonado, 0);
+      const updatedMontoRestanteContrato = Math.max(0, newAbonoInfo.montoTotalContrato - updatedMontoAbonadoContrato);
+
+      setModalContractData(prevData => ({
+        ...prevData,
+        contrato: {
+          ...prevData.contrato,
+          pagos: [...contrato.pagos], // Asegura que es una nueva referencia
+          montoAbonado: updatedMontoAbonadoContrato,
+          montoRestante: updatedMontoRestanteContrato,
+        }
+      }));
+
+      return updatedClientes;
+    });
+
+    toast.success('Abono registrado correctamente.');
+    // No cerramos el modal aquí, el usuario puede seguir agregando abonos
+    // setMostrarModalPago(false);
+    // setModalContractData(null);
+  };
+
+  // Manejador para cancelar un pago
+  const handleCancelPayment = (paymentIdToCancel, contratoNumero, clienteId) => {
+    setClientesConContratosYPagos(prevClientesData => {
+      const updatedClientes = JSON.parse(JSON.stringify(prevClientesData));
+
+      const clienteIndex = updatedClientes.findIndex(c => c.cliente.id === clienteId);
+      if (clienteIndex === -1) {
+        toast.error('Error: Cliente no encontrado para la cancelación.');
+        return prevClientesData;
+      }
+      const cliente = updatedClientes[clienteIndex];
+
+      const contratoIndex = cliente.contratos.findIndex(c => c.numero === contratoNumero);
+      if (contratoIndex === -1) {
+        toast.error('Error: Contrato no encontrado para la cancelación.');
+        return prevClientesData;
+      }
+      const contrato = cliente.contratos[contratoIndex];
+
+      const pagoIndex = contrato.pagos.findIndex(p => p.id === paymentIdToCancel);
+      if (pagoIndex === -1) {
+        toast.error('Error: Pago no encontrado para la cancelación.');
+        return prevClientesData;
+      }
+
+      // Marcar el pago como cancelado
+      contrato.pagos[pagoIndex].estado = 'Cancelado';
+
+      // Recalcular los montos del contrato después de la cancelación
+      const montoTotalContrato = contrato.pagos[0]?.montoTotal || 0;
+      const montoAbonadoContrato = contrato.pagos
+        .filter(p => p.estado !== 'Cancelado')
+        .reduce((sum, p) => sum + p.montoAbonado, 0);
+      const montoRestanteContrato = Math.max(0, montoTotalContrato - montoAbonadoContrato);
+
+      // Actualizar la `modalContractData` para reflejar los cambios en el modal
+      setModalContractData(prevData => ({
+        ...prevData,
+        contrato: {
+          ...prevData.contrato,
+          pagos: [...contrato.pagos], // Pasamos la nueva referencia para forzar re-render
+          montoAbonado: montoAbonadoContrato,
+          montoRestante: montoRestanteContrato,
+        }
+      }));
+
+      
+      return updatedClientes;
+    });
+  };
+
+
+  const handleExport = () => {
+    // Lógica de exportación, si es necesario, aquí podrías exportar todos los pagos filtrados
+    toast.info('Funcionalidad de exportar no implementada en este ejemplo.');
+    console.log('Exportando pagos:', filteredPagos);
+  };
+
 
   return (
     <div className="p-4 md:p-8">
       {/* Encabezado */}
-      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">
-          Gestión de Pagos y Abonos
-        </h1>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Buscar..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
-          </div>
-
+      <div className="flex flex-col md:flex-row justify-between items-center mb-2">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestión de Pagos e Cuotas</h1>
+        <div className="flex space-x-3">
+          
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 bg-green-400 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-all"
           >
-            <FaFileExcel /> Exportar
-          </button>
-
-          <button
-            onClick={() => setMostrarModalPago(true)}
-            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-          >
-            <FaPlus /> Registrar Pago
+            <FaDownload /> Exportar
           </button>
         </div>
       </div>
 
-      {/* Tabla */}
+      {/* Barra de búsqueda */}
+      <div className="mb-6">
+        <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar por cliente, contrato, estado, etc."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
+              setCurrentPage(1); // Resetear a la primera página al buscar
+            }}
+            className="w-full p-2.5 pl-10 border border-gray-300 rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold"
+          />
+          <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+        </div>
+      </div>
+
+      {/* Tabla de Pagos */}
       {loading ? (
-        <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-          <table className="w-full text-center">
-            <thead className="bg-gray-50">
-              <tr>
-                {['Fecha', 'Número de Contrato', 'Nombre y Apellido', 'Monto Total', 'Monto Pagado', 'Método de Pago', 'Estado', 'Acciones']
-                  .map((h, i) => (
-                    <th key={i} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">
-                      {h}
-                    </th>
-                  ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {[...Array(ITEMS_PER_PAGE)].map((_, i) => <SkeletonRow key={i} />)}
-            </tbody>
-          </table>
+        // Implementa tu SkeletonRow aquí si es necesario
+        <div className="animate-pulse">
+          <div className="h-10 bg-gray-200 rounded mb-4"></div>
+          {[...Array(ITEMS_PER_PAGE)].map((_, i) => (
+            <div key={i} className="h-8 bg-gray-100 rounded mb-2"></div>
+          ))}
         </div>
       ) : (
         <>
-          <PagosTable pagos={paginatedPagos} />
+          <PagosTable
+            pagos={paginatedPagos}
+            onRegisterNewAbono={handleOpenRegisterPaymentForContract} // Pasa la nueva función
+          />
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -203,14 +395,16 @@ const Payments_InstallmentsPage = () => {
         </>
       )}
 
-      {/* Modal */}
+      {/* Modal de Registro de Pagos */}
       <CreatePaymentsModal
         isOpen={mostrarModalPago}
-        onClose={() => setMostrarModalPago(false)}
-        onAddPago={handleAddPago}
-        pagosAgregados={pagos}
-        onLoadMock={handleCargarMock}
-        mockPagosIntegrado={mockPagosIntegrado}
+        onClose={() => {
+          setMostrarModalPago(false);
+          setModalContractData(null); // Limpiar data al cerrar
+        }}
+        onSaveNewAbono={handleAddPagoToData}
+        contractData={modalContractData} // Pasa la data completa del contrato
+        onCancelPayment={handleCancelPayment} // Pasa la función para cancelar
       />
     </div>
   );

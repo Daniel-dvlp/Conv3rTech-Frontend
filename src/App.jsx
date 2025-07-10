@@ -8,13 +8,13 @@ import ProtectedRoute from './shared/components/ProtectedRoute';
 // Importación de todas las páginas de los módulos
 
 import DashboardPage from './features/dashboard/DashboardPage';
+
 //Rutas Daniel
 import LoginPage from './features/auth/pages/LoginPage';
 import WorkSchedulingPage from './features/dashboard/pages/work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/project/ProjectPage';
 import EditProfilePage from './features/dashboard/pages/profile/EditProfilePage';
- 
 
 // Rutas Luissy
 import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
@@ -152,7 +152,7 @@ function App() {
           <Route path="profile" element={<EditProfilePage />} />
         </Route>
       </Routes>
-      <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
+      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
     </BrowserRouter>
     
   );

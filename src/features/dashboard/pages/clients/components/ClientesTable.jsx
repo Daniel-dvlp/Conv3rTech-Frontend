@@ -15,7 +15,7 @@ const ClientesTable = ({ clientes, onEdit, onDelete }) => {
       <table className="w-full text-center">
         <thead className="bg-gray-50">
           <tr>
-            {['Documento', 'Tipo de Documento', 'Nombre', 'Apellido', 'Correo electrónico', 'Celular', 'Estado', 'Acciones'].map((header, i) => (
+            {['Documento', 'Tipo de Documento', 'Nombre y Apellido', 'Correo electrónico', 'Celular', 'Estado', 'Acciones'].map((header, i) => (
               <th key={i} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">{header}</th>
             ))}
           </tr>
@@ -25,8 +25,8 @@ const ClientesTable = ({ clientes, onEdit, onDelete }) => {
             <tr key={cliente.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-2">{cliente.documento}</td>
               <td className="px-4 py-2">{cliente.tipoDocumento}</td>
-              <td className="px-4 py-2">{cliente.nombre}</td>
-              <td className="px-4 py-2">{cliente.apellido}</td>
+              <td className="px-4 py-2">{cliente.nombre} {cliente.apellido}</td>
+
               <td className="px-4 py-2">{cliente.email}</td>
               <td className="px-4 py-2">{cliente.celular}</td>
               <td className="px-4 py-2">
