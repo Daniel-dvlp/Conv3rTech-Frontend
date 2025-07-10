@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
+
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
@@ -36,18 +37,20 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
     rol: '',
     email: '',
     contrasena: '',
+    status: 'Activo', // Estado por defecto
     confirmarContrasena: ''
   };
-
+  const [verContrasena, setVerContrasena] = useState(false);
+  const [verConfirmacion, setVerConfirmacion] = useState(false);
   const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [validacionesContrasena, setValidacionesContrasena] = useState({
-  longitud: false,
-  mayuscula: false,
-  minuscula: false,
-  numero: false,
-  especial: false,
-});
+    longitud: false,
+    mayuscula: false,
+    minuscula: false,
+    numero: false,
+    especial: false,
+  });
 
   useEffect(() => {
     if (isOpen) {
@@ -183,135 +186,152 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
 
   if (!isOpen) return null;
 
-    return (
-  <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
+      <div
+        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex justify-between items-center p-4 border-b">
+          <h2 className="text-2xl font-bold text-gray-800">Crear Usuario</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
+            <FaTimes />
+          </button>
+        </header>
 
-    <div
-      className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <header className="flex justify-between items-center p-4 border-b">
-        <h2 className="text-2xl font-bold text-gray-800">Crear Usuario</h2>
-        <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
-          <FaTimes />
-        </button>
-      </header>
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
 
-      <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
+          {/* Sección principal */}
+          <FormSection title="Información Personal">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
 
-        {/* Sección principal */}
-        <FormSection title="Información Personal">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <FormLabel htmlFor="tipoDocumento">Tipo de Documento</FormLabel>
+                <select id="tipoDocumento" name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
+                  <option value="">Seleccionar...</option>
+                  <option value="CC">CC</option>
+                  <option value="TI">TI</option>
+                  <option value="CE">CE</option>
+                </select>
+                {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
+              </div>
 
-            <div>
-              <FormLabel htmlFor="tipoDocumento">Tipo de Documento</FormLabel>
-              <select id="tipoDocumento" name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
-                <option value="">Seleccionar...</option>
-                <option value="CC">CC</option>
-                <option value="TI">TI</option>
-                <option value="CE">CE</option>
-              </select>
-              {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
-            </div>
+              <div>
+                <FormLabel htmlFor="documento">Documento</FormLabel>
+                <input id="documento" name="documento" value={formData.documento} onChange={handleChange} className={inputBaseStyle} />
+                {errors.documento && <p className="text-red-500 text-sm mt-1">{errors.documento}</p>}
+              </div>
 
-            <div>
-              <FormLabel htmlFor="documento">Documento</FormLabel>
-              <input id="documento" name="documento" value={formData.documento} onChange={handleChange} className={inputBaseStyle} />
-              {errors.documento && <p className="text-red-500 text-sm mt-1">{errors.documento}</p>}
-            </div>
+              <div>
+                <FormLabel htmlFor="nombre">Nombre</FormLabel>
+                <input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
+                {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+              </div>
 
-            <div>
-              <FormLabel htmlFor="nombre">Nombre</FormLabel>
-              <input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
-              {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
-            </div>
+              <div>
+                <FormLabel htmlFor="apellido">Apellido</FormLabel>
+                <input id="apellido" name="apellido" value={formData.apellido} onChange={handleChange} className={inputBaseStyle} />
+                {errors.apellido && <p className="text-red-500 text-sm mt-1">{errors.apellido}</p>}
+              </div>
 
-            <div>
-              <FormLabel htmlFor="apellido">Apellido</FormLabel>
-              <input id="apellido" name="apellido" value={formData.apellido} onChange={handleChange} className={inputBaseStyle} />
-              {errors.apellido && <p className="text-red-500 text-sm mt-1">{errors.apellido}</p>}
-            </div>
+              <div>
+                <FormLabel htmlFor="celular">Celular</FormLabel>
+                <input id="celular" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
+                {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
+              </div>
 
-            <div>
-              <FormLabel htmlFor="celular">Celular</FormLabel>
-              <input id="celular" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
-              {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
-            </div>
+              <div>
+                <FormLabel htmlFor="rol">Rol</FormLabel>
+                <select id="rol" name="rol" value={formData.rol} onChange={handleChange} className={inputBaseStyle}>
+                  <option value="">Seleccionar...</option>
+                  {roles.map((rol) => (
+                    <option key={rol.id} value={rol.name}>{rol.name}</option>
+                  ))}
+                </select>
+                {errors.rol && <p className="text-red-500 text-sm mt-1">{errors.rol}</p>}
+              </div>
 
-            <div>
-              <FormLabel htmlFor="rol">Rol</FormLabel>
-              <select id="rol" name="rol" value={formData.rol} onChange={handleChange} className={inputBaseStyle}>
-                <option value="">Seleccionar...</option>
-                {roles.map((rol) => (
-                  <option key={rol.id} value={rol.name}>{rol.name}</option>
-                ))}
-              </select>
-              {errors.rol && <p className="text-red-500 text-sm mt-1">{errors.rol}</p>}
-            </div>
+              <div className="col-span-2">
+                <FormLabel htmlFor="email">Correo Electrónico</FormLabel>
+                <input id="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
+                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+              </div>
 
-            <div className="col-span-2">
-              <FormLabel htmlFor="email">Correo Electrónico</FormLabel>
-              <input id="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
-              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
-            </div>
+              <div className="flex justify-around gap-4 col-span-2">
+                <div className='w-full'>
+                  <FormLabel htmlFor="contrasena">Contraseña</FormLabel>
+                  <div className="relative">
+                    <input
+                      id="contrasena"
+                      name="contrasena"
+                      type={verContrasena ? "text" : "password"}
+                      value={formData.contrasena}
+                      onChange={handleChange}
+                      className={`${inputBaseStyle} pr-10`} // para que no tape el ícono
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setVerContrasena((prev) => !prev)}
+                      className="absolute top-2/4 right-3 transform -translate-y-1/2 text-gray-600"
+                    >
+                      {verContrasena ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                  {errors.contrasena && <p className="text-red-500 text-sm mt-1">{errors.contrasena}</p>}
 
-            <div className="flex justify-around gap-4 col-span-2">
-              <div className='w-full'>
-                <FormLabel htmlFor="contrasena">Contraseña</FormLabel>
-                <input
-                  type="password"
-                  id="contrasena"
-                  name="contrasena"
-                  value={formData.contrasena}
-                  onChange={handleChange}
-                  className={inputBaseStyle}
-                />
-                {errors.contrasena && <p className="text-red-500 text-sm mt-1">{errors.contrasena}</p>}
+                  <div className="mt-1 ml-2 space-y-0 text-sm text-gray-600">
+                    <p className={validacionesContrasena.longitud ? "text-green-600 mb-0" : "text-red-500 mb-0"} >
+                      {validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 10 caracteres
+                    </p>
+                    <p className={validacionesContrasena.mayuscula ? "text-green-600" : "text-red-500"}>
+                      {validacionesContrasena.mayuscula ? '✓' : '✗'} Al menos una letra mayúscula
+                    </p>
+                    <p className={validacionesContrasena.minuscula ? "text-green-600" : "text-red-500"}>
+                      {validacionesContrasena.minuscula ? '✓' : '✗'} Al menos una letra minúscula
+                    </p>
+                    <p className={validacionesContrasena.numero ? "text-green-600" : "text-red-500"}>
+                      {validacionesContrasena.numero ? '✓' : '✗'} Al menos un número
+                    </p>
+                    <p className={validacionesContrasena.especial ? "text-green-600" : "text-red-500"}>
+                      {validacionesContrasena.especial ? '✓' : '✗'} Al menos un símbolo (ej. @, #, $)
+                    </p>
+                  </div>
+                </div>
 
-                <div className="mt-2 space-y-1 text-sm text-gray-600">
-                  <p className={validacionesContrasena.longitud ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.longitud ? '✅' : '❌'} Entre 8 y 10 caracteres
-                  </p>
-                  <p className={validacionesContrasena.mayuscula ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.mayuscula ? '✅' : '❌'} Al menos una letra mayúscula
-                  </p>
-                  <p className={validacionesContrasena.minuscula ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.minuscula ? '✅' : '❌'} Al menos una letra minúscula
-                  </p>
-                  <p className={validacionesContrasena.numero ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.numero ? '✅' : '❌'} Al menos un número
-                  </p>
-                  <p className={validacionesContrasena.especial ? "text-green-600" : "text-red-500"}>
-                    {validacionesContrasena.especial ? '✅' : '❌'} Al menos un símbolo (ej. @, #, $)
-                  </p>
+                <div className='w-full'>
+                  <FormLabel htmlFor="confirmarContrasena">Confirmar Contraseña</FormLabel>
+                  <div className='relative'>
+                  <input
+                    type={verConfirmacion ? "text" : "password"}
+                    id="confirmarContrasena"
+                    name="confirmarContrasena"
+                    value={formData.confirmarContrasena}
+                    onChange={handleChange}
+                    className={`${inputBaseStyle} pr-10`}
+                  />
+                  <button
+                      type="button"
+                      onClick={() => setVerConfirmacion((prev) => !prev)}
+                      className="absolute top-2/4 right-3 transform -translate-y-1/2 text-gray-600"
+                    >
+                      {verConfirmacion ? <FaEyeSlash /> : <FaEye />}
+                    </button>
+                  </div>
+                  {errors.confirmarContrasena && <p className="text-red-500 text-sm mt-1">{errors.confirmarContrasena}</p>}
                 </div>
               </div>
-
-              <div className='w-full'>
-                <FormLabel htmlFor="confirmarContrasena">Confirmar Contraseña</FormLabel>
-                <input
-                  type="password"
-                  id="confirmarContrasena"
-                  name="confirmarContrasena"
-                  value={formData.confirmarContrasena}
-                  onChange={handleChange}
-                  className={inputBaseStyle}
-                />
-                {errors.confirmarContrasena && <p className="text-red-500 text-sm mt-1">{errors.confirmarContrasena}</p>}
-              </div>
             </div>
-          </div>
-        </FormSection>
+          </FormSection>
 
-        {/* Footer botones */}
-        <div className="flex justify-end gap-4 pt-6 border-t mt-6">
-          <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
-          <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Crear Usuario</button>
-        </div>
-      </form>
+          {/* Footer botones */}
+          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+            <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
+            <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Crear Usuario</button>
+          </div>
+        </form>
+      </div>
     </div>
-  </div>
-);
+  );
 
 };
 
