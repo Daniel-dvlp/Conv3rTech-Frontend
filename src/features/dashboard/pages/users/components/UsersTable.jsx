@@ -31,43 +31,40 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-      <table className="w-full">
+      <table className="w-full text-center">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Tipo de Documento</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Documento</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Nombre</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Apellido</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Correo</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Rol</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Estado</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 text-center uppercase tracking-wider">Acciones</th>
+            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Tipo de Documento</th>
+            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Documento</th>
+            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Nombre y Apellido</th>
+            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Correo</th>
+            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Rol</th>
+            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Estado</th>
+            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {usuariosPaginados.map((usuario) => (
             <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
 
-              <td className="px-6 py-4 text-center">
+              <td className="px-4 py-2 text-center">
                 <span className="text-xs text-gray-600">{usuario.tipoDocumento}</span>
               </td>
-              <td className="px-6 py-4 text-center">
+              <td className="px-4 py-2 text-center">
                 <span className="text-xs text-gray-600">{usuario.documento}</span>
               </td>
               
-              <td className="px-6 py-4 text-center">
-                <span className="text-xs text-gray-600">{usuario.nombre}</span>
+              <td className="px-4 py-2 text-center">
+                <span className="text-xs text-gray-600">{usuario.nombre} {usuario.apellido}</span>
               </td>
-              <td className="px-6 py-4 text-center">
-                <span className="text-xs text-gray-600">{usuario.apellido}</span>
-              </td>
-              <td className="px-6 py-4 text-center">
+      
+              <td className="px-4 py-2 text-center">
                 <span className="text-xs text-gray-600">{usuario.email}</span>
               </td>
-              <td className="px-6 py-4 text-center">
+              <td className="px-4 py-2 text-center">
                 <span className="text-xs text-gray-700 font-medium">{usuario.rol}</span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-center">
+              <td className="px-4 py-2 whitespace-nowrap text-center">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
                 ${usuario.status === 'Activo'
                     ? 'bg-green-100 text-green-800'
@@ -78,16 +75,16 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
                   {usuario.status}
                 </span>
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-xs font-medium">
-                <div className="flex justify-end items-center gap-4">
+              <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
+                <div className="flex justify-center items-center gap-3">
                   <button className="text-blue-600 hover:text-blue-900" title="Ver detalles" onClick={() => setSelectedUser(usuario)} >
-                    <FaEye size={18} />
+                    <FaEye size={14} />
                   </button>
                   <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
-                    <FaEdit size={18} />
+                    <FaEdit size={14} />
                   </button>
                   <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() =>onDelete(usuario.id)} >
-                    <FaTrashAlt size={18} />
+                    <FaTrashAlt size={14} />
                   </button>
                 </div>
                 {selectedUser && (

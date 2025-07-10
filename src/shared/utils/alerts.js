@@ -43,7 +43,7 @@ export const confirmDelete = async (
     showCancelButton: true,
     confirmButtonColor: '#e74c3c',
     cancelButtonColor: '#6c757d',
-    confirmButtonText: 'Sí, eliminar',
+    confirmButtonText: 'Sí',
     cancelButtonText: 'Cancelar'
   });
 

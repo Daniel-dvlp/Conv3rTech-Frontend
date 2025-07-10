@@ -65,7 +65,6 @@ const ClientsPage = () => {
   };
   // Filtro por búsqueda
   const term = searchTerm.trim().toLowerCase();
-
   const filteredClients = useMemo(() =>
     clientes.filter(c =>
       (c.nombre || '').toLowerCase().includes(term) ||
