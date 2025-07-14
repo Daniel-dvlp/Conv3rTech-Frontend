@@ -170,7 +170,7 @@ const Sidebar = () => {
                     to={item.path}
                     className={`no-underline flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${getBubbleClasses(isActiveParent)}`}
                   >
-                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`} style={getActiveTextColor(isActiveParent)}>
+                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto '}`} style={getActiveTextColor(isActiveParent)}>
                       {item.icon}
                     </div>
                     {isExpanded && (
