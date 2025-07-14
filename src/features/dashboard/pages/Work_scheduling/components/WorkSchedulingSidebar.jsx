@@ -1,97 +1,72 @@
 import React, { useState } from 'react';
-import { FaPlus, FaSearch, FaUser, FaEye, FaEyeSlash, FaFilter, FaCalendarAlt } from 'react-icons/fa';
+import { FaSearch, FaUser, FaEye, FaEyeSlash, FaPlus } from 'react-icons/fa';
+import { showToast } from '../../../../../shared/utils/alertas';
 
 const WorkSchedulingSidebar = ({ employees, filter, setFilter, selected, setSelected, onCreate }) => {
-  const [showAll, setShowAll] = useState(true);
-  const [searchFocused, setSearchFocused] = useState(false);
+  const [search, setSearch] = useState(filter);
 
-  const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(filter.toLowerCase()) || 
-    emp.role.toLowerCase().includes(filter.toLowerCase())
+  const filteredEmployees = employees.filter(emp =>
+    emp.name.toLowerCase().includes(search.toLowerCase()) ||
+    emp.documento?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleSelectAll = () => {
-    if (showAll) {
-      setSelected([]);
-    } else {
-      setSelected(employees.map(e => e.id));
+  const handleToggle = (id) => {
+    setSelected(selected.includes(id)
+      ? selected.filter(eid => eid !== id)
+      : [...selected, id]);
+  };
+
+  const handleToggleAll = () => {
+    if (selected.length === employees.length) setSelected([]);
+    else setSelected(employees.map(e => e.id));
+  };
+
+  const handleCreateClick = () => {
+    if (selected.length === 0) {
+      showToast('Debes seleccionar al menos un empleado activo para crear un turno.', 'warning');
+      return;
     }
-    setShowAll(!showAll);
+    onCreate();
   };
-
-  const toggleEmployee = (empId) => {
-    setSelected(selected.includes(empId)
-      ? selected.filter(id => id !== empId)
-      : [...selected, empId]);
-  };
-
-  const selectedCount = selected.length;
-  const totalCount = employees.length;
 
   return (
-    <aside className="w-full bg-gradient-to-br from-white via-yellow-50/30 to-orange-50/20 border-r border-orange-200/40 flex flex-col h-full shadow-lg backdrop-blur-sm">
-      {/* Header Compacto */}
-      <div className="p-4 border-b border-orange-200/40 bg-white/60 backdrop-blur-sm">
-        <div className="flex items-center gap-2 mb-3">
+    <aside className="h-full flex flex-col bg-gradient-to-br from-white via-yellow-50/30 to-orange-50/20 border-r border-yellow-100 shadow-lg min-w-[220px] max-w-xs">
+      <div className="p-4 border-b border-yellow-100 bg-white/60 flex flex-col gap-2">
+        <div className="flex items-center gap-2 mb-2">
           <div className="p-1.5 bg-gradient-to-r from-yellow-400 to-orange-400 rounded-lg shadow-md">
-            <FaCalendarAlt className="text-white text-sm" />
+            <FaUser className="text-white text-sm" />
           </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-800">Empleados</h2>
-            <p className="text-xs text-gray-600">Selecciona para filtrar</p>
-          </div>
+          <h2 className="text-lg font-bold text-gray-800">Empleados</h2>
         </div>
-        
-        {/* Botón Crear */}
         <button
-          onClick={onCreate}
-          className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white font-bold py-2 px-3 rounded-lg shadow-md hover:shadow-lg transform hover:scale-105 transition-all duration-200 flex items-center justify-center gap-2 text-sm"
+          onClick={handleCreateClick}
+          className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 hover:from-yellow-500 hover:to-orange-500 text-white font-bold py-2 px-3 rounded-lg shadow-md hover:shadow-lg flex items-center justify-center gap-2 text-sm"
         >
-          <FaPlus className="text-xs" />
-          Crear Turno
+          <FaPlus className="text-xs" /> Nuevo Turno
         </button>
       </div>
-
-      {/* Búsqueda Compacta */}
-      <div className="p-3 border-b border-orange-200/40 bg-white/40 backdrop-blur-sm">
-        <div className={`relative transition-all duration-300 ${searchFocused ? 'transform scale-105' : ''}`}>
-          <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-            <FaSearch className={`h-3 w-3 transition-colors ${searchFocused ? 'text-orange-500' : 'text-gray-400'}`} />
-          </div>
+      <div className="p-3 border-b border-yellow-100 bg-white/40">
+        <div className="relative">
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             placeholder="Buscar empleado..."
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            onFocus={() => setSearchFocused(true)}
-            onBlur={() => setSearchFocused(false)}
-            className="w-full pl-7 pr-3 py-2 bg-white/80 border border-orange-200/60 rounded-lg focus:ring-2 focus:ring-orange-400 focus:border-orange-400 transition-all placeholder-gray-500 text-gray-700 shadow-sm text-sm"
+            value={search}
+            onChange={e => { setSearch(e.target.value); setFilter(e.target.value); }}
+            className="w-full pl-9 pr-3 py-2 bg-white/80 border border-yellow-200 rounded-lg focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 placeholder-gray-500 text-gray-700 shadow-sm text-sm"
           />
         </div>
       </div>
-
-      {/* Controles de Filtro */}
-      <div className="p-3 border-b border-orange-200/40 bg-white/30 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-1">
-            <FaFilter className="text-gray-600 text-xs" />
-            <span className="text-xs font-medium text-gray-700">Filtros</span>
-          </div>
-          <div className="bg-orange-100 text-orange-800 px-2 py-0.5 rounded-full text-xs font-bold">
-            {selectedCount}/{totalCount}
-          </div>
-        </div>
-        
+      <div className="p-3 border-b border-yellow-100 bg-white/30 flex items-center justify-between">
+        <span className="text-xs font-medium text-gray-700">Mostrar/Ocultar todos</span>
         <button
-          onClick={handleSelectAll}
-          className="w-full flex items-center justify-center gap-1 py-1.5 px-3 bg-white/70 hover:bg-white/90 border border-orange-200/60 rounded-md transition-all text-gray-700 hover:text-gray-900 font-medium text-xs"
+          onClick={handleToggleAll}
+          className="flex items-center gap-1 py-1 px-3 bg-white/70 hover:bg-yellow-100 border border-yellow-200 rounded-md text-gray-700 hover:text-gray-900 font-medium text-xs"
         >
-          {showAll ? <FaEyeSlash className="text-orange-500 text-xs" /> : <FaEye className="text-orange-500 text-xs" />}
-          {showAll ? 'Ocultar todos' : 'Mostrar todos'}
+          {selected.length === employees.length ? <FaEyeSlash className="text-orange-500 text-xs" /> : <FaEye className="text-orange-500 text-xs" />}
+          {selected.length === employees.length ? 'Ocultar' : 'Mostrar'}
         </button>
       </div>
-
-      {/* Lista de Empleados */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {filteredEmployees.length === 0 ? (
           <div className="text-center py-6 text-gray-500">
@@ -99,77 +74,27 @@ const WorkSchedulingSidebar = ({ employees, filter, setFilter, selected, setSele
             <p className="text-xs">No se encontraron empleados</p>
           </div>
         ) : (
-          filteredEmployees.map(emp => {
-            const isSelected = selected.includes(emp.id);
-            return (
-              <div
-                key={emp.id}
-                className={`group relative overflow-hidden rounded-lg transition-all duration-300 cursor-pointer transform hover:scale-102 ${
-                  isSelected 
-                    ? 'bg-gradient-to-r from-orange-100 to-yellow-100 shadow-sm border border-orange-300' 
-                    : 'bg-white/70 hover:bg-white/90 border border-orange-200/60 hover:border-orange-300'
-                }`}
-                onClick={() => toggleEmployee(emp.id)}
-              >
-                <label className="flex items-center gap-2 p-2 cursor-pointer">
-                  <div className="relative">
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => toggleEmployee(emp.id)}
-                      className="sr-only"
-                    />
-                    <div className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all ${
-                      isSelected 
-                        ? 'bg-gradient-to-r from-orange-400 to-yellow-400 border-orange-400' 
-                        : 'border-gray-300 bg-white'
-                    }`}>
-                      {isSelected && (
-                        <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                          <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 flex-1 min-w-0">
-                    <div 
-                      className="w-3 h-3 rounded-full shadow-inner border border-white flex-shrink-0"
-                      style={{ backgroundColor: emp.color }}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className={`font-medium truncate transition-colors text-sm ${
-                          isSelected ? 'text-gray-900' : 'text-gray-800'
-                        }`}>
-                          {emp.name}
-                        </span>
-                      </div>
-                      <span className={`text-xs block transition-colors ${
-                        isSelected ? 'text-gray-700' : 'text-gray-500'
-                      }`}>
-                        {emp.role}
-                      </span>
-                    </div>
-                  </div>
-                </label>
-                
-                {/* Hover effect overlay */}
-                <div className={`absolute inset-0 bg-gradient-to-r from-orange-400/10 to-yellow-400/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none ${
-                  isSelected ? 'opacity-20' : ''
-                }`} />
-              </div>
-            );
-          })
+          filteredEmployees.map(emp => (
+            <div
+              key={emp.id}
+              className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all border ${selected.includes(emp.id) ? 'bg-yellow-100 border-yellow-300' : 'bg-white/70 border-yellow-200 hover:bg-yellow-50'} shadow-sm`}
+              onClick={() => handleToggle(emp.id)}
+            >
+              <input
+                type="checkbox"
+                checked={selected.includes(emp.id)}
+                onChange={() => handleToggle(emp.id)}
+                className="accent-yellow-500 mr-2"
+              />
+              <span className="font-medium text-gray-800 text-sm truncate flex-1">{emp.name}</span>
+              <span className="text-xs text-gray-500 font-mono">{emp.documento}</span>
+            </div>
+          ))
         )}
       </div>
-
-      {/* Footer Stats */}
-      <div className="p-3 border-t border-orange-200/40 bg-white/60 backdrop-blur-sm">
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-600">Empleados activos</span>
-          <span className="font-bold text-orange-600">{selectedCount}</span>
-        </div>
+      <div className="p-3 border-t border-yellow-100 bg-white/60 text-xs text-gray-600 flex items-center justify-between">
+        <span>Empleados activos</span>
+        <span className="font-bold text-orange-600">{selected.length}</span>
       </div>
     </aside>
   );

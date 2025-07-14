@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaTimes, FaShieldAlt, FaPlus, FaPencilAlt, FaTrash, FaEye, FaBan, FaCheck } from 'react-icons/fa';
+import { showToast } from '../../../../../shared/utils/alertas';
 
 // Configuración de módulos basada en tu sidebar
 const MODULES_CONFIG = [
@@ -192,11 +193,13 @@ const NewRoleModal = ({ isOpen, onClose, onSave }) => {
       
       // Limpiar formulario y cerrar modal
       resetForm();
+      showToast('Rol creado exitosamente', 'success');
       
     } catch (error) {
       console.error('Error al crear el rol:', error);
       alert('Error al crear el rol. Por favor, inténtalo de nuevo.');
       setIsSubmitting(false);
+      showToast('Error al crear el rol', 'error');
     }
   };
 

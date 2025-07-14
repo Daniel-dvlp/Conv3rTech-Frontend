@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { mockUsuarios } from '../../dashboard/pages/users/data/User_data.js';
+import { showToast } from '../../../shared/utils/alertas';
 
 // --- Componentes Internos ---
 
@@ -121,6 +122,8 @@ const LoginPage = () => {
       localStorage.setItem('user', JSON.stringify(userInfo));
       localStorage.setItem('isAuthenticated', 'true');
       
+      // Toast de bienvenida
+      showToast(`Bienvenido, ${user.nombre}!`, 'success');
       // Navegar al dashboard
       navigate('/dashboard');
     } else {

@@ -10,6 +10,7 @@ import ProjectDetailModal from './components/ProjectDetailModal';
 import NewProjectModal from './components/NewProjectModal';
 import EditProjectModal from './components/EditProjectModal';
 import * as XLSX from 'xlsx';
+import { showToast, showAlert } from '../../../../shared/utils/alertas';
 
 // --- CONSTANTE PARA EL NÚMERO DE ELEMENTOS POR PÁGINA ---
 const ITEMS_PER_PAGE = 5;
@@ -65,20 +66,43 @@ const ProjectPage = () => {
 
   // --- AQUÍ SE MANTIENE LA FUNCIÓN PARA AÑADIR NUEVOS PROYECTOS ---
   const handleAddProject = (newProject) => {
-    setAllProjects(prev => [newProject, ...prev]);
-    setShowNewModal(false);
+    try {
+      setAllProjects(prev => [newProject, ...prev]);
+      setShowNewModal(false);
+      showToast('Proyecto creado exitosamente', 'success');
+    } catch (error) {
+      showToast('Error al crear el proyecto', 'error');
+    }
   };
 
   // Editar proyecto
   const handleUpdateProject = (updatedProject) => {
-    setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
-    setEditingProject(null);
+    try {
+      setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+      setEditingProject(null);
+      showToast('Proyecto actualizado exitosamente', 'success');
+    } catch (error) {
+      showToast('Error al actualizar el proyecto', 'error');
+    }
   };
 
   // Eliminar proyecto
-  const handleDeleteProject = (project) => {
-    if (window.confirm(`¿Seguro que deseas eliminar el proyecto "${project.nombre}"?`)) {
-      setAllProjects(prev => prev.filter(p => p.id !== project.id));
+  const handleDeleteProject = async (project) => {
+    const result = await showAlert({
+      title: '¿Estás seguro?',
+      text: `¿Seguro que deseas eliminar el proyecto "${project.nombre}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (result.isConfirmed) {
+      try {
+        setAllProjects(prev => prev.filter(p => p.id !== project.id));
+        showToast('Proyecto eliminado exitosamente', 'success');
+      } catch (error) {
+        showToast('Error al eliminar el proyecto', 'error');
+      }
     }
   };
 
@@ -169,7 +193,17 @@ const ProjectPage = () => {
           isOpen={!!editingProject}
           onClose={() => setEditingProject(null)}
           onUpdate={handleUpdateProject}
-          project={editingProject}
+          project={(() => {
+            // Adaptar responsable y empleadosAsociados a string para el modal
+            const p = editingProject;
+            return {
+              ...p,
+              responsable: typeof p.responsable === 'object' && p.responsable?.nombre ? p.responsable.nombre : (p.responsable || ''),
+              empleadosAsociados: Array.isArray(p.empleadosAsociados)
+                ? p.empleadosAsociados.map(emp => typeof emp === 'object' && emp.nombre ? emp.nombre : emp)
+                : [],
+            };
+          })()}
         />
       )}
     </div>

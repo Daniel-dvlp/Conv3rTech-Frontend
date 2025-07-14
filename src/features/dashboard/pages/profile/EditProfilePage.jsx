@@ -13,22 +13,7 @@ import {
   FaEye,
   FaEyeSlash,
 } from 'react-icons/fa';
-
-// Mock data
-const mockUsuarios = [
-  {
-    id: 1,
-    nombre: 'Juan Carlos',
-    apellido: 'Pérez García',
-    email: 'juan.perez@email.com',
-    celular: '300 123 4567',
-    documento: '1234567890',
-    tipoDocumento: 'CC',
-    rol: 'Administrador',
-    status: 'Activo',
-    fechaCreacion: '15/03/2024'
-  }
-];
+import { useNavigate } from 'react-router-dom';
 
 const ProfileCard = ({ title, icon, children, className = '' }) => (
   <div className={`bg-white rounded-xl shadow-md border border-gray-100 ${className}`}>
@@ -81,21 +66,27 @@ const EditProfilePage = () => {
     new: false,
     confirm: false
   });
+  const navigate = useNavigate();
 
   useEffect(() => {
-    setTimeout(() => {
-      const user = mockUsuarios[0];
-      setCurrentUser(user);
-      setForm({
-        nombre: user.nombre,
-        apellido: user.apellido,
-        email: user.email,
-        celular: user.celular,
-        documento: user.documento,
-        tipoDocumento: user.tipoDocumento
-      });
-    }, 800);
-  }, []);
+    // Obtener usuario loggeado desde localStorage
+    const userStr = localStorage.getItem('user');
+    if (!userStr) {
+      // Si no hay usuario, redirige al login
+      navigate('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    setCurrentUser(user);
+    setForm({
+      nombre: user.name || user.nombre || '',
+      apellido: user.lastName || user.apellido || '',
+      email: user.email || '',
+      celular: user.celular || '',
+      documento: user.documento || '',
+      tipoDocumento: user.tipoDocumento || 'CC'
+    });
+  }, [navigate]);
 
   const handleInfoChange = (e) => {
     const { name, value } = e.target;
@@ -184,7 +175,7 @@ const EditProfilePage = () => {
 
   if (!currentUser) {
     return (
-      <div className="flex justify-center bg-gradient-to-br from-gray-50 to-gray-100">
+      <div className="flex justify-center items-center min-h-[60vh] bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-yellow-600 border-t-transparent mx-auto mb-4"></div>
           <p className="text-gray-600 text-sm font-medium">Cargando perfil...</p>
@@ -203,24 +194,23 @@ const EditProfilePage = () => {
         </div>
 
         {/* Grid principal */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* Columna 1: Avatar e info básica */}
-          <div className="lg:col-span-3 space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8 min-h-0">
+          {/* Avatar e info básica */}
+          <div className="flex flex-col h-full min-h-0">
             {/* Avatar */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4 text-center">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8 flex flex-col items-center justify-center flex-1 min-h-[320px]">
               <div className="relative inline-block mb-3">
                 <img
-                  className="h-20 w-20 rounded-full ring-4 ring-yellow-600 ring-offset-2 shadow-lg"
-                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.nombre}${currentUser.apellido}&backgroundColor=ffd700&textColor=1a1a1a`}
+                  className="h-24 w-24 rounded-full ring-4 ring-yellow-600 ring-offset-2 shadow-lg"
+                  src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.name || currentUser.nombre}${currentUser.lastName || currentUser.apellido}&backgroundColor=ffd700&textColor=1a1a1a`}
                   alt="Avatar"
                 />
                 <button className="absolute bottom-0 right-0 bg-yellow-600 text-white p-1.5 rounded-full shadow-lg hover:bg-yellow-700 transition-all duration-200 hover:scale-110">
                   <FaCamera className="w-3 h-3" />
                 </button>
               </div>
-              <h2 className="text-sm font-bold text-gray-800 mb-1">{currentUser.nombre} {currentUser.apellido}</h2>
-              <p className="text-yellow-600 font-bold text-xs mb-1">{currentUser.rol}</p>
+              <h2 className="text-lg font-bold text-gray-800 mb-1">{currentUser.name || currentUser.nombre} {currentUser.lastName || currentUser.apellido}</h2>
+              <p className="text-yellow-600 font-bold text-xs mb-1">{currentUser.role || currentUser.rol}</p>
               <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
                 currentUser.status === 'Activo' ? 'bg-green-100 text-green-700' :
                 currentUser.status === 'Inactivo' ? 'bg-red-100 text-red-700' :
@@ -231,7 +221,7 @@ const EditProfilePage = () => {
             </div>
 
             {/* Info de contacto */}
-            <div className="bg-white rounded-xl shadow-md border border-gray-100 p-4">
+            <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-6 mt-6 flex-1">
               <h3 className="text-xs font-bold text-gray-800 mb-3 flex items-center gap-2 uppercase tracking-wide">
                 <FaShieldAlt className="text-yellow-600" />
                 Información de Contacto
@@ -254,9 +244,9 @@ const EditProfilePage = () => {
           </div>
 
           {/* Columna 2: Información Personal */}
-          <div className="lg:col-span-5">
-            <ProfileCard title="Información Personal" icon={<FaUserEdit />}>
-              <div className="space-y-4">
+          <div className="flex flex-col h-full min-h-0">
+            <ProfileCard title="Información Personal" icon={<FaUserEdit />} className="h-full rounded-2xl shadow-xl p-8">
+              <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormRow label="Nombre" id="nombre" error={formErrors.nombre}>
                     <input
@@ -361,9 +351,9 @@ const EditProfilePage = () => {
           </div>
 
           {/* Columna 3: Cambiar Contraseña */}
-          <div className="lg:col-span-4">
-            <ProfileCard title="Cambiar Contraseña" icon={<FaLock />}>
-              <div className="space-y-4">
+          <div className="flex flex-col h-full min-h-0">
+            <ProfileCard title="Cambiar Contraseña" icon={<FaLock />} className="h-full rounded-2xl shadow-xl p-8">
+              <div className="space-y-6">
                 <FormRow label="Contraseña Actual" id="current" error={passwordErrors.current}>
                   <div className="relative">
                     <input

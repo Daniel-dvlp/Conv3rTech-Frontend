@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaShieldAlt, FaPlus, FaPencilAlt, FaTrash, FaEye, FaBan, FaSpinner } from 'react-icons/fa';
+import { showToast } from '../../../../../shared/utils/alertas';
 
 // --- CONFIGURACIÓN Y COMPONENTES INTERNOS ---
 const MODULES_CONFIG = [

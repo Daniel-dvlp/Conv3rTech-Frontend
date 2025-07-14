@@ -109,6 +109,32 @@ const ProjectDetailModal = ({ project, onClose, onEdit }) => {
                 </DetailCard>
               </div>
 
+              {/* SECCIÓN DE SEDES Y DISTRIBUCIÓN DE MATERIALES */}
+              {Array.isArray(project.sedes) && project.sedes.length > 0 && (
+                <DetailCard title="Sedes y Distribución de Materiales" icon={<FaMapMarkerAlt className="text-blue-500" />}>
+                  <div className="space-y-4">
+                    {project.sedes.map((sede, idx) => (
+                      <div key={idx} className="border rounded-lg p-3 bg-gray-50">
+                        <div className="font-bold text-md text-gray-800">{sede.nombre}</div>
+                        <div className="text-gray-600 text-sm mb-1">Ubicación: {sede.ubicacion || <span className='italic text-gray-400'>No especificada</span>}</div>
+                        <div className="text-sm">
+                          <span className="font-semibold">Materiales asignados:</span>
+                          {Array.isArray(sede.materialesAsignados) && sede.materialesAsignados.length > 0 ? (
+                            <ul className="ml-2 list-disc">
+                              {sede.materialesAsignados.map((mat, i) => (
+                                <li key={i}>{mat.item}: <span className="font-bold">{mat.cantidad}</span></li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <span className="ml-2 text-gray-400 italic">Ninguno</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </DetailCard>
+              )}
+
               <DetailCard title="Equipo Asignado" icon={<FaUsers className="text-teal-500" />}>
                 <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3`}>
                   {(project.empleadosAsociados ?? []).map(empleado => (

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import { useState as useAutocompleteState } from 'react';
+import { showToast } from '../../../../../shared/utils/alertas';
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -21,10 +22,14 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     fechaInicio: '', fechaFin: '', estado: 'Pendiente', prioridad: 'Media',
     descripcion: '', ubicacion: '', observaciones: '',
     empleadosAsociados: [], materiales: [], servicios: [], costos: { manoDeObra: '' },
+    sedes: [], // <-- NUEVO
   };
   const [projectData, setProjectData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [empleadoSearch, setEmpleadoSearch] = useState('');
+  const [sedeModalOpen, setSedeModalOpen] = useState(false);
+  const [editingSede, setEditingSede] = useState(null); // null o índice de sede
+  const [sedeForm, setSedeForm] = useState({ nombre: '', ubicacion: '', materialesAsignados: [] });
 
   useEffect(() => {
     if (project && isOpen) {
@@ -85,10 +90,16 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     if (projectData.materiales.length === 0) newErrors.materiales = 'Agrega al menos un material';
     if (projectData.servicios.length === 0) newErrors.servicios = 'Agrega al menos un servicio';
     setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) return;
-    onUpdate({ ...projectData });
-    setErrors({});
-    onClose();
+    if (Object.keys(newErrors).length > 0) {
+      showToast('Por favor, corrige los errores del formulario.', 'error');
+      return;
+    }
+    try {
+      onUpdate({ ...projectData });
+      showToast('Proyecto actualizado exitosamente', 'success');
+    } catch (error) {
+      showToast('Error al actualizar el proyecto', 'error');
+    }
   };
 
   const renderListInputs = (listName, label) => {
@@ -119,6 +130,191 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
           <FaPlus size={12} /> Agregar {singularLabel}
         </button>
       </FormSection>
+    );
+  };
+
+  // --- LÓGICA PARA SEDES Y ASIGNACIÓN DE MATERIALES ---
+  const openSedeModal = (sedeIdx = null) => {
+    if (sedeIdx !== null) {
+      setSedeForm({ ...projectData.sedes[sedeIdx] });
+      setEditingSede(sedeIdx);
+    } else {
+      setSedeForm({ nombre: '', ubicacion: '', materialesAsignados: [] });
+      setEditingSede(null);
+    }
+    setSedeModalOpen(true);
+  };
+  const closeSedeModal = () => {
+    setSedeModalOpen(false);
+    setEditingSede(null);
+    setSedeForm({ nombre: '', ubicacion: '', materialesAsignados: [] });
+  };
+  const handleSedeFormChange = (e) => {
+    const { name, value } = e.target;
+    setSedeForm(prev => ({ ...prev, [name]: value }));
+  };
+  const handleMaterialAsignadoChange = (idx, value) => {
+    setSedeForm(prev => {
+      const materialesAsignados = [...prev.materialesAsignados];
+      materialesAsignados[idx].cantidad = value;
+      return { ...prev, materialesAsignados };
+    });
+  };
+  const handleAddMaterialToSede = (item) => {
+    setSedeForm(prev => {
+      if (prev.materialesAsignados.some(m => m.item === item.item)) return prev;
+      return { ...prev, materialesAsignados: [...prev.materialesAsignados, { item: item.item, cantidad: 0 }] };
+    });
+  };
+  const handleRemoveMaterialFromSede = (idx) => {
+    setSedeForm(prev => {
+      const materialesAsignados = [...prev.materialesAsignados];
+      materialesAsignados.splice(idx, 1);
+      return { ...prev, materialesAsignados };
+    });
+  };
+  const getMaterialDisponible = (itemName) => {
+    // Total global - suma en todas las sedes (excepto la actual edición)
+    const total = (projectData.materiales.find(m => m.item === itemName)?.cantidad) || 0;
+    let usado = 0;
+    projectData.sedes.forEach((sede, idx) => {
+      if (editingSede !== null && idx === editingSede) return;
+      const mat = sede.materialesAsignados.find(m => m.item === itemName);
+      if (mat) usado += Number(mat.cantidad);
+    });
+    return total - usado;
+  };
+  const handleSedeSubmit = (e) => {
+    e.preventDefault();
+    // Validar que no se excedan los materiales
+    for (const mat of sedeForm.materialesAsignados) {
+      const disponible = getMaterialDisponible(mat.item) + (editingSede !== null ? Number(projectData.sedes[editingSede].materialesAsignados.find(m => m.item === mat.item)?.cantidad || 0) : 0);
+      if (Number(mat.cantidad) > disponible) {
+        showToast(`No puedes asignar más de ${disponible} unidades de ${mat.item} a esta sede.`, 'error');
+        return;
+      }
+    }
+    if (!sedeForm.nombre.trim()) {
+      showToast('El nombre de la sede es obligatorio', 'error');
+      return;
+    }
+    if (editingSede !== null) {
+      // Editar sede existente
+      setProjectData(prev => {
+        const sedes = [...prev.sedes];
+        sedes[editingSede] = { ...sedeForm };
+        return { ...prev, sedes };
+      });
+    } else {
+      // Agregar nueva sede
+      setProjectData(prev => ({ ...prev, sedes: [...prev.sedes, { ...sedeForm }] }));
+    }
+    closeSedeModal();
+  };
+  const handleDeleteSede = (idx) => {
+    setProjectData(prev => {
+      const sedes = [...prev.sedes];
+      sedes.splice(idx, 1);
+      return { ...prev, sedes };
+    });
+  };
+  // --- UI PARA SEDES ---
+  const renderSedesSection = () => (
+    <FormSection title="Sedes y Asignación de Materiales">
+      <button type="button" className="mb-4 bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700" onClick={() => openSedeModal()}>Agregar Sede</button>
+      {!(Array.isArray(projectData.sedes) && projectData.sedes.length > 0) && <div className="text-gray-500 italic">No hay sedes agregadas.</div>}
+      <div className="space-y-4">
+        {(Array.isArray(projectData.sedes) ? projectData.sedes : []).map((sede, idx) => (
+          <div key={idx} className="border rounded-lg p-4 bg-white flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+            <div>
+              <div className="font-bold text-lg text-gray-800">{sede.nombre}</div>
+              <div className="text-gray-600 text-sm">Ubicación: {sede.ubicacion}</div>
+              <div className="mt-2 text-sm">
+                <span className="font-semibold">Materiales asignados:</span>
+                {Array.isArray(sede.materialesAsignados) && sede.materialesAsignados.length > 0 ? (
+                  <ul className="ml-2 list-disc">
+                    {sede.materialesAsignados.map((mat, i) => (
+                      <li key={i}>{mat.item}: <span className="font-bold">{mat.cantidad}</span></li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="ml-2 text-gray-400 italic">Ninguno</span>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 mt-2 md:mt-0">
+              <button type="button" className="bg-yellow-400 text-gray-800 px-3 py-1 rounded-lg font-bold hover:bg-yellow-500" onClick={() => openSedeModal(idx)}>Editar</button>
+              <button type="button" className="bg-red-500 text-white px-3 py-1 rounded-lg font-bold hover:bg-red-600" onClick={() => handleDeleteSede(idx)}>Eliminar</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </FormSection>
+  );
+  // --- MODAL PARA AGREGAR/EDITAR SEDE ---
+  const renderSedeModal = () => {
+    if (!sedeModalOpen) return null;
+    // Materiales disponibles para asignar
+    const materialesDisponibles = projectData.materiales;
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 relative">
+          <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl" onClick={closeSedeModal}><FaTimes /></button>
+          <h3 className="text-xl font-bold mb-4">{editingSede !== null ? 'Editar Sede' : 'Agregar Sede'}</h3>
+          <form onSubmit={handleSedeSubmit} className="space-y-4">
+            <div>
+              <FormLabel htmlFor="nombre">Nombre de la Sede</FormLabel>
+              <input id="nombre" name="nombre" type="text" value={sedeForm.nombre} onChange={handleSedeFormChange} className={inputBaseStyle} required />
+            </div>
+            <div>
+              <FormLabel htmlFor="ubicacion">Ubicación</FormLabel>
+              <input id="ubicacion" name="ubicacion" type="text" value={sedeForm.ubicacion} onChange={handleSedeFormChange} className={inputBaseStyle} />
+            </div>
+            <div>
+              <FormLabel>Materiales a asignar</FormLabel>
+              {materialesDisponibles.length === 0 && <div className="text-gray-400 italic">Primero agrega materiales al proyecto.</div>}
+              <div className="space-y-2">
+                {materialesDisponibles.map((mat, idx) => {
+                  const asignadoIdx = sedeForm.materialesAsignados.findIndex(m => m.item === mat.item);
+                  const cantidadAsignada = asignadoIdx !== -1 ? sedeForm.materialesAsignados[asignadoIdx].cantidad : 0;
+                  const maxDisponible = getMaterialDisponible(mat.item) + (editingSede !== null ? Number(projectData.sedes[editingSede].materialesAsignados.find(m => m.item === mat.item)?.cantidad || 0) : 0);
+                  return (
+                    <div key={mat.item} className="flex items-center gap-2">
+                      <span className="w-32 font-medium">{mat.item}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={maxDisponible}
+                        value={cantidadAsignada}
+                        onChange={e => {
+                          const val = Math.max(0, Math.min(Number(e.target.value), maxDisponible));
+                          if (asignadoIdx !== -1) {
+                            handleMaterialAsignadoChange(asignadoIdx, val);
+                          } else {
+                            setSedeForm(prev => ({
+                              ...prev,
+                              materialesAsignados: [...prev.materialesAsignados, { item: mat.item, cantidad: val }]
+                            }));
+                          }
+                        }}
+                        className="w-24 border rounded p-1 text-sm"
+                      />
+                      <span className="text-xs text-gray-500">/ {maxDisponible} disponibles</span>
+                      {asignadoIdx !== -1 && (
+                        <button type="button" className="ml-2 text-red-500 hover:text-red-700" onClick={() => handleRemoveMaterialFromSede(asignadoIdx)}><FaTrash /></button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button type="button" className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-bold hover:bg-gray-300" onClick={closeSedeModal}>Cancelar</button>
+              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">{editingSede !== null ? 'Guardar Cambios' : 'Agregar Sede'}</button>
+            </div>
+          </form>
+        </div>
+      </div>
     );
   };
 
@@ -188,6 +384,9 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
           <FormSection title="Observaciones">
             <div><FormLabel htmlFor="observaciones">Notas Adicionales</FormLabel><textarea id="observaciones" name="observaciones" rows="3" value={projectData.observaciones} onChange={handleChange} className={inputBaseStyle} placeholder="Comentarios del cliente, etc." /></div>
           </FormSection>
+
+          {renderSedesSection()}
+          {renderSedeModal()}
 
           <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
