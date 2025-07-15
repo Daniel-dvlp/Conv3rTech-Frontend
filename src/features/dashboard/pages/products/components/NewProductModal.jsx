@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FaTimes, FaTrash, FaPlus, FaCamera } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaPlus } from 'react-icons/fa';
 
 const FormSection = ({ title, children }) => (
     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -13,8 +13,6 @@ const FormLabel = ({ htmlFor, children }) => (
 );
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border border-gray-300 rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
-const inputHiddenStyle = 'absolute opacity-0 w-0 h-0';
-
 const normalizeText = (text) => text?.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
 
 const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts }) => {
@@ -25,7 +23,6 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
 
     const [productData, setProductData] = useState(initialState);
     const [errors, setErrors] = useState({});
-    const [fotoActual, setFotoActual] = useState(0);
 
 
     const validateDuplicate = () => {
@@ -47,17 +44,6 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
     const handleChange = (e) => {
         const { name, value } = e.target;
         setProductData((prev) => ({ ...prev, [name]: value }));
-    };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setProductData((prev) => ({ ...prev, foto: reader.result }));
-            };
-            reader.readAsDataURL(file);
-        }
     };
 
     const handleBlur = (e) => {
@@ -88,24 +74,27 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
     };
 
     const handleSubmit = (e) => {
-    e.preventDefault();
-    validateDuplicate();
-    if (errors.duplicate || (productData.garantia && productData.garantia < 12)) return;
+        e.preventDefault();
+        validateDuplicate();
+        if (errors.duplicate || (productData.garantia && productData.garantia < 12)) return;
 
-    const codigoFinal = productData.codigoBarra?.trim() || "N/A";
+        const FinalCode = productData.codigoBarra?.trim() || "N/A";
 
-    const nuevoProducto = {
-        ...productData,
-        codigoBarra: codigoFinal,
-        id: Date.now(),
-        categoria: Number(productData.categoria),
+        const newProduct = {
+            ...productData,
+            precio: Number(productData.precio),
+            stock: Number(productData.stock),
+            garantia: Number(productData.garantia),
+            codigoBarra: FinalCode,
+            id: Date.now(),
+            categoria: Number(productData.categoria),
+        };
+
+        onSave(newProduct);
+        setProductData(initialState);
+        setErrors({});
+        onClose();
     };
-
-    onSave(nuevoProducto);
-    setProductData(initialState);
-    setErrors({});
-    onClose();
-};
 
     if (!isOpen) return null;
 
@@ -147,7 +136,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                 </div>
                             ))}
 
-                            {productData.fotos.length < 3 && (
+                            {productData.fotos.length < 4 && (
                                 <>
                                     <label
                                         htmlFor="fotos"
@@ -162,7 +151,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                         accept="image/*"
                                         multiple
                                         onChange={(e) => {
-                                            const files = Array.from(e.target.files).slice(0, 3 - productData.fotos.length);
+                                            const files = Array.from(e.target.files).slice(0, 4 - productData.fotos.length);
                                             const readers = files.map((file) => {
                                                 return new Promise((resolve) => {
                                                     const reader = new FileReader();
@@ -208,9 +197,15 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
                                     required
                                 >
-                                    <option value="">Seleccione la categoría</option>
-                                    <option value="seguridad">Seguridad</option>
-                                    
+                                    {categories?.length > 0 ? (
+                                        categories.map((cat) => (
+                                            <option key={cat.id} value={cat.id}>
+                                                {cat.nombre}
+                                            </option>
+                                        ))
+                                    ) : (
+                                        <option disabled>No hay categorías</option>
+                                    )}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400">
                                     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
@@ -233,7 +228,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
                                     required
                                 >
-                                    <option value="">Seleccione la unidad</option>
+                                    <option value="">Seleccione la unidad:</option>
                                     <option value="Unidad">Unidad</option>
                                     <option value="Metros">Metros</option>
                                     <option value="Tramo 2 metros">Tramo 2 metros</option>

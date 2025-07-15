@@ -5,6 +5,9 @@ import SkeletonRow from './components/SkeletonRow';
 import { mockClientes } from './data/Clientes_data';
 import Pagination from '../../../../shared/components/Pagination';
 import CreateClientModal from './components/CreateClientModal';
+import EditClientModal from './components/EditClientModal';
+import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
+import { toast } from 'react-hot-toast';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -16,9 +19,31 @@ const ClientsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [openModal, setOpenModal] = useState(false);
+
+  // Función para eliminar un cliente
+ const handleEliminarCliente = async (clienteId) => {
+  const confirmed = await confirmDelete('¿Deseas eliminar este cliente?');
+  console.log('Intentando eliminar', clienteId, 'Confirmado:', confirmed);
+
+  if (confirmed) {
+    setClientes(prev => {
+      const updated = prev.filter(c => c.id !== clienteId);
+      console.log('Clientes actualizados:', updated);
+      return updated;
+    });
+
+    toast.success('Cliente eliminado exitosamente');
+  }
+};
+
+  // Función para agregar un nuevo cliente
   const handleAddCliente = (nuevoCliente) => {
     setClientes((prev) => [...prev, { id: Date.now(), ...nuevoCliente }]);
+    showSuccess('Cliente creado correctamente');
   };
+  const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
+  const [editarModalAbierto, setEditarModalAbierto] = useState(false);
+
 
   useEffect(() => {
     setTimeout(() => {
@@ -27,19 +52,29 @@ const ClientsPage = () => {
     }, 1200);
   }, []);
 
-  // Filtro por búsqueda
- const term = searchTerm.trim().toLowerCase();
+  const handleEditClick = (cliente) => {
+    setClienteSeleccionado(cliente);
+    setEditarModalAbierto(true); // ✅ ¡Así debe ser!
+  };
 
-const filteredClients = useMemo(() =>
-  clientes.filter(c =>
-    (c.nombre || '').toLowerCase().includes(term) ||
-    (c.apellido || '').toLowerCase().includes(term) ||
-    (c.documento || '').toLowerCase() === term ||
-    (c.tipoDocumento || '').toLowerCase() === term ||
-    (c.email || '').toLowerCase() === term ||
-    (c.estado ? 'activo' : 'inactivo') === term
-  ), [clientes, searchTerm]
-);
+  const handleEditSubmit = (clienteActualizado) => {
+    setClientes(prev =>
+      prev.map(c => c.id === clienteActualizado.id ? clienteActualizado : c)
+    );
+    setEditarModalAbierto(false)
+  };
+  // Filtro por búsqueda
+  const term = searchTerm.trim().toLowerCase();
+  const filteredClients = useMemo(() =>
+    clientes.filter(c =>
+      (c.nombre || '').toLowerCase().includes(term) ||
+      (c.apellido || '').toLowerCase().includes(term) ||
+      (c.documento || '').toLowerCase().includes(term) ||
+      (c.tipoDocumento || '').toLowerCase().includes(term) ||
+      (c.email || '').toLowerCase().includes(term) ||
+      (c.estado ? 'activo' : 'inactivo').includes(term)
+    ), [clientes, searchTerm]
+  );
 
 
   const totalPages = Math.ceil(filteredClients.length / ITEMS_PER_PAGE);
@@ -47,7 +82,7 @@ const filteredClients = useMemo(() =>
   const paginatedClients = useMemo(() => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredClients.slice(startIndex, startIndex + ITEMS_PER_PAGE);
-  }, [filteredClients, currentPage]);
+  }, [filteredClients, currentPage]); // Asegúrate que depende de `filteredClients`
 
   return (
     <div className="p-4 md:p-8">
@@ -95,7 +130,12 @@ const filteredClients = useMemo(() =>
         </div>
       ) : (
         <>
-          <ClientesTable clientes={paginatedClients} />
+          <ClientesTable
+            clientes={paginatedClients}
+            onEdit={handleEditClick}
+            onDelete={handleEliminarCliente} // ✅ debe estar así
+          />
+
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -114,11 +154,16 @@ const filteredClients = useMemo(() =>
               celular: c.celular
             }))} // Pasar los clientes existentes para validación
           />
+          <EditClientModal
+            isOpen={editarModalAbierto}
+            onClose={() => setEditarModalAbierto(false)}
+            clientData={clienteSeleccionado}
+            onSubmit={handleEditSubmit}
+          />
 
         </>
       )}
     </div>
   );
 };
-
 export default ClientsPage;

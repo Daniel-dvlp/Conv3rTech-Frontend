@@ -1,7 +1,7 @@
 import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 
-const ProductsTable = ({ products, categories, onViewDetails }) => {
+const ProductsTable = ({ products, categories, onViewDetails, onEditProduct, onDeleteProduct }) => {
   const getCategoryName = (id) => {
     if (!Array.isArray(categories)) return 'Desconocida';
     const cat = categories.find((c) => c.id === id);
@@ -44,8 +44,8 @@ const ProductsTable = ({ products, categories, onViewDetails }) => {
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{getCategoryName(product.categoria)}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.unidad}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${product.precio.toLocaleString()}</td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.stock}</td>
-              
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.stock < 5 ? <span className="text-red-500 font-semibold">{product.stock}</span> : product.stock}</td>
+
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${product.estado === true
                   ? 'bg-green-100 text-green-800'
@@ -63,10 +63,10 @@ const ProductsTable = ({ products, categories, onViewDetails }) => {
                   >
                     <FaEye size={16} />
                   </button>
-                  <button className="text-yellow-600 hover:text-blue-900" title="Editar">
+                  <button className="text-yellow-600 hover:text-blue-900" title="Editar" onClick={() => onEditProduct(product)}>
                     <FaEdit size={16} />
                   </button>
-                  <button className="text-red-600 hover:text-red-900" title="Eliminar">
+                  <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() => onDeleteProduct(product.id)}>
                     <FaTrashAlt size={16} />
                   </button>
                 </div>

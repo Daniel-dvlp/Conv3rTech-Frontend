@@ -41,7 +41,6 @@ const Sidebar = () => {
       icon: <FaConciergeBell />,
       children: [
         { name: 'Categoría de Servicios', path: '/dashboard/categoria_servicios' },
-        { name: 'Órdenes de Servicio', path: '/dashboard/ordenes_servicios' },
         { name: 'Programación laboral', path: '/dashboard/programacion_laboral' },
       ]
     },
@@ -99,7 +98,7 @@ const Sidebar = () => {
 
   return (
     <aside
-      className={`bg-[#00012A] text-white h-screen pl-3 rounded-r-xl flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}
+      className={`bg-[#00012A] text-white h-screen pl-3 rounded-r-xl  flex flex-col transition-all duration-300 ease-in-out ${isExpanded ? 'w-64' : 'w-20'}`}
       onMouseEnter={() => setIsExpanded(true)}
       onMouseLeave={() => setIsExpanded(false)}
     >
@@ -171,7 +170,7 @@ const Sidebar = () => {
                     to={item.path}
                     className={`no-underline flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${getBubbleClasses(isActiveParent)}`}
                   >
-                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`} style={getActiveTextColor(isActiveParent)}>
+                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto '}`} style={getActiveTextColor(isActiveParent)}>
                       {item.icon}
                     </div>
                     {isExpanded && (
