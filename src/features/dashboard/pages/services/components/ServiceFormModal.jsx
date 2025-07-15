@@ -1,6 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
-const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
+const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     categoria: '',
@@ -14,6 +14,44 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
 
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef();
+
+  // Rellenar campos si es edición
+  useEffect(() => {
+    if (esEdicion && servicio) {
+      const [horas = '', minutos = ''] = servicio.duracion
+        ?.match(/(\d+)h\s*(\d+)?m?/)?.slice(1) || [];
+
+      setFormData({
+        nombre: servicio.nombre || '',
+        categoria: servicio.categoria || '',
+        precio: servicio.precio || '',
+        duracion: servicio.duracion || '',
+        descripcion: servicio.descripcion || '',
+        imagen: null, // no se puede previsualizar archivo
+        horas,
+        minutos,
+        id: servicio.id, // ← importante para mantener el ID en edición
+      });
+
+      // Previsualizar si viene con URL
+      if (servicio.imagen) {
+        setPreviewImage(servicio.imagen);
+      }
+    } else {
+      // Limpiar si no es edición
+      setFormData({
+        nombre: '',
+        categoria: '',
+        precio: '',
+        duracion: '',
+        descripcion: '',
+        imagen: null,
+        horas: '',
+        minutos: '',
+      });
+      setPreviewImage(null);
+    }
+  }, [esEdicion, servicio]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,18 +79,11 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
-    setFormData({
-      nombre: '',
-      categoria: '',
-      precio: '',
-      duracion: '',
-      descripcion: '',
-      imagen: null,
-      horas: '',
-      minutos: '',
-    });
-    setPreviewImage(null);
+    const datosAEnviar = {
+      ...formData,
+      id: formData.id || Date.now(), // si es nuevo, le damos un ID ficticio
+    };
+    onSubmit(datosAEnviar);
     onClose();
   };
 
@@ -61,15 +92,16 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
-        <h2 className="text-xl font-bold mb-4 text-center">Agregar un nuevo servicio</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <h2 className="text-xl font-bold mb-4 text-center">
+          {esEdicion ? 'Editar servicio' : 'Agregar un nuevo servicio'}
+        </h2>
 
-          {/* Imagen del servicio */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Imagen */}
           <div className="flex flex-col items-center">
             <label className="text-sm font-medium text-gray-700 mb-2">
               Inserta la imagen del servicio
             </label>
-
             <input
               type="file"
               accept="image/*"
@@ -77,7 +109,6 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
               onChange={handleImageChange}
               className="hidden"
             />
-
             <button
               type="button"
               onClick={() => fileInputRef.current.click()}
@@ -86,9 +117,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
               📁 Elegir imagen
             </button>
 
-            {formData.imagen && (
-              <p className="text-sm text-gray-600 mb-2">{formData.imagen.name}</p>
-            )}
+            {formData.imagen && <p className="text-sm text-gray-600 mb-2">{formData.imagen.name}</p>}
 
             {previewImage && (
               <img
@@ -128,9 +157,11 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
             required
           />
 
-          {/* Duración aproximada */}
+          {/* Duración */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duración aproximada</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Duración aproximada
+            </label>
             <div className="flex gap-2">
               <select
                 value={formData.horas}
@@ -182,7 +213,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit }) => {
               type="submit"
               className="px-4 py-2 bg-[#FFB800] text-black rounded hover:bg-[#e0a500]"
             >
-              Guardar
+              {esEdicion ? 'Actualizar' : 'Guardar'}
             </button>
           </div>
         </form>
