@@ -4,6 +4,7 @@ import SkeletonCard from './components/SkeletonCard';
 import MockServices from './data/Services_data';
 import ServiceFormModal from './components/ServiceFormModal';
 import ServiceViewModal from './components/ServiceViewModal';
+import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js'
 
 const ServiciosLoading = () => {
   return (
@@ -44,9 +45,14 @@ const ServicesPage = () => {
     setModalOpen(true);
   };
 
-  const handleEliminar = (id) => {
+const handleEliminar = async (id) => {
+  const confirmed = await confirmDelete('¿Deseas eliminar este servicio?');
+  if (confirmed) {
     setServicios((prev) => prev.filter((s) => s.id !== id));
-  };
+    showSuccess('Servicio eliminado correctamente');
+  }
+};    
+
 
   const handleAgregarServicio = (nuevoServicio) => {
     const nuevo = {

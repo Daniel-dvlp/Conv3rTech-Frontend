@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) => {
   const [formData, setFormData] = useState({
@@ -84,7 +85,9 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
       id: formData.id || Date.now(), // si es nuevo, le damos un ID ficticio
     };
     onSubmit(datosAEnviar);
-    onClose();
+    showSuccess(`Servicio ${esEdicion ? 'actualizado' : 'creado'} correctamente`);
+    onClose(); 
+    
   };
 
   if (!isOpen) return null;

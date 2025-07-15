@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
+import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const AppointmentModal = ({ isOpen, onClose, onSave, selectedDate, initialData }) => {
   const [formData, setFormData] = useState({
@@ -41,30 +42,11 @@ const AppointmentModal = ({ isOpen, onClose, onSave, selectedDate, initialData }
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const result = await Swal.fire({
-      title: "¿Estás seguro?",
-      text: "¿Deseas guardar esta cita?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#facc15",
-      cancelButtonColor: "#d1d5db",
-      confirmButtonText: "Sí, guardar",
-      cancelButtonText: "Cancelar",
-      background: "#ffffff",
-      color: "#00012A",
-    });
-
-    if (result.isConfirmed) {
+    
       onSave(formData);
-
-      Swal.fire({
-        title: "Cita guardada",
-        icon: "success",
-        confirmButtonColor: "#facc15",
-        background: "#ffffff",
-        color: "#00012A",
-      });
-    }
+      showSuccess('Cita guardada correctamente');
+      onClose();
+    
   };
 
   if (!isOpen) return null;

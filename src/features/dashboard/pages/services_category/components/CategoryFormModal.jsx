@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) => {
   const [formData, setFormData] = useState({
@@ -54,6 +55,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
     onSubmit(formData);
     setFormData({ id: null, nombre: '', descripcion: '', imagen: null });
     setPreviewImage(null);
+    showSuccess(esEdicion ? 'Categoría actualizada correctamente' : 'Categoría guardada correctamente');
     onClose();
   };
 

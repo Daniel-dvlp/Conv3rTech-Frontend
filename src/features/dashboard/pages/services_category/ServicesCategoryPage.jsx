@@ -4,6 +4,7 @@ import SkeletonCategoryCard from './components/SkeletonCategoryCard.jsx';
 import MockCategories from './data/ServicesCategory_data.js';
 import CategoryFormModal from './components/CategoryFormModal.jsx';
 import CategoryViewModal from './components/CategoryViewModal.jsx';
+import { confirmDelete, showSuccess } from '../../../../shared/utils/alerts.js';
 
 const CategoriasLoading = () => {
   return (
@@ -44,9 +45,13 @@ const ServiceCategoryPage = () => {
     setModalOpen(true);
   };
 
-  const handleEliminar = (id) => {
+const handleEliminar = async (id) => {
+  const confirmed = await confirmDelete('¿Deseas eliminar esta categoría?');
+  if (confirmed) {
     setCategorias((prev) => prev.filter((c) => c.id !== id));
-  };
+    showSuccess('Categoría eliminada correctamente');
+  }
+};
 
   const handleAgregarCategoria = (nuevaCategoria) => {
     const nueva = {

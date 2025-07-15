@@ -5,6 +5,7 @@ import AppointmentDetailModal from "./components/AppointmentDetailModal";
 import { v4 as uuidv4 } from "uuid";
 import Swal from "sweetalert2";
 import mockAppointments from "./data/mockAppointments";
+import { toast } from 'react-hot-toast';
 
 const AppointmentsPage = () => {
   const [appointments, setAppointments] = useState(mockAppointments);
@@ -65,11 +66,7 @@ const AppointmentsPage = () => {
           : appt
       );
       setAppointments(updated);
-      Swal.fire({
-        icon: "success",
-        title: "Cita actualizada",
-        confirmButtonColor: "#FACC15",
-      });
+      
     } else {
       const newId = uuidv4();
       const newAppointment = {
@@ -113,11 +110,7 @@ const AppointmentsPage = () => {
         prev.filter((cita) => cita.id !== selectedAppointment.id)
       );
       setShowDetailsModal(false);
-      Swal.fire({
-        icon: "success",
-        title: "Cita eliminada",
-        confirmButtonColor: "#FACC15",
-      });
+      toast.success("Cita eliminada correctamente");
     }
   };
 
