@@ -9,6 +9,7 @@ export const mockUsuarios = [
     celular: '317 8901 876',
     rol: 'Admin',
     status: 'Activo',
+    contrasena: '123456',
     fechaCreacion: '22-06-25'
   },
   {
@@ -21,17 +22,20 @@ export const mockUsuarios = [
     celular: '312 2844 876',
     rol: 'Tecnico',
     status: 'Inactivo',
+    contrasena: '123456',
     fechaCreacion: '22-06-25'
-  },{
+  },
+  {
   id: 3,
   documento: '9876543210',
   tipoDocumento: 'CC',
   nombre: 'Laura',
   apellido: 'Gómez',
   email: 'laura.gomez@gmail.com',
-  celular: '310 4567 123',
+  celular: '3104567123',
   rol: 'Recepcionista',
   status: 'Activo',
+  contrasena: '123456',
   fechaCreacion: '22-06-25'
 },
 {
@@ -41,9 +45,10 @@ export const mockUsuarios = [
   nombre: 'Andrés',
   apellido: 'Torres',
   email: 'andres.torres@hotmail.com',
-  celular: '315 7788 990',
+  celular: '3157788990',
   rol: 'Supervisor',
   status: 'Activo',
+  contrasena: '123456',
   fechaCreacion: '22-06-25'
 },
 {
@@ -53,9 +58,23 @@ export const mockUsuarios = [
   nombre: 'Camila',
   apellido: 'Rodríguez',
   email: 'camila.rdz@gmail.com',
-  celular: '313 9988 221',
+  celular: '3139988221',
   rol: 'Tecnico',
   status: 'Vacaciones',
+  contrasena: '123456',
+  fechaCreacion: '22-06-25'
+},
+{
+  id: 6,
+  documento: '3634728368',
+  tipoDocumento: 'CE',
+  nombre: 'Sarai',
+  apellido: 'Rodríguez',
+  email: 'csarai.rdz@gmail.com',
+  celular: '3139988221',
+  rol: 'Tecnico',
+  status: 'Vacaciones',
+  contrasena: '12345678901',
   fechaCreacion: '22-06-25'
 }
   // Puedes agregar más usuarios aquí si lo necesitas

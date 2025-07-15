@@ -8,10 +8,11 @@ import TableSkeleton from '../../../../shared/components/TableSkeleton';
 import Pagination from '../../../../shared/components/Pagination';
 import ProjectDetailModal from './components/ProjectDetailModal';
 import NewProjectModal from './components/NewProjectModal';
+import EditProjectModal from './components/EditProjectModal';
 import * as XLSX from 'xlsx';
 
 // --- CONSTANTE PARA EL NÚMERO DE ELEMENTOS POR PÁGINA ---
-const ITEMS_PER_PAGE = 7;
+const ITEMS_PER_PAGE = 5;
 
 const ProjectPage = () => {
   // --- TODA TU LÓGICA DE ESTADO Y FUNCIONES PERMANECE EXACTAMENTE IGUAL ---
@@ -21,6 +22,7 @@ const ProjectPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
+  const [editingProject, setEditingProject] = useState(null);
 
   useEffect(() => {
     setTimeout(() => {
@@ -67,6 +69,19 @@ const ProjectPage = () => {
     setShowNewModal(false);
   };
 
+  // Editar proyecto
+  const handleUpdateProject = (updatedProject) => {
+    setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+    setEditingProject(null);
+  };
+
+  // Eliminar proyecto
+  const handleDeleteProject = (project) => {
+    if (window.confirm(`¿Seguro que deseas eliminar el proyecto "${project.nombre}"?`)) {
+      setAllProjects(prev => prev.filter(p => p.id !== project.id));
+    }
+  };
+
   const projectTableHeaders = ['Proyecto', 'Responsable', 'Fechas', 'Estado', 'Prioridad', 'Progreso', 'Acciones'];
   // --------------------------------------------------------------------
 
@@ -76,7 +91,7 @@ const ProjectPage = () => {
       {/* --- ESTA LÍNEA ES LA ÚNICA QUE CAMBIA PARA EL DISEÑO RESPONSIVE --- */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
       
-        <h1 className="text-3xl font-bold text-gray-800">Proyectos</h1>
+        <h1 className="text-3xl font-bold text-gray-800 text-m">Proyectos</h1>
         
         {/* El contenedor de los botones ya es responsive con 'flex-wrap' */}
         <div className="flex flex-wrap items-center gap-2">
@@ -89,20 +104,20 @@ const ProjectPage = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-m"
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
+            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors text-m"
           >
             <FaFileExcel />
             Exportar
           </button>
           <button
             onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors"
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors text-m"
           >
             <FaPlus />
             Nuevo Proyecto
@@ -117,6 +132,8 @@ const ProjectPage = () => {
         <ProjectsTable
           projects={paginatedProjects}
           onViewDetails={(project) => setSelectedProject(project)}
+          onEditProject={(project) => setEditingProject(project)}
+          onDeleteProject={handleDeleteProject}
         />
       )}
 
@@ -132,6 +149,10 @@ const ProjectPage = () => {
         <ProjectDetailModal
           project={selectedProject}
           onClose={() => setSelectedProject(null)}
+          onEdit={(project) => {
+            setEditingProject(project);
+            setSelectedProject(null);
+          }}
         />
       )}
 
@@ -140,6 +161,15 @@ const ProjectPage = () => {
           isOpen={showNewModal}
           onClose={() => setShowNewModal(false)}
           onSave={handleAddProject}
+        />
+      )}
+
+      {editingProject && (
+        <EditProjectModal
+          isOpen={!!editingProject}
+          onClose={() => setEditingProject(null)}
+          onUpdate={handleUpdateProject}
+          project={editingProject}
         />
       )}
     </div>

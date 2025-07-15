@@ -9,7 +9,7 @@ export const mockPagos = [
     montoAbonado: 1000000,
     metodoPago: 'Tarjeta',
     montoRestante: 4000000,
-    estado: 'En curso',
+    estado: 'Registrado',
   },
   {
     id: 2,
@@ -21,7 +21,7 @@ export const mockPagos = [
     montoAbonado: 3000000,
     metodoPago: 'Transferencia',
     montoRestante: 0,
-    estado: 'Pagado',
+    estado: 'Registrado',
   },
   {
     id: 3,
@@ -33,7 +33,7 @@ export const mockPagos = [
     montoAbonado: 2000000,
     metodoPago: 'Efectivo',
     montoRestante: 5000000,
-    estado: 'En curso',
+    estado: 'Registrado',
   },
   {
     id: 4,
@@ -45,7 +45,7 @@ export const mockPagos = [
     montoAbonado: 1500000,
     metodoPago: 'PSE',
     montoRestante: 3000000,
-    estado: 'En curso',
+    estado: 'Registrado',
   },
   {
     id: 5,
@@ -57,6 +57,18 @@ export const mockPagos = [
     montoAbonado: 6000000,
     metodoPago: 'Cheque',
     montoRestante: 6000000,
-    estado: 'Pendiente',
+    estado: 'Registrado',
+  },
+  {
+    id: 6,
+    fecha: '25/03/2025',
+    numeroContrato: '00005',
+    nombre: 'Carlos',
+    apellido: 'Martínez',
+    montoTotal: 6000000,
+    montoAbonado: 6000000,
+    metodoPago: 'Cheque',
+    montoRestante: 6000000,
+    estado: 'Registrado',
   },
 ];

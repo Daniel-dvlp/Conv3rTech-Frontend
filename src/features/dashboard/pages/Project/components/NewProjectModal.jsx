@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import { useState as useAutocompleteState } from 'react';
 
 // Componente reutilizable para las secciones del formulario
 const FormSection = ({ title, children }) => (
@@ -34,6 +35,8 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     costos: { manoDeObra: '' },
   };
   const [projectData, setProjectData] = useState(initialState);
+  const [errors, setErrors] = useState({});
+  const [empleadoSearch, setEmpleadoSearch] = useState('');
 
   const mockClientes = ['Constructora XYZ', 'Hospital Central', 'Oficinas BigCorp'];
   const mockResponsables = ['Daniela V.', 'Carlos R.', 'Ana G.', 'Sofía M.'];
@@ -78,8 +81,21 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   };
   const handleSubmit = (e) => {
     e.preventDefault();
+    // Validaciones
+    const newErrors = {};
+    if (!projectData.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
+    if (!projectData.cliente) newErrors.cliente = 'Selecciona un cliente';
+    if (!projectData.responsable) newErrors.responsable = 'Selecciona un responsable';
+    if (!projectData.fechaInicio) newErrors.fechaInicio = 'Selecciona la fecha de inicio';
+    if (!projectData.fechaFin) newErrors.fechaFin = 'Selecciona la fecha de fin';
+    if (projectData.empleadosAsociados.length === 0) newErrors.empleadosAsociados = 'Selecciona al menos un empleado';
+    if (projectData.materiales.length === 0) newErrors.materiales = 'Agrega al menos un material';
+    if (projectData.servicios.length === 0) newErrors.servicios = 'Agrega al menos un servicio';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) return;
     onSave({ ...projectData, id: `P-${Date.now()}` });
     setProjectData(initialState);
+    setErrors({});
     onClose();
   };
   // -----------------------------------------------------------------
@@ -144,13 +160,31 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
           </FormSection>
 
           <FormSection title="Equipo del Proyecto">
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {mockEmpleados.map(emp => (
-                <label key={emp} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 cursor-pointer">
-                  <input type="checkbox" name="empleadosAsociados" value={emp} onChange={handleEquipoChange} className="h-4 w-4 text-conv3r-gold border-gray-300 rounded focus:ring-conv3r-gold" />
-                  <span className="text-sm text-gray-800">{emp}</span>
-                </label>
-              ))}
+            <div>
+              <FormLabel htmlFor="empleadosAsociados">Empleados Asociados</FormLabel>
+              <input
+                type="text"
+                placeholder="Buscar empleado..."
+                value={empleadoSearch}
+                onChange={e => setEmpleadoSearch(e.target.value)}
+                className={inputBaseStyle}
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                {projectData.empleadosAsociados.map(emp => (
+                  <span key={emp} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full flex items-center gap-2">
+                    {emp}
+                    <button type="button" onClick={() => setProjectData(prev => ({ ...prev, empleadosAsociados: prev.empleadosAsociados.filter(e => e !== emp) }))} className="text-blue-500 hover:text-red-500">&times;</button>
+                  </span>
+                ))}
+              </div>
+              <div className="mt-2 max-h-32 overflow-y-auto border rounded bg-white shadow">
+                {mockEmpleados.filter(emp => emp.toLowerCase().includes(empleadoSearch.toLowerCase()) && !projectData.empleadosAsociados.includes(emp)).map(emp => (
+                  <div key={emp} className="px-3 py-2 hover:bg-gray-100 cursor-pointer" onClick={() => setProjectData(prev => ({ ...prev, empleadosAsociados: [...prev.empleadosAsociados, emp] }))}>
+                    {emp}
+                  </div>
+                ))}
+              </div>
+              {errors.empleadosAsociados && <span className="text-xs text-red-500">{errors.empleadosAsociados}</span>}
             </div>
           </FormSection>
           
@@ -158,7 +192,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
           {renderListInputs('servicios', 'Servicios Incluidos')}
           
           <FormSection title="Costos Adicionales">
-             <div><FormLabel htmlFor="manoDeObra">Costo de Mano de Obra (COP)</FormLabel><input id="manoDeObra" type="number" name="manoDeObra" value={projectData.costos.manoDeObra} onChange={handleChange} className={inputBaseStyle} placeholder="Ej: 1500000" min="0" /></div>
+            <div><FormLabel htmlFor="manoDeObra">Costo de Mano de Obra (COP)</FormLabel><input id="manoDeObra" type="number" name="manoDeObra" value={projectData.costos.manoDeObra} onChange={handleChange} className={inputBaseStyle} placeholder="Ej: 1500000" min="0" /></div>
           </FormSection>
 
           <FormSection title="Observaciones">
@@ -168,6 +202,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
           <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
             <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Proyecto</button>
+            {Object.keys(errors).length > 0 && <div className="text-red-500 text-sm mt-2">Corrige los errores antes de guardar.</div>}
           </div>
         </form>
       </div>

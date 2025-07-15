@@ -1,19 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 
 // Layout Principal
 import DashboardLayout from './shared/layout/DashboardLayout';
-
+import ProtectedRoute from './shared/components/ProtectedRoute';
 
 // Importación de todas las páginas de los módulos
 
 import DashboardPage from './features/dashboard/DashboardPage';
+
 //Rutas Daniel
 import LoginPage from './features/auth/pages/LoginPage';
 import WorkSchedulingPage from './features/dashboard/pages/work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/project/ProjectPage';
 import EditProfilePage from './features/dashboard/pages/profile/EditProfilePage';
- 
 
 // Rutas Luissy
 import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
@@ -37,42 +38,123 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Redirección de la ruta raíz al dashboard */}
+        {/* Redirección de la ruta raíz al login */}
         <Route path="/" element={<Navigate to="/login" />} />
         {/* Ruta de Login */}
         <Route path="/login" element={<LoginPage />} />
 
-
-          <Route path="dashboard" element={<DashboardLayout />}>
+        {/* Rutas protegidas del dashboard */}
+        <Route path="dashboard" element={
+          <ProtectedRoute>
+            <DashboardLayout />
+          </ProtectedRoute>
+        }>
           <Route index element={<DashboardPage />} />
-          <Route path="programacion_laboral" element={<WorkSchedulingPage />} />
-          <Route path="roles" element={<RolesPage />} />
-          <Route path="proyectos_servicios" element={<ProjectPage/>} />
-          <Route path="perfil" element={<EditProfilePage />} /> {/* <-- AÑADIMOS LA NUEVA RUTA */}
-          {/* Rutas de Daniel */}
-    
-
-          {/*Rutas Luissy */}
-          <Route path="usuarios" element= {<UsersPages/> } />
-          <Route path="clientes" element= {<ClientsPage/> } />
-          <Route path="pagosyabonos" element= {<Payments_InstallmentsPage/>} />
-          {/*Rutas Elany */}
-          <Route path="categoria_servicios" element={<ServicesCategoryPage />} />
-          <Route path="servicios" element={<ServicesPage />} />
-          <Route path="citas" element={<AppoinmentsPage />} />
-          {/*Rutas Sarai */}
-          <Route path="productos" element={<ProductsPage />} />
-         <Route path="categoria_productos" element={<ProductsCategoryPage />} />
-          <Route path="venta_productos" element={<ProductsSalePage />} />
-          <Route path="cotizaciones" element={<QuotesPage/>} />
-          {/*Rutas Cruz */}
-          <Route path= "ordenes_servicios" element= {<ServiceOrdersPage/>} />
-          <Route path= "proveedores" element= {<SuppliersPage/>} />
-          <Route path= "compras" element= {<PurchasesPage/>} />
-
+          
+          {/* Rutas con permisos específicos */}
+          <Route path="usuarios" element={
+            <ProtectedRoute requiredModule="usuarios">
+              <UsersPages />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="roles" element={
+            <ProtectedRoute requiredModule="roles">
+              <RolesPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="proveedores" element={
+            <ProtectedRoute requiredModule="proveedores">
+              <SuppliersPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="categoria_productos" element={
+            <ProtectedRoute requiredModule="categoria_productos">
+              <ProductsCategoryPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="productos" element={
+            <ProtectedRoute requiredModule="productos">
+              <ProductsPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="compras" element={
+            <ProtectedRoute requiredModule="compras">
+              <PurchasesPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="categoria_servicios" element={
+            <ProtectedRoute requiredModule="categoria_servicios">
+              <ServicesCategoryPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="ordenes_servicios" element={
+            <ProtectedRoute requiredModule="ordenes_servicios">
+              <ServiceOrdersPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="programacion_laboral" element={
+            <ProtectedRoute requiredModule="programacion_laboral">
+              <WorkSchedulingPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="clientes" element={
+            <ProtectedRoute requiredModule="clientes">
+              <ClientsPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="venta_productos" element={
+            <ProtectedRoute requiredModule="venta_productos">
+              <ProductsSalePage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="citas" element={
+            <ProtectedRoute requiredModule="citas">
+              <AppoinmentsPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="cotizaciones" element={
+            <ProtectedRoute requiredModule="cotizaciones">
+              <QuotesPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="proyectos_servicios" element={
+            <ProtectedRoute requiredModule="proyectos_servicios">
+              <ProjectPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="pagosyabonos" element={
+            <ProtectedRoute requiredModule="pagosyabonos">
+              <Payments_InstallmentsPage />
+            </ProtectedRoute>
+          } />
+          
+          <Route path="servicios" element={
+            <ProtectedRoute requiredModule="categoria_servicios">
+              <ServicesPage />
+            </ProtectedRoute>
+          } />
+          
+          {/* Ruta de perfil - accesible para todos los usuarios autenticados */}
+          <Route path="profile" element={<EditProfilePage />} />
         </Route>
       </Routes>
+      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
     </BrowserRouter>
+    
   );
 }
 

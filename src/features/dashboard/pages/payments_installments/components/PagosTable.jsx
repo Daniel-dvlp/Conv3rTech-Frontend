@@ -1,63 +1,83 @@
-import React from 'react';
-import { FaEye } from 'react-icons/fa';
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { FaEye, FaPlus } from 'react-icons/fa'; // Importa FaPlusCircle para el nuevo botón
 import PaymentsDetailModal from './PaymentsDetailModal';
 
-const PagosTable = ({ pagos }) => {
-    const [selectedPayment, setSelectedPayment] = useState(null);
+// Helper para formatear montos a moneda local (COP)
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+};
 
-    return (
-        <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-            <table className="w-full text-center">
-                <thead className="bg-gray-50">
-                    <tr>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">ID</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Fecha</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Número de Contrato</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Nombre y Apellido</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Monto Total</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Monto Pagado</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Método de Pago</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Estado</th>
-                        <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                    {pagos.map((pago) => (
-                        <tr key={pago.id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-4 py-2">{pago.id}</td>
-                            <td className="px-4 py-2">{pago.fecha}</td>
-                            <td className="px-4 py-2">{pago.numeroContrato}</td>
-                            <td className="px-4 py-2">{pago.nombre} {pago.apellido}</td>
-                            <td className="px-4 py-2">{Number(pago.montoTotal).toLocaleString('es-CO')}</td>
-                            <td className="px-4 py-2">{Number(pago.montoAbonado).toLocaleString('es-CO')}</td>
-                            <td className="px-4 py-2">{pago.metodoPago}</td>
-                            <td className="px-4 py-2">
-                                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                ${pago.estado === 'Pagado'
-                                        ? 'bg-green-100 text-green-800'
-                                        : pago.estado === 'Cancelado'
-                                            ? 'bg-yellow-100 text-red-800'
-                                            : 'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                    {pago.estado}
-                                </span>
-                            </td>
-                            <td className="px-4 py-2">
-                                <button className="text-blue-600 hover:text-blue-800" onClick={() => setSelectedPayment(pago)} title="Ver detalles">
-                                    <FaEye />
-                                </button>
+// Asegúrate de que este componente reciba la prop 'onRegisterNewAbono'
+const PagosTable = ({ pagos, onRegisterNewAbono, handleOpenPaymentDetails  }) => { // Agrega onRegisterNewAbono a las props
+  const [selectedPayment, setSelectedPayment] = useState(null);
 
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-            {selectedPayment && (
-                <PaymentsDetailModal pago={selectedPayment} onClose={() => setSelectedPayment(null)} />
-            )}
-        </div>
-    );
+  return (
+    <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+      <table className="w-full text-center">
+        <thead className="bg-gray-50">
+          <tr>
+            {['Fecha', 'Número de Contrato', 'Nombre y Apellido', 'Monto Pagado', 'Método de Pago', 'Estado', 'Acciones']
+              .map(h => (
+                <th key={h} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">
+                  {h}
+                </th>
+              ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {pagos.map(p => (
+            <tr key={p.id} className="hover:bg-gray-50 transition-colors">
+              <td className="px-4 py-2">{p.fecha}</td>
+              <td className="px-4 py-2">{p.numeroContrato}</td>
+              <td className="px-4 py-2">{p.nombre} {p.apellido}</td>
+              <td className="px-4 py-2">{formatCurrency(p.montoAbonado)}</td> {/* Formato de moneda */}
+              <td className="px-4 py-2">{p.metodoPago}</td>
+              <td className="px-4 py-2">
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
+                  ${p.estado === 'Registrado'
+                    ? 'bg-green-100 text-green-800'
+                    : p.estado === 'Cancelado'
+                      ? 'bg-red-100 text-red-800'
+                      : p.estado === 'Completado' // Nuevo estado si el montoRestante es 0
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                  {p.estado}
+                </span>
+              </td>
+              <td className="px-4 py-2">
+                <div className="flex items-center justify-center gap-2"> {/* Contenedor para los botones */}
+                  {/* Botón Ver Detalles */}
+                  <button className='text-blue-600 hover:text-blue-800' onClick={() => handleOpenPaymentDetails(p.numeroContrato, p.clienteId)}>
+                    <FaEye />
+                  </button>
+                  {/* Nuevo Botón para Registrar Abono */}
+                  {/* {p.estado !== 'Completado' && p.estado !== 'Cancelado' && ( // Solo si no está completado/cancelado */}
+                    <button
+                      // Deshabilitado si ya está completado o cancelado
+                      className="text-conv3rge-drak hover:text-conv3ge-dark-800"
+                      onClick={() => onRegisterNewAbono(p)} // Llama a la función del padre y pasa el pago actual
+                      title="Registrar Abono"
+                    >
+                      <FaPlus />
+                    </button>
+                  
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Modal de detalle */}
+      
+    </div>
+  );
 };
 
 export default PagosTable;
