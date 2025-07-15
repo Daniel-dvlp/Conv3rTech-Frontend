@@ -40,6 +40,7 @@ const Sidebar = () => {
       name: 'Servicios',
       icon: <FaConciergeBell />,
       children: [
+        { name: 'Servicios', path: '/dashboard/servicios'},
         { name: 'Categoría de Servicios', path: '/dashboard/categoria_servicios' },
         { name: 'Programación laboral', path: '/dashboard/programacion_laboral' },
       ]

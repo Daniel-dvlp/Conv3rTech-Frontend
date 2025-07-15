@@ -1,3 +1,5 @@
+/* src/index.css */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -44,4 +46,43 @@
 /* Asegurar que el gradiente radial funcione correctamente */
 .bg-gradient-radial {
   background: radial-gradient(var(--tw-gradient-stops));
+}
+
+/* Estilo reutilizable para inputs */
+.input {
+  @apply w-full border border-gray-300 px-3 py-2 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-400;
+}
+/* lo agregue  */
+/* Cambiar el color de los links (como los días en la cabecera) */
+.fc a {
+  color: #00012A; /* Azul oscuro personalizado */
+  text-decoration: none;
+}
+
+/* Cambiar color al pasar el mouse */
+.fc a:hover {
+  color: #FFC107; /* Amarillo mostaza */
+}
+
+/* Cambiar color del título del mes */
+.fc-toolbar-title {
+  color: #00012A;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+/* Día seleccionado */
+.fc-daygrid-day.fc-day-today {
+  background-color: #FFF8DC !important; /* color crema */
+}
+
+/* Evento en calendario */
+.fc-event {
+  background-color: #FFD54F !important; /* Amarillo pastel */
+  border: none;
+  color: #000;
+  font-weight: 500;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
 }
