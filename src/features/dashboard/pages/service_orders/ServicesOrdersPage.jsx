@@ -1,12 +1,17 @@
+// src/features/dashboard/pages/service_orders/ServiceOrdersPage.jsx
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import ServiceOrdersTable from './components/Service_ordersTable';
 import SkeletonServiceOrderRow from './components/SkeletonRow';
-import { mockServiceOrders } from './data/Service_orders_data';
+import { mockServiceOrders } from './data/Service_orders_data'; // Mantén esta importación si es la que te funciona.
+                                                              // Anteriormente usé initialMockServiceOrders,
+                                                              // pero si 'mockServiceOrders' es lo que tienes, usa esa.
 import Pagination from '../../../../../src/shared/components/Pagination';
 import ServiceOrderDetailModal from './components/Service_ordersDetailModal';
 import NewServiceOrderModal from './components/NewService_ordersModal';
 import EditServiceOrderModal from './components/EditService_ordersModal';
+import { Toaster } from 'react-hot-toast'; // Asegúrate de tener 'react-hot-toast' instalado si usas Toaster.
 
 const ITEMS_PER_PAGE = 5;
 
@@ -24,7 +29,7 @@ const ServiceOrdersPage = () => {
     setTimeout(() => {
       setOrders(mockServiceOrders);
       setLoading(false);
-    }, 1500); // Simula fetch con delay
+    }, 1500);
   }, []);
 
   const normalize = (text) =>
@@ -46,7 +51,7 @@ const ServiceOrdersPage = () => {
         order.requestDate
       ];
 
-      return searchFields.some(field => 
+      return searchFields.some(field =>
         normalize(field).includes(normalizedSearch)
       );
     });
@@ -68,9 +73,40 @@ const ServiceOrdersPage = () => {
     setOrderToEdit(null);
   };
 
+  // !!! MODIFICACIÓN CLAVE AQUÍ: AHORA RECIBE 'cancellationReason' Y LO GUARDA !!!
+  const handleAnnulOrder = (orderId, cancellationReason) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId
+          ? {
+              ...order,
+              isActive: false, // Mantén 'isActive' o 'isActividad' según tu modelo de datos
+              status: 'Anulada',
+              cancellationReason: cancellationReason // <-- ¡Aquí se guarda la razón!
+            }
+          : order
+      )
+    );
+    // Si la orden anulada es la que está abierta en el modal de detalles, ciérralo
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder(null);
+    }
+  };
+
+  // --- FUNCIÓN PARA ASIGNAR COTIZACIÓN (sin cambios) ---
+  const handleAssignQuote = (orderId, newQuoteId) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId
+          ? { ...order, quoteId: newQuoteId } // Asigna el nuevo quoteId
+          : order
+      )
+    );
+  };
+
   return (
     <div className="p-4 md:p-8">
-      {/* Encabezado del módulo */}
+      {/* Sección de encabezado y búsqueda (sin cambios) */}
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Órdenes de Servicio</h1>
         <div className="flex gap-4 flex-wrap">
@@ -99,7 +135,7 @@ const ServiceOrdersPage = () => {
         </div>
       </div>
 
-      {/* Tabla o Skeleton mientras carga */}
+      {/* Renderizado condicional: Esqueletos de carga o la tabla de órdenes */}
       {loading ? (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <table className="w-full">
@@ -123,10 +159,12 @@ const ServiceOrdersPage = () => {
         </div>
       ) : (
         <>
-          <ServiceOrdersTable 
-            orders={currentItems} 
+          <ServiceOrdersTable
+            orders={currentItems}
             onView={(order) => setSelectedOrder(order)}
             onEdit={(order) => setOrderToEdit(order)}
+            onAnnul={handleAnnulOrder} // Asegúrate de que ServiceOrdersTable pasa la razón de anulación
+            onAssignQuote={handleAssignQuote}
           />
           {totalPages > 1 && (
             <Pagination
@@ -151,6 +189,8 @@ const ServiceOrdersPage = () => {
         onSave={handleEditOrder}
         orderId={orderToEdit?.id}
       />
+      {/* Toaster para notificaciones si lo usas */}
+      <Toaster position="bottom-right" />
     </div>
   );
 };

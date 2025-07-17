@@ -39,7 +39,7 @@ export const mockServiceOrders = [
   {
     id: 1,
     orderId: 'OS-1001',
-    quoteId: '001',
+    quoteId: 'COT-8486',
     clientName: 'Cliente Corporativo S.A.',
     contact: '312-456-7890',
     projectName: 'Instalación de CCTV corporativo',
@@ -54,7 +54,8 @@ export const mockServiceOrders = [
     ],
     observations: 'Se requiere visita adicional para la instalación final.',
     requestDate: '2025-07-01',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null // Nuevo campo: inicializado como null o undefined
   },
   {
     id: 2,
@@ -72,12 +73,13 @@ export const mockServiceOrders = [
     ],
     observations: '',
     requestDate: '2025-07-02',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 3,
     orderId: 'OS-1003',
-    quoteId: '002',
+    quoteId: 'COT-1234',
     clientName: 'Empresa Industrial XYZ',
     contact: '310-987-6543',
     projectName: 'Diagnóstico sistema industrial',
@@ -90,7 +92,8 @@ export const mockServiceOrders = [
     ],
     observations: 'Esperando llegada del sensor especial.',
     requestDate: '2025-07-03',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 4,
@@ -108,12 +111,13 @@ export const mockServiceOrders = [
     ],
     observations: 'Trabajo finalizado con éxito.',
     requestDate: '2025-07-04',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 5,
     orderId: 'OS-1005',
-    quoteId: '003',
+    quoteId: 'COT-5678',
     clientName: 'Corporación Delta',
     contact: '311-234-5678',
     projectName: 'Inspección técnica planta industrial',
@@ -126,7 +130,8 @@ export const mockServiceOrders = [
     ],
     observations: 'Requiere autorización del cliente.',
     requestDate: '2025-07-05',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 6,
@@ -145,12 +150,13 @@ export const mockServiceOrders = [
     ],
     observations: '',
     requestDate: '2025-07-06',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 7,
     orderId: 'OS-1007',
-    quoteId: '004',
+    quoteId: 'COT-9012',
     clientName: 'Servicios Integrales Ltda.',
     contact: '316-456-7890',
     projectName: 'Mantenimiento correctivo motor',
@@ -163,7 +169,8 @@ export const mockServiceOrders = [
     ],
     observations: 'Se programará instalación al recibir el repuesto.',
     requestDate: '2025-07-07',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 8,
@@ -181,12 +188,13 @@ export const mockServiceOrders = [
     ],
     observations: '',
     requestDate: '2025-07-08',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 9,
     orderId: 'OS-1009',
-    quoteId: '005',
+    quoteId: 'COT-3456',
     clientName: 'Logística Express S.A.',
     contact: '318-678-9012',
     projectName: 'Ajuste banda transportadora',
@@ -199,7 +207,8 @@ export const mockServiceOrders = [
     ],
     observations: 'Cliente solicitó repuesto original.',
     requestDate: '2025-07-09',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
   {
     id: 10,
@@ -217,9 +226,9 @@ export const mockServiceOrders = [
     ],
     observations: '',
     requestDate: '2025-07-10',
-    isActividad: true
+    isActividad: true,
+    cancellationReason: null
   },
-  // Ejemplo de una orden inactiva para pruebas
   {
     id: 11,
     orderId: 'OS-1011',
@@ -227,15 +236,33 @@ export const mockServiceOrders = [
     clientName: 'Pruebas Inactividad S.A.',
     contact: '300-111-2222',
     projectName: 'Prueba de sistema de actividad',
-    status: 'Inactiva',
+    status: 'Anulada', // Esta es la que ya estaba anulada
     services: [
       { serviceId: 1, quantity: 1 },
     ],
     products: [
       { productId: 1, quantity: 1 },
     ],
-    observations: 'Orden de prueba para verificar estado inactivo',
+    observations: 'Orden de prueba para verificar estado inactivo.',
     requestDate: '2025-07-11',
-    isActividad: false
+    isActividad: false,
+    cancellationReason: 'El cliente canceló por cambio de planes.' // ¡Aquí está el nuevo campo con un valor!
+  },
+  {
+    id: 12,
+    orderId: 'OS-1012',
+    quoteId: 'COT-7777',
+    clientName: 'Finca La Esperanza',
+    contact: '300-555-8888',
+    projectName: 'Mantenimiento Preventivo de Bombeo',
+    status: 'Anulada', // Otra orden anulada para probar
+    services: [
+      { serviceId: 1, quantity: 1 },
+    ],
+    products: [],
+    observations: 'Se había programado el mantenimiento, pero la finca vendió los equipos.',
+    requestDate: '2025-07-12',
+    isActividad: false,
+    cancellationReason: 'Venta de equipos por parte del cliente.' // Otro motivo de anulación
   }
 ];

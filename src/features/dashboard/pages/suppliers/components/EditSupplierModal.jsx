@@ -1,4 +1,4 @@
-// src/features/dashboard/pages/service_orders/components/NewProviderModal.jsx
+// src/features/dashboard/pages/suppliers/components/EditSupplierModal.jsx
 
 import React, { useState, useEffect, useRef } from "react";
 import { FaTimes } from "react-icons/fa";
@@ -7,32 +7,45 @@ import { toast } from "react-hot-toast";
 const inputBaseStyle =
   "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
-const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
+const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNits = [] }) => {
   const initialState = {
+    id: null,
     taxId: "",
     empresa: "",
     encargado: "",
     contactNumber: "",
     email: "",
     address: "",
+    estado: "Activo",
   };
 
-  const [providerData, setProviderData] = useState(initialState);
+  const [formData, setFormData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [formSubmitted, setFormSubmitted] = useState(false);
 
-  // Eliminamos useRef para modalContentRef y mouseDownTarget ya que no se usarán para cerrar el modal al hacer clic fuera
+  // Ya no necesitamos useRef para manejar clics fuera, solo para el scroll del contenido
   // const modalContentRef = useRef(null); 
-  // const mouseDownTarget = useRef(null); 
+  // const mouseDownTarget = useRef(null);
 
-  // Resetear el formulario cuando se abre/cierra
+  // Precargar los datos del proveedor cuando supplierToEdit cambie o el modal se abra
   useEffect(() => {
-    if (isOpen) {
-      setProviderData(initialState);
+    if (isOpen && supplierToEdit) {
+      setFormData({
+        id: supplierToEdit.id,
+        taxId: supplierToEdit.nit || "",
+        empresa: supplierToEdit.empresa || "",
+        encargado: supplierToEdit.encargado || "",
+        contactNumber: supplierToEdit.telefono || "",
+        email: supplierToEdit.correo || "",
+        address: supplierToEdit.direccion || "",
+        estado: supplierToEdit.estado || "Activo",
+      });
       setErrors({});
       setFormSubmitted(false);
+    } else if (!isOpen) {
+        setFormData(initialState);
     }
-  }, [isOpen]); // Dependencia solo en isOpen para resetear al abrir
+  }, [isOpen, supplierToEdit]);
 
   // Validaciones
   const validateField = (name, value) => {
@@ -43,8 +56,8 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           error = "El NIT es obligatorio.";
         } else if (!/^\d+$/.test(value)) {
           error = "El NIT debe contener solo números.";
-        } else if (existingNits.includes(value)) {
-          error = "Este NIT ya está registrado.";
+        } else if (existingNits.includes(value) && supplierToEdit && value !== supplierToEdit.nit) {
+            error = "Este NIT ya está registrado por otro proveedor.";
         }
         break;
       case "empresa":
@@ -76,7 +89,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setProviderData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (formSubmitted) {
         validateField(name, value);
     } else {
@@ -117,11 +130,13 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     let formIsValid = true;
     const newErrors = {};
 
-    Object.keys(providerData).forEach(name => {
-      const error = validateField(name, providerData[name]);
-      if (error) {
-        newErrors[name] = error;
-        formIsValid = false;
+    Object.keys(formData).forEach(name => {
+      if (name !== 'id' && name !== 'estado') {
+          const error = validateField(name, formData[name]);
+          if (error) {
+              newErrors[name] = error;
+              formIsValid = false;
+          }
       }
     });
 
@@ -132,27 +147,24 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
       return;
     }
 
-    const newProvider = {
-      id: Date.now(), // Asigna un ID único, podrías usar una librería como uuid si es necesario
-      nit: providerData.taxId,
-      empresa: providerData.empresa,
-      encargado: providerData.encargado,
-      telefono: providerData.contactNumber,
-      correo: providerData.email,
-      direccion: providerData.address,
-      estado: "Activo", // Los nuevos proveedores inician como Activos
+    const updatedSupplier = {
+      ...supplierToEdit,
+      id: formData.id,
+      nit: formData.taxId,
+      empresa: formData.empresa,
+      encargado: formData.encargado,
+      telefono: formData.contactNumber,
+      correo: formData.email,
+      direccion: formData.address,
+      estado: formData.estado,
     };
 
-    onSave(newProvider);
-    toast.success("¡Proveedor creado exitosamente!");
-    setProviderData(initialState);
-    setErrors({});
-    setFormSubmitted(false);
+    onSave(updatedSupplier);
+    toast.success("¡Proveedor actualizado exitosamente!");
     onClose();
   };
 
-  // Eliminamos handleMouseDown y handleMouseUp ya que no queremos cerrar al hacer clic fuera
-  // y por lo tanto tampoco necesitamos las referencias 'modalContentRef' y 'mouseDownTarget'.
+  // Eliminamos las funciones handleMouseDown y handleMouseUp
 
   if (!isOpen) return null;
 
@@ -162,12 +174,12 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
       // Eliminamos onMouseDown y onMouseUp de aquí
     >
       <div
-        // Eliminamos ref={modalContentRef} de aquí
+        // Ya no necesitamos ref en este div para el clic fuera
         className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
       >
         {/* Encabezado fijo */}
         <header className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">Registrar Nuevo Proveedor</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Editar Proveedor</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
             <FaTimes />
           </button>
@@ -176,7 +188,8 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
         {/* Contenido del formulario con scroll */}
         <form
           onSubmit={handleSubmit}
-          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow" // Añadimos flex-grow
+          // Aplicamos el overflow-y-auto y max-height directamente al formulario
+          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow" // Añadimos flex-grow para que ocupe el espacio disponible
         >
           {/* NIT y Empresa */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
@@ -188,7 +201,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                 id="taxId"
                 type="text"
                 name="taxId"
-                value={providerData.taxId}
+                value={formData.taxId}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 onKeyPress={handleKeyPressNumeric}
@@ -208,7 +221,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                 id="empresa"
                 type="text"
                 name="empresa"
-                value={providerData.empresa}
+                value={formData.empresa}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 className={`${inputBaseStyle} ${errors.empresa ? 'border-red-500' : ''}`}
@@ -226,7 +239,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                 id="encargado"
                 type="text"
                 name="encargado"
-                value={providerData.encargado}
+                value={formData.encargado}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 className={`${inputBaseStyle} ${errors.encargado ? 'border-red-500' : ''}`}
@@ -244,7 +257,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                 id="contactNumber"
                 type="tel"
                 name="contactNumber"
-                value={providerData.contactNumber}
+                value={formData.contactNumber}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 onKeyPress={handleKeyPressPhone}
@@ -263,7 +276,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                 id="email"
                 type="email"
                 name="email"
-                value={providerData.email}
+                value={formData.email}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 className={`${inputBaseStyle} ${errors.email ? 'border-red-500' : ''}`}
@@ -281,11 +294,28 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                 id="address"
                 type="text"
                 name="address"
-                value={providerData.address}
+                value={formData.address}
                 onChange={handleChange}
                 onBlur={handleBlur}
                 className={inputBaseStyle}
               />
+            </div>
+
+            {/* Estado (nuevo campo editable) */}
+            <div>
+              <label htmlFor="estado" className="block text-sm font-medium text-gray-700 mb-1">
+                Estado
+              </label>
+              <select
+                id="estado"
+                name="estado"
+                value={formData.estado}
+                onChange={handleChange}
+                className={inputBaseStyle}
+              >
+                <option value="Activo">Activo</option>
+                <option value="Inactivo">Inactivo</option>
+              </select>
             </div>
           </div>
 
@@ -301,7 +331,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
               type="submit"
               className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
             >
-              Guardar Proveedor
+              Guardar Cambios
             </button>
           </div>
         </form>
@@ -310,4 +340,4 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
   );
 };
 
-export default NewProviderModal;
+export default EditSupplierModal;
