@@ -214,8 +214,8 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
 
   // Navegar a la página de creación de un nuevo cliente y cerrar el modal
   const navigateToNewClient = () => {
-    navigate('/clients');
-    onClose(); // Cerrar modal al navegar
+    navigate('/dashboard/clientes')
+    if (onClose) onClose();
   };
 
   // Añadir o actualizar un servicio en la orden

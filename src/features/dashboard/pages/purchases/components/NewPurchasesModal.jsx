@@ -1,6 +1,7 @@
 // src/features/dashboard/pages/purchases/NewPurchasesModal.jsx
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaPlus, FaTrash, FaEdit, FaBarcode } from "react-icons/fa";
 import { mockProductosParaCompra, mockProveedores } from '../data/Purchases_data';
 import { toast } from 'react-hot-toast';
@@ -27,6 +28,7 @@ const NewPurchasesModal = ({
   productos = mockProductosParaCompra,
 }) => {
   const modalContentRef = useRef();
+  const navigate = useNavigate();
   const proveedorSelectRef = useRef();
   const fechaRegistroRef = useRef();
   const numeroReciboRef = useRef();
@@ -469,8 +471,8 @@ const NewPurchasesModal = ({
 
   // Función placeholder para el botón de nuevo producto
   const handleRegisterNewProduct = () => {
-    toast.info("Funcionalidad para registrar nuevo producto no implementada aún.");
-    // Aquí se podría abrir otro modal, redirigir a una página, etc.
+    navigate('/dashboard/productos');
+    if (onClose) onClose();
   };
 
   if (!isOpen) return null;
