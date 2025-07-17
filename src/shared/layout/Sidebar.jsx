@@ -40,8 +40,8 @@ const Sidebar = () => {
       name: 'Servicios',
       icon: <FaConciergeBell />,
       children: [
+        { name: 'Servicios', path: '/dashboard/servicios'},
         { name: 'Categoría de Servicios', path: '/dashboard/categoria_servicios' },
-        { name: 'Órdenes de Servicio', path: '/dashboard/ordenes_servicios' },
         { name: 'Programación laboral', path: '/dashboard/programacion_laboral' },
       ]
     },
@@ -171,7 +171,7 @@ const Sidebar = () => {
                     to={item.path}
                     className={`no-underline flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${getBubbleClasses(isActiveParent)}`}
                   >
-                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto'}`} style={getActiveTextColor(isActiveParent)}>
+                    <div className={`text-2xl flex-shrink-0 ${isExpanded ? '' : 'mx-auto '}`} style={getActiveTextColor(isActiveParent)}>
                       {item.icon}
                     </div>
                     {isExpanded && (

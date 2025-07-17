@@ -6,7 +6,9 @@ import Pagination from '../../../../shared/components/Pagination';
 import NewProductModal from './components/NewProductModal';
 import ProductDetailModal from './components/ProductDetailModal';
 import { mockProducts } from './data/Products_data';
-import {mockProductsCategory} from '../products_category/data/ProductsCategory_data';
+import { mockProductsCategory } from '../products_category/data/ProductsCategory_data';
+import ProductEditModal from './components/ProductEditModal';
+import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
 import * as XLSX from 'xlsx';
 
 const ITEMS_PER_PAGE = 5;
@@ -19,6 +21,7 @@ const ProductsPage = () => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
@@ -28,16 +31,23 @@ const ProductsPage = () => {
     }, 1500);
   }, []);
 
-  const normalize = (text) => (text || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase();
+  const normalize = (text) =>
+    text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
-    return products.filter((product) =>
-      normalize(product.producto).includes(normalizedSearch) ||
-      normalize(product.modelo).includes(normalizedSearch) ||
-      normalize(product.estado).includes(normalizedSearch)
-    );
+
+    return products.filter((product) => {
+      const estadoLegible = product.estado ? 'activo' : 'inactivo';
+      const nameIncludes = normalize(product.nombre).includes(normalizedSearch);
+      const modelIncludes = normalize(product.modelo).includes(normalizedSearch);
+      const unityIncludes = normalize(product.unidad).includes(normalizedSearch);
+      const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch);
+
+      return nameIncludes || unityIncludes || modelIncludes || stateIncludes;
+    });
   }, [products, searchTerm]);
+
 
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
 
@@ -49,14 +59,65 @@ const ProductsPage = () => {
   const handleAddProduct = (newProduct) => {
     setProducts((prev) => [newProduct, ...prev]);
     setShowNewModal(false);
+    showSuccess('Producto agregado exitosamente');
   };
 
   const handleExport = () => {
-    const worksheet = XLSX.utils.json_to_sheet(filteredProducts);
+    const getCategoryName = (id) => {
+      if (!Array.isArray(categories)) return 'Desconocida';
+      const cat = categories.find((c) => c.id === id);
+      return cat ? cat.nombre : 'Desconocida';
+    };
+    const dataToExport = filteredProducts.map((product) => {
+      const especificacionesTexto = Array.isArray(product.especificaciones_tecnicas)
+        ? product.especificaciones_tecnicas
+          .map((spec) => `${spec.concepto}: ${spec.valor}`)
+          .join(' | ')
+        : 'Sin especificaciones';
+
+      return {
+        ID: product.id,
+        Nombre: product.nombre,
+        Modelo: product.modelo,
+        Categoría: getCategoryName(product.categoria),
+        Unidad: product.unidad,
+        Garantía: `${product.garantia} meses`,
+        Código: product.codigo,
+        Precio: product.precio,
+        Stock: product.stock,
+        Estado: product.estado ? 'Activo' : 'Inactivo',
+        Especificaciones: especificacionesTexto,
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Productos');
     XLSX.writeFile(workbook, 'ReporteProductos.xlsx');
+    showSuccess('Los productos han sido exportados exitosamente');
   };
+
+  const handleUpdateProduct = (updatedProduct) => {
+    setProducts((prev) =>
+      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+    );
+    setIsEditing(false);
+    setSelectedProduct(null);
+    showSuccess('Producto actualizado exitosamente');
+  };
+
+const handleDeleteProduct = async (productId) => {
+  const confirmed = await confirmDelete(
+    '¿Estás segura de eliminar este producto?',
+    'Esta acción no se puede deshacer'
+  );
+
+  if (!confirmed) return;
+
+  setProducts(prev => prev.filter(prod => prod.id !== productId));
+  showSuccess('Producto eliminado exitosamente');
+};
+
 
   return (
     <div className="p-4 md:p-8 relative">
@@ -121,7 +182,13 @@ const ProductsPage = () => {
             products={currentItems}
             categories={categories}
             onViewDetails={(product) => setSelectedProduct(product)}
+            onEditProduct={(product) => {
+              setSelectedProduct(product);
+              setIsEditing(true);
+            }}
+            onDeleteProduct={handleDeleteProduct}
           />
+
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -136,12 +203,32 @@ const ProductsPage = () => {
         isOpen={showNewModal}
         onClose={() => setShowNewModal(false)}
         onSave={handleAddProduct}
+        categories={categories}
+        onEditProduct={(product) => {
+          setSelectedProduct(product);
+          setIsEditing(true);
+        }}
       />
 
       {selectedProduct && (
         <ProductDetailModal
           product={selectedProduct}
+          categories={categories}
           onClose={() => setSelectedProduct(null)}
+        />
+      )}
+
+      {selectedProduct && isEditing && (
+        <ProductEditModal
+          isOpen={isEditing}
+          onClose={() => {
+            setIsEditing(false);
+            setSelectedProduct(null);
+          }}
+          onSave={handleUpdateProduct}
+          productToEdit={selectedProduct}
+          existingProducts={products}
+          categories={categories}
         />
       )}
     </div>

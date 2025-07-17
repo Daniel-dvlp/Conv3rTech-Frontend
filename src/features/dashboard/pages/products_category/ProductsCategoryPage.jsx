@@ -8,6 +8,9 @@ import { mockProductsCategory } from './data/ProductsCategory_data';
 import Pagination from '../../../../shared/components/Pagination';
 import NewProductCategoryModal from './components/NewProductCategoryModal';
 import ProductCategoryDetailModal from './components/ProductCategoryDetailModal';
+import ProductCategoryEditModal from './components/ProductCategoryEditModal';
+import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,6 +21,7 @@ const ProductsCategoryPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [isEditing, setIsEditing] = useState(false); // ✅ Nuevo estado para edición
 
   useEffect(() => {
     setTimeout(() => {
@@ -27,15 +31,18 @@ const ProductsCategoryPage = () => {
   }, []);
 
   const normalize = (text) =>
-    text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
   const filteredProductsCategory = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
-    return categories.filter((cat) =>
-      normalize(cat.nombre).includes(normalizedSearch) ||
-      normalize(cat.descripcion).includes(normalizedSearch) ||
-      normalize(cat.estado.toString()).includes(normalizedSearch)
-    );
+    return categories.filter((cat) => {
+      const estadoLegible = cat.estado ? 'activo' : 'inactivo';
+      return (
+        normalize(cat.nombre).includes(normalizedSearch) ||
+        normalize(cat.descripcion).includes(normalizedSearch) ||
+        normalize(estadoLegible).startsWith(normalizedSearch)
+      );
+    });
   }, [categories, searchTerm]);
 
   const totalPages = Math.ceil(filteredProductsCategory.length / ITEMS_PER_PAGE);
@@ -46,8 +53,45 @@ const ProductsCategoryPage = () => {
   }, [filteredProductsCategory, currentPage]);
 
   const handleAddCategory = (newCategory) => {
-    setCategories(prev => [newCategory, ...prev]);
-    setShowNewModal(false);
+    try {
+      setCategories(prev => [newCategory, ...prev]);
+      showSuccess('Categoría creada exitosamente');
+    } catch (error) {
+      showError('Error al crear la categoría');
+    } finally {
+      setShowNewModal(false);
+    }
+  };
+
+  const handleEditCategory = (category) => {
+    setSelectedCategory(category);
+    setIsEditing(true);
+  };
+
+  const handleUpdateCategory = (updatedCategory) => {
+    try {
+      setCategories(prev =>
+        prev.map(cat => (cat.id === updatedCategory.id ? updatedCategory : cat))
+      );
+      showSuccess('Categoría actualizada exitosamente');
+    } catch (error) {
+      showError('Error al actualizar la categoría');
+    } finally {
+      setIsEditing(false);
+      setSelectedCategory(null);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    const confirmed = await confirmDelete('¿Estás seguro de eliminar esta categoría?');
+    if (!confirmed) return;
+
+    try {
+      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+      showSuccess('Categoría eliminada exitosamente');
+    } catch (error) {
+      showError('Error al eliminar la categoría');
+    }
   };
 
   return (
@@ -101,6 +145,8 @@ const ProductsCategoryPage = () => {
           <ProductsCategoryTable
             categories={currentItems}
             onViewDetails={(cat) => setSelectedCategory(cat)}
+            onEditCategory={handleEditCategory}
+            onDeleteCategory={handleDeleteCategory}
           />
           {totalPages > 1 && (
             <Pagination
@@ -121,10 +167,23 @@ const ProductsCategoryPage = () => {
         />
       )}
 
-      {selectedCategory && (
+      {selectedCategory && !isEditing && (
         <ProductCategoryDetailModal
           category={selectedCategory}
           onClose={() => setSelectedCategory(null)}
+        />
+      )}
+
+      {selectedCategory && isEditing && (
+        <ProductCategoryEditModal
+          isOpen={isEditing}
+          onClose={() => {
+            setIsEditing(false);
+            setSelectedCategory(null);
+          }}
+          onSave={handleUpdateCategory}
+          categoryToEdit={selectedCategory}
+          existingCategories={categories}
         />
       )}
     </div>

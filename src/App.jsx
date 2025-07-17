@@ -8,25 +8,25 @@ import ProtectedRoute from './shared/components/ProtectedRoute';
 // Importación de todas las páginas de los módulos
 
 import DashboardPage from './features/dashboard/DashboardPage';
+
 //Rutas Daniel
 import LoginPage from './features/auth/pages/LoginPage';
 import WorkSchedulingPage from './features/dashboard/pages/work_scheduling/WorkSchedulingPage';
 import RolesPage from './features/dashboard/pages/Roles/RolesPage';
 import ProjectPage from './features/dashboard/pages/project/ProjectPage';
 import EditProfilePage from './features/dashboard/pages/profile/EditProfilePage';
- 
 
 // Rutas Luissy
 import ClientsPage from './features/dashboard/pages/clients/ClientsPage';
 import UsersPages from './features/dashboard/pages/users/UsersPage';
 import Payments_InstallmentsPage from './features/dashboard/pages/payments_installments/Payments_InstallmentsPage';
 //Rutas Elany
-import ServicesCategoryPage from './features/dashboard/pages/Services_category/ServicesCategoryPage';
+import ServicesCategoryPage from './features/dashboard/pages/services_category/ServicesCategoryPage';
 import ServicesPage from './features/dashboard/pages/services/ServicesPage';
 import AppoinmentsPage from './features/dashboard/pages/appointment/AppointmentsPage';
 //Rutas Sarai
 import ProductsPage from './features/dashboard/pages/products/ProductsPage';
-import ProductsCategoryPage from './features/dashboard/pages/products_Category/ProductsCategoryPage';
+ import ProductsCategoryPage from './features/dashboard/pages/products_Category/ProductsCategoryPage';
 import ProductsSalePage from './features/dashboard/pages/products_sale/ProductsSalePage';
 //Rutas Cruz
 import PurchasesPage from './features/dashboard/pages/purchases/PurchasesPage';
@@ -152,7 +152,7 @@ function App() {
           <Route path="profile" element={<EditProfilePage />} />
         </Route>
       </Routes>
-      <Toaster position="bottom-right" toastOptions={{ duration: 3000 }} />
+      <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
     </BrowserRouter>
     
   );

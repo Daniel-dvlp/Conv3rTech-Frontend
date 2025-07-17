@@ -12,7 +12,7 @@ const DashboardLayout = () => {
       <Sidebar />
       <div className="flex flex-col flex-grow min-h-screen">
         <Header />
-        <main className="flex-grow p-4 bg-white overflow-y-auto">
+        <main className="flex-grow p-2 bg-white overflow-y-auto">
           <Outlet />
         </main>
       </div>
