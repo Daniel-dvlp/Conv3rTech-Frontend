@@ -4,9 +4,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import SuppliersTable from './components/SuppliersTable';
 import SkeletonRow from './components/SkeletonRow';
-import { MockSuppliers } from './data/Suppliers_data';
+import { MockSuppliers } from './data/Suppliers_data'; // <--- RUTA CORREGIDA
 import Pagination from '../../../../../src/shared/components/Pagination';
-import NewProviderModal from './components/NewSuppliersModal';
+import NewProviderModal from './components/NewSuppliersModal'; // <--- NOMBRE DE IMPORTACIÓN CORREGIDO
+import EditSupplierModal from './components/EditSupplierModal'; // <--- IMPORTA EditSupplierModal
+import { Toaster } from 'react-hot-toast'; // <--- IMPORTA Toaster
 
 const ITEMS_PER_PAGE = 5;
 
@@ -16,6 +18,7 @@ const SuppliersPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewSupplierModalOpen, setIsNewSupplierModalOpen] = useState(false);
+  const [supplierToEdit, setSupplierToEdit] = useState(null); // <--- NUEVO ESTADO para el proveedor a editar
 
   useEffect(() => {
     setTimeout(() => {
@@ -29,6 +32,7 @@ const SuppliersPage = () => {
 
   const filteredSuppliers = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
+    if (!normalizedSearch) return suppliers; // Retorna todos si no hay búsqueda
     return suppliers.filter((s) =>
       normalize(s.nit).includes(normalizedSearch) ||
       normalize(s.encargado).includes(normalizedSearch) ||
@@ -46,6 +50,40 @@ const SuppliersPage = () => {
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
     return filteredSuppliers.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredSuppliers, currentPage]);
+
+  // Handler para guardar un nuevo proveedor
+  const handleSaveNewSupplier = (newSupplier) => {
+    setSuppliers((prev) => [newSupplier, ...prev]);
+    setIsNewSupplierModalOpen(false); // Cierra el modal
+  };
+
+  // Handler para guardar un proveedor editado
+  const handleSaveEditedSupplier = (updatedSupplier) => {
+    setSuppliers((prev) =>
+      prev.map((supplier) =>
+        supplier.id === updatedSupplier.id ? updatedSupplier : supplier
+      )
+    );
+    setSupplierToEdit(null); // Cierra el modal de edición
+  };
+
+  // Handler para eliminar un proveedor
+  const handleDeleteSupplier = (supplierId) => {
+    setSuppliers((prev) => prev.filter(supplier => supplier.id !== supplierId));
+    // Si el proveedor que se eliminó era el que se estaba editando, cierra el modal de edición
+    if (supplierToEdit && supplierToEdit.id === supplierId) {
+      setSupplierToEdit(null);
+    }
+  };
+
+  // Handler para abrir el modal de edición con el proveedor seleccionado
+  const handleEditSupplier = (supplier) => {
+    setSupplierToEdit(supplier); // Establece el proveedor a editar
+  };
+
+  // Obtener la lista de NITs existentes para pasar a los modales (excluyendo el del proveedor actual en edición)
+  const existingNits = useMemo(() => suppliers.map(s => s.nit), [suppliers]);
+
 
   return (
     <div className="p-4 md:p-8">
@@ -85,8 +123,8 @@ const SuppliersPage = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIT</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Encargado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th> {/* Empresa primero */}
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre del Encargado</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección</th>
@@ -103,7 +141,11 @@ const SuppliersPage = () => {
         </div>
       ) : (
         <>
-          <SuppliersTable suppliers={currentItems} />
+          <SuppliersTable
+            suppliers={currentItems}
+            onEdit={handleEditSupplier} // <--- PASA LA FUNCIÓN PARA EDITAR
+            onDelete={handleDeleteSupplier} // <--- PASA LA FUNCIÓN PARA ELIMINAR
+          />
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -118,8 +160,21 @@ const SuppliersPage = () => {
       <NewProviderModal
         isOpen={isNewSupplierModalOpen}
         onClose={() => setIsNewSupplierModalOpen(false)}
-        onSave={(newSupplier) => setSuppliers((prev) => [newSupplier, ...prev])}
+        onSave={handleSaveNewSupplier} // Usa el handler definido
+        existingNits={existingNits} // Pasa los NITs existentes
       />
+
+      {/* Modal para editar proveedor */}
+      <EditSupplierModal
+        isOpen={!!supplierToEdit} // Se abre si supplierToEdit tiene un valor
+        onClose={() => setSupplierToEdit(null)} // Cierra el modal de edición
+        onSave={handleSaveEditedSupplier} // Usa el handler definido
+        supplierToEdit={supplierToEdit} // Pasa el objeto del proveedor a editar
+        existingNits={existingNits} // Pasa los NITs existentes para validación
+      />
+
+      {/* Componente para mostrar las notificaciones (toasts) */}
+      <Toaster position="bottom-right" />
     </div>
   );
 };

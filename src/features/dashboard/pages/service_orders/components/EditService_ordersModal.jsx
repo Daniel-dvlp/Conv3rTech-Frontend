@@ -2,9 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { FaTimes, FaPlus, FaTrash, FaSearch, FaUserPlus, FaEdit } from 'react-icons/fa';
 import { mockProductos, mockServicios, mockServiceOrders } from '../data/Service_orders_data';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-hot-toast'; // Asegúrate de que react-hot-toast esté instalado y configurado
+import { toast } from 'react-hot-toast';
 
-// Componentes reutilizables del diseño estándar
+// Componentes reutilizables del diseño estándar (mantenerlos igual)
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
     <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
@@ -16,16 +16,15 @@ const FormLabel = ({ htmlFor, children }) => (
   <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
 );
 
-// Estilo base para los campos de entrada, incluyendo estilos de enfoque
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border border-gray-300 rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
-const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
+const EditServiceOrderModal = ({ isOpen, onClose, onSave, orderId }) => {
   const navigate = useNavigate();
-  const modalContentRef = useRef(); // Referencia al contenido del modal
-  const clientSearchRef = useRef(); // Referencia para el campo de búsqueda de cliente para el desplazamiento
-  const projectNameRef = useRef(); // Referencia para el campo de nombre del proyecto para el desplazamiento
-  const contactRef = useRef(); // Referencia para el campo de contacto para el desplazamiento
-  const serviceSelectRef = useRef(); // Referencia para el selector de servicio para el desplazamiento
+  const modalContentRef = useRef();
+  const clientSearchRef = useRef();
+  const projectNameRef = useRef();
+  const contactRef = useRef();
+  const serviceSelectRef = useRef();
 
   // Función para extraer clientes únicos de las órdenes de servicio existentes
   const getClientsFromOrders = () => {
@@ -47,13 +46,21 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     return clients;
   };
 
-  // Estado inicial para un nuevo formulario de orden de servicio
-  const initialState = {
-    orderId: `OS-${Math.floor(1000 + Math.random() * 9000)}`, // Generar un ID de orden aleatorio
+  // Memoizar la orden a editar para evitar recálculos innecesarios
+  const orderToEdit = React.useMemo(() => {
+    if (isOpen && orderId) {
+      return mockServiceOrders.find(order => order.id === orderId);
+    }
+    return null;
+  }, [isOpen, orderId]); // No dependencies on mockServiceOrders to prevent infinite loops if it changes
+
+  // Estado del formulario
+  const [orderData, setOrderData] = useState({
+    orderId: '',
     clientId: '',
     clientName: '',
     contact: '',
-    requestDate: new Date().toISOString().split('T')[0], // Fecha actual
+    requestDate: new Date().toISOString().split('T')[0],
     projectName: '',
     status: 'Pendiente',
     services: [],
@@ -63,10 +70,9 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     iva: 0,
     total: 0,
     observations: '',
-  };
+  });
 
-  // Variables de estado para los datos del formulario, selecciones, errores e índices de edición
-  const [orderData, setOrderData] = useState(initialState);
+  // Estados para inputs auxiliares y control de UI
   const [selectedService, setSelectedService] = useState('');
   const [serviceQuantity, setServiceQuantity] = useState(1);
   const [selectedProduct, setSelectedProduct] = useState('');
@@ -79,6 +85,85 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
   const [touchedFields, setTouchedFields] = useState({});
   const [editingServiceIndex, setEditingServiceIndex] = useState(null);
   const [editingProductIndex, setEditingProductIndex] = useState(null);
+
+  // Efecto para inicializar o resetear los datos del formulario cuando el modal se abre/cierra o la orden cambia
+  useEffect(() => {
+    if (isOpen && orderToEdit) {
+      const formattedServices = orderToEdit.services.map(service => {
+        const serviceInfo = mockServicios.find(s => s.id === service.serviceId);
+        return {
+          serviceId: service.serviceId,
+          name: serviceInfo?.nombre || 'Servicio no encontrado',
+          quantity: service.quantity,
+          price: serviceInfo?.precio || 0
+        };
+      });
+
+      const formattedProducts = orderToEdit.products.map(product => {
+        const productInfo = mockProductos.find(p => p.id === product.productId);
+        return {
+          productId: product.productId,
+          name: productInfo?.nombre || 'Producto no encontrado',
+          quantity: product.quantity,
+          price: productInfo?.precio || 0
+        };
+      });
+
+      setOrderData({
+        orderId: orderToEdit.orderId,
+        clientId: orderToEdit.clientId,
+        clientName: orderToEdit.clientName,
+        contact: orderToEdit.contact,
+        requestDate: orderToEdit.requestDate,
+        projectName: orderToEdit.projectName,
+        status: orderToEdit.status,
+        services: formattedServices,
+        products: formattedProducts,
+        subtotalProducts: 0, // Se recalculará en el siguiente useEffect
+        subtotalServices: 0, // Se recalculará en el siguiente useEffect
+        iva: 0, // Se recalculará en el siguiente useEffect
+        total: 0, // Se recalculará en el siguiente useEffect
+        observations: orderToEdit.observations,
+      });
+      setClientSearch(orderToEdit.clientName);
+      setErrors({});
+      setTouchedFields({});
+      setEditingServiceIndex(null);
+      setSelectedService('');
+      setServiceQuantity(1);
+      setEditingProductIndex(null);
+      setSelectedProduct('');
+      setProductQuantity(1);
+
+    } else if (!isOpen) {
+      // Resetear a un estado inicial "vacío" o de "nueva orden" al cerrar
+      setOrderData({
+        orderId: `OS-${Math.floor(1000 + Math.random() * 9000)}`, // Generar un nuevo ID de orden al resetear
+        clientId: '',
+        clientName: '',
+        contact: '',
+        requestDate: new Date().toISOString().split('T')[0],
+        projectName: '',
+        status: 'Pendiente',
+        services: [],
+        products: [],
+        subtotalProducts: 0,
+        subtotalServices: 0,
+        iva: 0,
+        total: 0,
+        observations: '',
+      });
+      setClientSearch('');
+      setErrors({});
+      setTouchedFields({});
+      setEditingServiceIndex(null);
+      setSelectedService('');
+      setServiceQuantity(1);
+      setEditingProductIndex(null);
+      setSelectedProduct('');
+      setProductQuantity(1);
+    }
+  }, [isOpen, orderToEdit, mockServicios, mockProductos]); // Eliminar orderId de dependencies si ya está en orderToEdit memo
 
   // Efecto para filtrar clientes según la entrada de búsqueda
   useEffect(() => {
@@ -95,7 +180,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     }
   }, [clientSearch, clients]);
 
-  // Efecto para recalcular los totales financieros cada vez que los servicios o productos cambian
+  // Efecto para recalcular los totales financieros
   useEffect(() => {
     const subtotalProducts = orderData.products.reduce(
       (sum, p) => sum + (p.price * p.quantity), 0);
@@ -115,16 +200,6 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     }));
   }, [orderData.products, orderData.services]);
 
-  // Manejar cambios en la entrada de contacto, filtrando caracteres no numéricos
-  const handleContactChange = (e) => {
-    const { value } = e.target;
-    // Permitir números, espacios, +, - y paréntesis para el contacto
-    const filteredValue = value.replace(/[^0-9\s+\-()]/g, '');
-    setOrderData(prev => ({ ...prev, contact: filteredValue }));
-    // Validar siempre al cambiar para retroalimentación "en tiempo real"
-    validateField('contact', filteredValue);
-  };
-
   // Validar un campo específico y actualizar el estado de errores
   const validateField = (fieldName, value) => {
     const newErrors = { ...errors };
@@ -139,9 +214,10 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
       case 'contact':
         // Eliminar caracteres no numéricos para la validación de longitud
         newErrors.contact = !value ? 'Debe ingresar un contacto' :
-          value.replace(/[\s+\-()]/g, '').length < 8 ? 'El contacto debe tener al menos 8 caracteres' : null;
+          value.replace(/[^0-9\s+\-()]/g, '').length < 8 ? 'El contacto debe tener al menos 8 caracteres' : null;
         break;
       case 'services':
+        // Validar que haya al menos un servicio
         newErrors.services = orderData.services.length === 0 ? 'Debe agregar al menos un servicio' : null;
         break;
       default:
@@ -174,16 +250,29 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
         serviceSelectRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
         serviceSelectRef.current.focus();
       }
-    }, 100); // Pequeño retraso para asegurar que los elementos están renderizados
+    }, 100); // Pequeño retraso
   };
-
 
   // Manejador genérico de cambios para los campos del formulario
   const handleChange = (e) => {
     const { name, value } = e.target;
     setOrderData(prev => ({ ...prev, [name]: value }));
-    // Validar siempre al cambiar para retroalimentación "en tiempo real"
-    validateField(name, value);
+    // Validar solo si el campo ya ha sido tocado
+    if (touchedFields[name]) {
+      validateField(name, value);
+    }
+  };
+
+  // Manejador para el campo de contacto, filtrando caracteres no numéricos
+  const handleContactChange = (e) => {
+    const { value } = e.target;
+    // Permitir números, espacios, +, - y paréntesis para el contacto
+    const filteredValue = value.replace(/[^0-9\s+\-()]/g, '');
+    setOrderData(prev => ({ ...prev, contact: filteredValue }));
+    // Validar solo si el campo ya ha sido tocado
+    if (touchedFields.contact) {
+      validateField('contact', filteredValue);
+    }
   };
 
   // Seleccionar un cliente del menú desplegable
@@ -196,7 +285,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     }));
     setClientSearch(client.name);
     setShowClientDropdown(false);
-    setErrors(prev => ({ ...prev, client: null })); // Limpiar error de cliente
+    setErrors(prev => ({ ...prev, client: null })); // Limpiar error de cliente al seleccionar
   };
 
   // Función para limpiar la selección del cliente
@@ -208,9 +297,10 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
       contact: ''
     }));
     setClientSearch('');
-    setErrors(prev => ({ ...prev, client: 'Debe seleccionar un cliente' })); // Reestablecer el error si es necesario
+    setErrors(prev => ({ ...prev, client: 'Debe seleccionar un cliente' })); // Reestablecer el error
     clientSearchRef.current.focus(); // Enfocar el campo de búsqueda
   };
+
 
   // Navegar a la página de creación de un nuevo cliente y cerrar el modal
   const navigateToNewClient = () => {
@@ -258,7 +348,34 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
 
     setSelectedService('');
     setServiceQuantity(1);
-    setErrors(prev => ({ ...prev, service: null, serviceQuantity: null, services: null })); // Limpiar errores relacionados con el servicio
+    // Limpiar errores relacionados con el servicio, incluyendo el error general de "services"
+    setErrors(prev => ({ ...prev, service: null, serviceQuantity: null, services: null }));
+  };
+
+  // Establecer el servicio seleccionado para editar
+  const editService = (index) => {
+    const service = orderData.services[index];
+    setSelectedService(service.serviceId.toString());
+    setServiceQuantity(service.quantity);
+    setEditingServiceIndex(index);
+  };
+
+  // Eliminar un servicio de la orden
+  const removeService = (index) => {
+    const updatedServices = orderData.services.filter((_, i) => i !== index);
+    setOrderData(prev => ({
+      ...prev,
+      services: updatedServices
+    }));
+    if (editingServiceIndex === index) {
+      setEditingServiceIndex(null);
+      setSelectedService('');
+      setServiceQuantity(1);
+    }
+    // Validar si la lista de servicios queda vacía después de eliminar
+    if (updatedServices.length === 0) {
+      setErrors(prev => ({ ...prev, services: 'Debe agregar al menos un servicio' }));
+    }
   };
 
   // Añadir o actualizar un producto en la orden
@@ -304,38 +421,12 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
     setErrors(prev => ({ ...prev, product: null, productQuantity: null }));
   };
 
-  // Establecer el servicio seleccionado para editar
-  const editService = (index) => {
-    const service = orderData.services[index];
-    setSelectedService(service.serviceId.toString());
-    setServiceQuantity(service.quantity);
-    setEditingServiceIndex(index);
-  };
-
   // Establecer el producto seleccionado para editar
   const editProduct = (index) => {
     const product = orderData.products[index];
     setSelectedProduct(product.productId.toString());
     setProductQuantity(product.quantity);
     setEditingProductIndex(index);
-  };
-
-  // Eliminar un servicio de la orden
-  const removeService = (index) => {
-    setOrderData(prev => ({
-      ...prev,
-      services: prev.services.filter((_, i) => i !== index)
-    }));
-    if (editingServiceIndex === index) {
-      setEditingServiceIndex(null);
-      setSelectedService('');
-      setServiceQuantity(1);
-    }
-    // Volver a validar los servicios después de la eliminación si era el último
-    // Usar el estado actualizado para la validación
-    if (orderData.services.length === 1 && index === 0) {
-      setErrors(prev => ({ ...prev, services: 'Debe agregar al menos un servicio' }));
-    }
   };
 
   // Eliminar un producto de la orden
@@ -382,8 +473,10 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
       return;
     }
 
-    const newOrder = {
+    const updatedOrder = {
+      ...orderToEdit, // Mantener propiedades originales si no son modificadas por el formulario
       ...orderData,
+      id: orderId, // Asegurarse de mantener el ID original
       services: orderData.services.map(s => ({
         serviceId: s.serviceId,
         quantity: s.quantity
@@ -391,31 +484,12 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
       products: orderData.products.map(p => ({
         productId: p.productId,
         quantity: p.quantity
-      }))
+      })),
     };
 
-    onSave(newOrder); // Llamar a la prop onSave con los nuevos datos de la orden
-    resetForm(); // Restablecer los campos del formulario
+    onSave(updatedOrder); // Llamar a la prop onSave con los datos actualizados
     onClose(); // Cerrar el modal
-    toast.success("Orden de servicio creada correctamente");
-  };
-
-  // Restablecer todo el formulario a su estado inicial
-  const resetForm = () => {
-    setOrderData({
-      ...initialState,
-      orderId: `OS-${Math.floor(1000 + Math.random() * 9000)}` // Generar un nuevo ID de orden
-    });
-    setSelectedService('');
-    setServiceQuantity(1);
-    setSelectedProduct('');
-    setProductQuantity(1);
-    setClientSearch('');
-    setErrors({});
-    setTouchedFields({});
-    setShowClientDropdown(false); // Asegurarse de ocultar el dropdown
-    setEditingServiceIndex(null);
-    setEditingProductIndex(null);
+    toast.success("Orden de servicio actualizada correctamente");
   };
 
   // Si el modal no está abierto, no renderizar nada
@@ -426,12 +500,12 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12"
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" // Added overflow-hidden here
-        ref={modalContentRef} // Asignar la referencia al contenido del modal
+        className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden" // Added overflow-hidden
+        ref={modalContentRef}
       >
         {/* Encabezado fijo */}
         <header className="flex justify-between items-center p-4 border-b sticky top-0 bg-white z-20">
-          <h2 className="text-3xl font-bold text-gray-800">Nueva Orden de Servicio</h2>
+          <h2 className="text-3xl font-bold text-gray-800">Editar Orden de Servicio</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
             <FaTimes />
           </button>
@@ -468,12 +542,11 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
                         }}
                         onFocus={() => setShowClientDropdown(true)}
                         onBlur={() => {
-                          // Pequeño retardo para permitir el clic en los elementos del dropdown
                           setTimeout(() => setShowClientDropdown(false), 200);
-                          handleBlur('clientId');
+                          handleBlur('clientId'); // Validar al perder el foco
                         }}
                         className={`${inputBaseStyle} ${errors.client ? 'border-red-500' : ''}`}
-                        readOnly={!!orderData.clientId && !showClientDropdown} // Hacerlo de solo lectura si un cliente está seleccionado y el desplegable no está activo
+                        readOnly={!!orderData.clientId && !showClientDropdown}
                       />
                       <FaSearch className="absolute right-3 top-3 text-gray-400" />
                       {/* Botón para limpiar la selección del cliente */}
@@ -507,7 +580,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
                           <div
                             key={client.id}
                             className="p-2 hover:bg-gray-100 cursor-pointer"
-                            onMouseDown={(e) => e.preventDefault()} // Prevenir que el desplegable se cierre al hacer clic
+                            onMouseDown={(e) => e.preventDefault()}
                             onClick={() => selectClient(client)}
                           >
                             <div className="font-medium">{client.name}</div>
@@ -693,7 +766,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
                   <select
                     value={selectedProduct}
                     onChange={(e) => setSelectedProduct(e.target.value)}
-                    className={`${inputBaseStyle} ${errors.product ? 'border-red-500' : ''}`}
+                    className={inputBaseStyle}
                   >
                     <option value="">Seleccionar producto</option>
                     {mockProductos.map(product => (
@@ -713,7 +786,7 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
                     min="1"
                     value={productQuantity}
                     onChange={(e) => setProductQuantity(Math.max(1, parseInt(e.target.value) || 1))}
-                    className={`${inputBaseStyle} ${errors.productQuantity ? 'border-red-500' : ''}`}
+                    className={inputBaseStyle}
                   />
                   {errors.productQuantity && (
                     <p className="text-red-500 text-sm mt-1">{errors.productQuantity}</p>
@@ -834,20 +907,17 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
         <div className="flex justify-end gap-4 pt-6 pb-4 px-6 border-t sticky bottom-0 bg-white z-20">
           <button
             type="button"
-            onClick={() => {
-              resetForm();
-              onClose();
-            }}
+            onClick={onClose} // Simplemente cerrar sin resetear, ya que es para edición
             className="bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg hover:bg-gray-300 transition-colors"
           >
             Cancelar
           </button>
           <button
             type="submit"
-            onClick={handleSubmit} // Aseguramos que handleSubmit se llama al hacer clic
+            onClick={handleSubmit}
             className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-6 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
           >
-            Guardar Orden
+            Guardar Cambios
           </button>
         </div>
       </div>
@@ -855,4 +925,4 @@ const NewServiceOrderModal = ({ isOpen, onClose, onSave }) => {
   );
 };
 
-export default NewServiceOrderModal;
+export default EditServiceOrderModal;
