@@ -4,10 +4,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import ServiceOrdersTable from './components/Service_ordersTable';
 import SkeletonServiceOrderRow from './components/SkeletonRow';
-import { mockServiceOrders } from './data/Service_orders_data';
+import { mockServiceOrders } from './data/Service_orders_data'; // Mantén esta importación si es la que te funciona.
+                                                              // Anteriormente usé initialMockServiceOrders,
+                                                              // pero si 'mockServiceOrders' es lo que tienes, usa esa.
 import Pagination from '../../../../../src/shared/components/Pagination';
 import ServiceOrderDetailModal from './components/Service_ordersDetailModal';
 import NewServiceOrderModal from './components/NewService_ordersModal';
+import EditServiceOrderModal from './components/EditService_ordersModal';
+import { Toaster } from 'react-hot-toast'; // Asegúrate de tener 'react-hot-toast' instalado si usas Toaster.
 
 const ITEMS_PER_PAGE = 5;
 
@@ -18,13 +22,14 @@ const ServiceOrdersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [orderToEdit, setOrderToEdit] = useState(null);
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
       setOrders(mockServiceOrders);
       setLoading(false);
-    }, 1500); // Simula fetch con delay
+    }, 1500);
   }, []);
 
   const normalize = (text) =>
@@ -33,14 +38,23 @@ const ServiceOrdersPage = () => {
   const filteredOrders = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
 
-    return orders.filter((order) =>
-      normalize(order.orderId).includes(normalizedSearch) ||
-      normalize(order.quoteId).includes(normalizedSearch) ||
-      normalize(order.clientName).includes(normalizedSearch) ||
-      normalize(order.contact).includes(normalizedSearch) ||
-      normalize(order.requestDate).includes(normalizedSearch) ||
-      normalize(order.status).includes(normalizedSearch)
-    );
+    if (!normalizedSearch) return orders;
+
+    return orders.filter((order) => {
+      const searchFields = [
+        order.orderId,
+        order.quoteId,
+        order.clientName,
+        order.contact,
+        order.projectName,
+        order.status,
+        order.requestDate
+      ];
+
+      return searchFields.some(field =>
+        normalize(field).includes(normalizedSearch)
+      );
+    });
   }, [orders, searchTerm]);
 
   const totalPages = Math.ceil(filteredOrders.length / ITEMS_PER_PAGE);
@@ -50,22 +64,62 @@ const ServiceOrdersPage = () => {
     return filteredOrders.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredOrders, currentPage]);
 
+  const handleEditOrder = (updatedOrder) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === updatedOrder.id ? updatedOrder : order
+      )
+    );
+    setOrderToEdit(null);
+  };
+
+  // !!! MODIFICACIÓN CLAVE AQUÍ: AHORA RECIBE 'cancellationReason' Y LO GUARDA !!!
+  const handleAnnulOrder = (orderId, cancellationReason) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId
+          ? {
+              ...order,
+              isActive: false, // Mantén 'isActive' o 'isActividad' según tu modelo de datos
+              status: 'Anulada',
+              cancellationReason: cancellationReason // <-- ¡Aquí se guarda la razón!
+            }
+          : order
+      )
+    );
+    // Si la orden anulada es la que está abierta en el modal de detalles, ciérralo
+    if (selectedOrder && selectedOrder.id === orderId) {
+      setSelectedOrder(null);
+    }
+  };
+
+  // --- FUNCIÓN PARA ASIGNAR COTIZACIÓN (sin cambios) ---
+  const handleAssignQuote = (orderId, newQuoteId) => {
+    setOrders(prevOrders =>
+      prevOrders.map(order =>
+        order.id === orderId
+          ? { ...order, quoteId: newQuoteId } // Asigna el nuevo quoteId
+          : order
+      )
+    );
+  };
+
   return (
     <div className="p-4 md:p-8">
-      {/* Encabezado del módulo */}
+      {/* Sección de encabezado y búsqueda (sin cambios) */}
       <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
         <h1 className="text-3xl font-bold text-gray-800">Órdenes de Servicio</h1>
         <div className="flex gap-4 flex-wrap">
           <div className="relative">
             <input
               type="text"
-              placeholder="Buscar por número, cliente, fecha o estado..."
+              placeholder="Buscar"
               value={searchTerm}
               onChange={(e) => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-full md:w-64"
               aria-label="Buscar orden de servicio"
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -81,7 +135,7 @@ const ServiceOrdersPage = () => {
         </div>
       </div>
 
-      {/* Tabla o Skeleton mientras carga */}
+      {/* Renderizado condicional: Esqueletos de carga o la tabla de órdenes */}
       {loading ? (
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           <table className="w-full">
@@ -105,7 +159,13 @@ const ServiceOrdersPage = () => {
         </div>
       ) : (
         <>
-          <ServiceOrdersTable orders={currentItems} onView={(order) => setSelectedOrder(order)} />
+          <ServiceOrdersTable
+            orders={currentItems}
+            onView={(order) => setSelectedOrder(order)}
+            onEdit={(order) => setOrderToEdit(order)}
+            onAnnul={handleAnnulOrder} // Asegúrate de que ServiceOrdersTable pasa la razón de anulación
+            onAssignQuote={handleAssignQuote}
+          />
           {totalPages > 1 && (
             <Pagination
               currentPage={currentPage}
@@ -123,6 +183,14 @@ const ServiceOrdersPage = () => {
         onClose={() => setIsNewOrderModalOpen(false)}
         onSave={(newOrder) => setOrders((prev) => [newOrder, ...prev])}
       />
+      <EditServiceOrderModal
+        isOpen={!!orderToEdit}
+        onClose={() => setOrderToEdit(null)}
+        onSave={handleEditOrder}
+        orderId={orderToEdit?.id}
+      />
+      {/* Toaster para notificaciones si lo usas */}
+      <Toaster position="bottom-right" />
     </div>
   );
 };
