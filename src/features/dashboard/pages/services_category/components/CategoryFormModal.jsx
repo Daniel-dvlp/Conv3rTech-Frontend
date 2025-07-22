@@ -7,6 +7,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
     nombre: '',
     descripcion: '',
     imagen: null,
+    estado: 'Activo', // Nuevo campo agregado
   });
 
   const [previewImage, setPreviewImage] = useState(null);
@@ -20,9 +21,9 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
         nombre: categoria.nombre,
         descripcion: categoria.descripcion,
         imagen: categoria.imagen || null,
+        estado: categoria.estado || 'Activo',
       });
 
-      // Si es una imagen tipo File, genera preview
       if (categoria.imagen instanceof File) {
         setPreviewImage(URL.createObjectURL(categoria.imagen));
       } else if (typeof categoria.imagen === 'string') {
@@ -31,8 +32,13 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
         setPreviewImage(null);
       }
     } else {
-      // Reset si no es edición
-      setFormData({ id: null, nombre: '', descripcion: '', imagen: null });
+      setFormData({
+        id: null,
+        nombre: '',
+        descripcion: '',
+        imagen: null,
+        estado: 'Activo',
+      });
       setPreviewImage(null);
     }
   }, [categoria, esEdicion]);
@@ -53,7 +59,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
-    setFormData({ id: null, nombre: '', descripcion: '', imagen: null });
+    setFormData({ id: null, nombre: '', descripcion: '', imagen: null, estado: 'Activo' });
     setPreviewImage(null);
     showSuccess(esEdicion ? 'Categoría actualizada correctamente' : 'Categoría guardada correctamente');
     onClose();
@@ -99,7 +105,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
             )}
           </div>
 
-          {/* Nombre y descripción */}
+          {/* Nombre */}
           <input
             type="text"
             name="nombre"
@@ -110,6 +116,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
             required
           />
 
+          {/* Descripción */}
           <textarea
             name="descripcion"
             placeholder="Descripción de la categoría"
@@ -119,6 +126,20 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
             rows={3}
             required
           ></textarea>
+
+          {/* Estado */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <select
+              name="estado"
+              value={formData.estado}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+            >
+              <option value="Activo">Activo</option>
+              <option value="Inactivo">Inactivo</option>
+            </select>
+          </div>
 
           {/* Botones */}
           <div className="flex justify-end gap-2">

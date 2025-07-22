@@ -1,54 +1,62 @@
 import React, { useState, useEffect, useRef } from 'react';
+import MockCategories from "../../services_category/data/ServicesCategory_data";
 import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) => {
   const [formData, setFormData] = useState({
     nombre: '',
-    categoria: '',
+    categoriaId: '',
     precio: '',
     duracion: '',
     descripcion: '',
     imagen: null,
     horas: '',
     minutos: '',
+    estado: 'activo',
   });
 
   const [previewImage, setPreviewImage] = useState(null);
+  const [categories, setCategories] = useState([]);
   const fileInputRef = useRef();
 
-  // Rellenar campos si es edición
+  useEffect(() => {
+    setCategories(MockCategories);
+  }, []);
+
   useEffect(() => {
     if (esEdicion && servicio) {
       const [horas = '', minutos = ''] = servicio.duracion
         ?.match(/(\d+)h\s*(\d+)?m?/)?.slice(1) || [];
 
+      const categoriaEncontrada = MockCategories.find(cat => cat.nombre === servicio.categoria);
+
       setFormData({
         nombre: servicio.nombre || '',
-        categoria: servicio.categoria || '',
+        categoriaId: categoriaEncontrada?.id || '',
         precio: servicio.precio || '',
         duracion: servicio.duracion || '',
         descripcion: servicio.descripcion || '',
-        imagen: null, // no se puede previsualizar archivo
+        imagen: null,
         horas,
         minutos,
-        id: servicio.id, // ← importante para mantener el ID en edición
+        id: servicio.id,
+        estado: servicio.estado || 'activo',
       });
 
-      // Previsualizar si viene con URL
       if (servicio.imagen) {
         setPreviewImage(servicio.imagen);
       }
     } else {
-      // Limpiar si no es edición
       setFormData({
         nombre: '',
-        categoria: '',
+        categoriaId: '',
         precio: '',
         duracion: '',
         descripcion: '',
         imagen: null,
         horas: '',
         minutos: '',
+        estado: 'activo',
       });
       setPreviewImage(null);
     }
@@ -80,14 +88,17 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    const categoriaSeleccionada = categories.find(cat => cat.id === parseInt(formData.categoriaId));
     const datosAEnviar = {
       ...formData,
-      id: formData.id || Date.now(), // si es nuevo, le damos un ID ficticio
+      id: formData.id || Date.now(),
+      categoria: categoriaSeleccionada ? categoriaSeleccionada.nombre : '',
     };
+
     onSubmit(datosAEnviar);
     showSuccess(`Servicio ${esEdicion ? 'actualizado' : 'creado'} correctamente`);
-    onClose(); 
-    
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -131,7 +142,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
             )}
           </div>
 
-          {/* Campos de texto */}
+          {/* Nombre */}
           <input
             type="text"
             name="nombre"
@@ -141,15 +152,24 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
             className="w-full border rounded px-3 py-2"
             required
           />
-          <input
-            type="text"
-            name="categoria"
-            placeholder="Categoría"
-            value={formData.categoria}
+
+          {/* Categoría */}
+          <select
+            name="categoriaId"
+            value={formData.categoriaId}
             onChange={handleChange}
             className="w-full border rounded px-3 py-2"
             required
-          />
+          >
+            <option value="">Seleccione una categoría</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.nombre}
+              </option>
+            ))}
+          </select>
+
+          {/* Precio */}
           <input
             type="number"
             name="precio"
@@ -193,6 +213,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
             </div>
           </div>
 
+          {/* Descripción */}
           <textarea
             name="descripcion"
             placeholder="Descripción del servicio"
@@ -202,6 +223,18 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
             rows={3}
             required
           ></textarea>
+
+          {/* Estado */}
+          <select
+            name="estado"
+            value={formData.estado}
+            onChange={handleChange}
+            className="w-full border rounded px-3 py-2"
+            required
+          >
+            <option value="activo">Activo</option>
+            <option value="inactivo">Inactivo</option>
+          </select>
 
           {/* Botones */}
           <div className="flex justify-end gap-2">
