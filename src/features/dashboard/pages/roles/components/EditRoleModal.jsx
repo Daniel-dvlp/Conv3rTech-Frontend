@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaShieldAlt, FaPlus, FaPencilAlt, FaTrash, FaEye, FaBan, FaSpinner } from 'react-icons/fa';
+import { showToast } from '../../../../../shared/utils/alertas';
 
 // --- CONFIGURACIÓN Y COMPONENTES INTERNOS ---
 const MODULES_CONFIG = [
@@ -149,11 +150,16 @@ const EditRoleModal = ({ isOpen, onClose, role, onUpdate }) => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
                 <FormLabel>Nombre del Rol *</FormLabel>
-                <input type="text" value={roleName} onChange={(e) => setRoleName(e.target.value)} className={inputBaseStyle} required disabled={isSubmitting}/>
+                <div className="relative">
+                  <label htmlFor="nombreRol" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Rol <span aria-label="Ayuda" tabIndex="0" role="tooltip" className="ml-1 text-blue-500 cursor-pointer" title="El nombre del rol debe ser único y representativo.">ⓘ</span></label>
+                  <input id="nombreRol" name="nombreRol" type="text" value={roleName} onChange={(e) => setRoleName(e.target.value)} className={`${inputBaseStyle} ${isSubmitting && !roleName.trim() ? 'border-red-500 ring-2 ring-red-300' : ''}`} required aria-invalid={isSubmitting && !roleName.trim()} aria-describedby="error-nombreRol" disabled={isSubmitting}/>
+                  {isSubmitting && !roleName.trim() && <span id="error-nombreRol" className="text-red-500 text-xs flex items-center gap-1 mt-1"><span role="img" aria-label="error">❌</span> El nombre del rol es obligatorio.</span>}
+                </div>
               </div>
               <div>
                 <FormLabel>Descripción *</FormLabel>
-                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" className={`${inputBaseStyle} resize-none`} required disabled={isSubmitting}/>
+                <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows="3" className={`${inputBaseStyle} resize-none ${isSubmitting && !description.trim() ? 'border-red-500 ring-2 ring-red-300' : ''}`} required disabled={isSubmitting}/>
+                {isSubmitting && !description.trim() && <span id="error-descripcion" className="text-red-500 text-xs flex items-center gap-1 mt-1"><span role="img" aria-label="error">❌</span> La descripción es obligatoria.</span>}
               </div>
             </div>
             
@@ -174,7 +180,10 @@ const EditRoleModal = ({ isOpen, onClose, role, onUpdate }) => {
                       {!module.submodules ? (
                         <div className="flex flex-wrap gap-x-6 gap-y-3">
                           {module.privileges.map(priv => (
-                            <label key={priv} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={!!permissions[module.name]?.[priv]} onChange={() => handlePermissionChange(module.name, null, priv)} disabled={isSubmitting} className="h-4 w-4 text-conv3r-gold border-gray-300 rounded focus:ring-conv3r-gold"/> <span className="text-sm text-gray-700 flex items-center gap-1.5">{privilegeIcons[priv]} {priv}</span></label>
+                            <label key={priv} className="flex items-center gap-2 cursor-pointer">
+                              <input type="checkbox" checked={!!permissions[module.name]?.[priv]} onChange={() => handlePermissionChange(module.name, null, priv)} disabled={isSubmitting} className="h-4 w-4 text-conv3r-gold border-gray-300 rounded focus:ring-conv3r-gold"/> 
+                              <span className="text-sm text-gray-700 flex items-center gap-1.5">{privilegeIcons[priv]} {priv}</span>
+                            </label>
                           ))}
                         </div>
                       ) : (
@@ -184,7 +193,10 @@ const EditRoleModal = ({ isOpen, onClose, role, onUpdate }) => {
                               <h5 className="font-semibold text-gray-700 mb-3">{submodule.name}</h5>
                               <div className="flex flex-wrap gap-x-6 gap-y-3">
                                 {submodule.privileges.map(privilege => (
-                                  <label key={privilege} className="flex items-center gap-2 cursor-pointer"><input type="checkbox" checked={!!permissions[`${module.name}.${submodule.name}`]?.[privilege]} onChange={() => handlePermissionChange(module.name, submodule.name, privilege)} disabled={isSubmitting} className="h-4 w-4 text-conv3r-gold border-gray-300 rounded focus:ring-conv3r-gold"/> <span className="text-sm text-gray-700 flex items-center gap-1.5">{privilegeIcons[privilege]} {privilege}</span></label>
+                                  <label key={privilege} className="flex items-center gap-2 cursor-pointer">
+                                    <input type="checkbox" checked={!!permissions[`${module.name}.${submodule.name}`]?.[privilege]} onChange={() => handlePermissionChange(module.name, submodule.name, privilege)} disabled={isSubmitting} className="h-4 w-4 text-conv3r-gold border-gray-300 rounded focus:ring-conv3r-gold"/> 
+                                    <span className="text-sm text-gray-700 flex items-center gap-1.5">{privilegeIcons[privilege]} {privilege}</span>
+                                  </label>
                                 ))}
                               </div>
                             </div>

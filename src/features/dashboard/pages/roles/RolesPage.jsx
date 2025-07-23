@@ -10,6 +10,7 @@ import EditRoleModal from './components/EditRoleModal';
 import RoleDetailModal from './components/RoleDetailModal';
 // 1. IMPORTAMOS todas las funciones CRUD que necesitamos de nuestro archivo de datos
 import { getRoles, createRole, updateRole, deleteRole } from './data/Roles_data'; 
+import { showToast, showAlert } from '../../../../shared/utils/alertas';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -48,14 +49,24 @@ const RolesPage = () => {
   }, [roles, currentPage, totalPages]);
 
   const handleSaveRole = (newRoleData) => {
-    createRole(newRoleData);
-    loadRoles(); // Recargamos para ver los cambios
+    try {
+      createRole(newRoleData);
+      loadRoles();
+      showToast('Rol creado exitosamente', 'success');
+    } catch (error) {
+      showToast('Error al crear el rol', 'error');
+    }
   };
 
   // Corregimos esta función para que llame a 'updateRole'
   const handleUpdateRole = (id, updatedData) => {
-    updateRole(id, updatedData);
-    loadRoles(); // Recargamos para ver los cambios
+    try {
+      updateRole(id, updatedData);
+      loadRoles();
+      showToast('Rol actualizado exitosamente', 'success');
+    } catch (error) {
+      showToast('Error al actualizar el rol', 'error');
+    }
   };
 
   const handleViewDetails = (rol) => {
@@ -67,18 +78,22 @@ const RolesPage = () => {
   };
 
   // 2. NUEVA FUNCIÓN PARA MANEJAR LA ELIMINACIÓN
-  const handleDeleteRole = (rol) => {
-    // Pedimos confirmación al usuario para una acción segura
-    if (window.confirm(`¿Estás seguro de que deseas eliminar el rol "${rol.name}"? Esta acción no se puede deshacer.`)) {
+  const handleDeleteRole = async (rol) => {
+    const result = await showAlert({
+      title: '¿Estás seguro?',
+      text: `¿Deseas eliminar el rol "${rol.name}"? Esta acción no se puede deshacer.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (result.isConfirmed) {
       try {
         deleteRole(rol.id);
-        loadRoles(); // Recargamos la lista para que el rol eliminado desaparezca
-        // Opcional: Mostrar notificación de éxito
-        // toast.success(`El rol "${rol.name}" ha sido eliminado.`);
+        loadRoles();
+        showToast(`El rol "${rol.name}" ha sido eliminado.`, 'success');
       } catch (error) {
-        console.error('Error al eliminar el rol:', error);
-        // Opcional: Mostrar notificación de error
-        // toast.error('Error al eliminar el rol.');
+        showToast('Error al eliminar el rol.', 'error');
       }
     }
   };

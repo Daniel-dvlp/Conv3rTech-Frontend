@@ -31,41 +31,41 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-      <table className="w-full text-center">
+      <table className="w-full text-center text-sm">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Tipo de Documento</th>
-            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Documento</th>
-            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Nombre y Apellido</th>
-            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Correo</th>
-            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Rol</th>
-            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Estado</th>
-            <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Acciones</th>
+            <th className="px-6 py-4 text-sm font-bold text-gray-700 uppercase">Tipo de Documento</th>
+            <th className="px-6 py-4 text-sm font-bold text-gray-700 uppercase">Documento</th>
+            <th className="px-6 py-4 text-sm font-bold text-gray-700 uppercase">Nombre y Apellido</th>
+            <th className="px-6 py-4 text-sm font-bold text-gray-700 uppercase">Correo</th>
+            <th className="px-6 py-4 text-sm font-bold text-gray-700 uppercase">Rol</th>
+            <th className="px-6 py-4 text-sm font-bold text-gray-700 uppercase">Estado</th>
+            <th className="px-6 py-4 text-sm font-bold text-gray-700 uppercase">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {usuariosPaginados.map((usuario) => (
-            <tr key={usuario.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={usuario.id} className="hover:bg-gray-50 transition-colors text-sm">
 
-              <td className="px-4 py-2 text-center">
-                <span className="text-xs text-gray-600">{usuario.tipoDocumento}</span>
+              <td className="px-6 py-3 text-center">
+                <span className="text-sm text-gray-700">{usuario.tipoDocumento}</span>
               </td>
-              <td className="px-4 py-2 text-center">
-                <span className="text-xs text-gray-600">{usuario.documento}</span>
+              <td className="px-6 py-3 text-center">
+                <span className="text-sm text-gray-700">{usuario.documento}</span>
               </td>
               
-              <td className="px-4 py-2 text-center">
-                <span className="text-xs text-gray-600">{usuario.nombre} {usuario.apellido}</span>
+              <td className="px-6 py-3 text-center">
+                <span className="text-sm text-gray-700">{usuario.nombre} {usuario.apellido}</span>
               </td>
       
-              <td className="px-4 py-2 text-center">
-                <span className="text-xs text-gray-600">{usuario.email}</span>
+              <td className="px-6 py-3 text-center">
+                <span className="text-sm text-gray-700">{usuario.email}</span>
               </td>
-              <td className="px-4 py-2 text-center">
-                <span className="text-xs text-gray-700 font-medium">{usuario.rol}</span>
+              <td className="px-6 py-3 text-center">
+                <span className="text-sm text-gray-800 font-semibold">{usuario.rol}</span>
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-center">
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full 
+              <td className="px-6 py-3 whitespace-nowrap text-center">
+                <span className={`px-4 py-1 inline-flex text-sm leading-5 font-semibold rounded-full 
                 ${usuario.status === 'Activo'
                     ? 'bg-green-100 text-green-800'
                     : usuario.status === 'Inactivo'
@@ -75,16 +75,16 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
                   {usuario.status}
                 </span>
               </td>
-              <td className="px-4 py-2 whitespace-nowrap text-right text-sm font-medium">
-                <div className="flex justify-center items-center gap-3">
+              <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
+                <div className="flex justify-center items-center gap-4">
                   <button className="text-blue-600 hover:text-blue-900" title="Ver detalles" onClick={() => setSelectedUser(usuario)} >
-                    <FaEye size={14} />
+                    <FaEye size={20} />
                   </button>
                   <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
-                    <FaEdit size={14} />
+                    <FaEdit size={20} />
                   </button>
                   <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() =>onDelete(usuario.id)} >
-                    <FaTrashAlt size={14} />
+                    <FaTrashAlt size={20} />
                   </button>
                 </div>
                 {selectedUser && (

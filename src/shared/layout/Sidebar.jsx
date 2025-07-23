@@ -65,7 +65,6 @@ const Sidebar = () => {
       name: 'Configuración',
       icon: <FaCog />,
       children: [
-        { name: 'Editar mi Perfil', path: '/dashboard/profile' },
         { name: 'Gestión de Roles', path: '/dashboard/roles' }
       ]
     },
@@ -110,25 +109,34 @@ const Sidebar = () => {
             Conv<span style={{ color: '#FFB300' }}>3</span>rTech
           </h1>
         ) : (
-          <img
-            src="https://via.placeholder.com/40"
-            alt="Logo"
-            className="rounded-full"
-          />
+          <span className="text-3xl font-extrabold text-white" style={{letterSpacing: '2px'}}>
+            <span style={{ color: '#FFB300' }}>C</span>3
+          </span>
         )}
       </div>
 
       {/* Indicador de rol */}
-      {isExpanded && userRole && (
-        <div className="px-4 py-2 mb-4 bg-yellow-600/20 rounded-lg border border-yellow-600/30">
-          <p className="text-xs text-yellow-400 font-medium">Rol: {userRole}</p>
-        </div>
-      )}
 
-      {/* MENÚ PRINCIPAL */}
+      {/* BOTÓN DASHBOARD SIEMPRE ARRIBA */}
       <nav className="flex-grow overflow-y-auto scrollbar-hide">
         <ul className="pl-0">
-          {filteredMainMenuItems.map((item) => {
+          <li className="mb-2 relative">
+            <Link
+              to="/dashboard"
+              className={`no-underline flex items-center ${isExpanded ? 'justify-start' : 'justify-center'} p-2 rounded-lg ${location.pathname === '/dashboard' ? 'bg-white text-[#00012A] font-semibold shadow-md rounded-l-full pl-4 pr-2' : 'hover:bg-gray-700 hover:text-white text-gray-400'}`}
+            >
+              <span className="text-2xl flex-shrink-0">
+                <FaTachometerAlt />
+              </span>
+              {isExpanded && (
+                <span className="ml-4 font-semibold whitespace-nowrap">
+                  Dashboard
+                </span>
+              )}
+            </Link>
+          </li>
+          {/* RESTO DEL MENÚ FILTRADO */}
+          {filteredMainMenuItems.filter(item => item.name !== 'Dashboard').map((item) => {
             const isActiveParent = location.pathname === item.path || isChildActive(item.children);
             return (
               <li key={item.name} className="mb-2 relative " >
