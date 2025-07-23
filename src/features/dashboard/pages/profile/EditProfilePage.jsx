@@ -274,15 +274,21 @@ const EditProfilePage = () => {
                 </div>
                 
                 <FormRow label="Correo Electrónico" id="email" error={formErrors.email}>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={form.email}
-                    onChange={handleInfoChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm"
-                    placeholder="tu@email.com"
-                  />
+                  <div className="relative">
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Correo electrónico <span aria-label="Ayuda" tabIndex="0" role="tooltip" className="ml-1 text-blue-500 cursor-pointer" title="Debe ser un correo válido y único.">ⓘ</span></label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      value={form.email}
+                      onChange={handleInfoChange}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-600 focus:border-yellow-600 transition-all duration-200 text-sm ${formErrors.email ? 'border-red-500 ring-2 ring-red-300' : ''}`}
+                      placeholder="tu@email.com"
+                      aria-invalid={!!formErrors.email}
+                      aria-describedby="error-email"
+                    />
+                    {formErrors.email && <span id="error-email" className="text-red-500 text-xs flex items-center gap-1 mt-1"><span role="img" aria-label="error">❌</span> {formErrors.email}</span>}
+                  </div>
                 </FormRow>
                 
                 <FormRow label="Celular" id="celular" error={formErrors.celular}>

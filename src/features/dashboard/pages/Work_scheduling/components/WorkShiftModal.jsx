@@ -134,16 +134,17 @@ const WorkShiftModal = ({ isOpen, onClose, onSave, onDelete, employees, initialD
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 p-3 space-y-3">
           {/* Empleado */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
-              <FaUser className="text-yellow-600" /> Empleado
-            </label>
+          <div className="relative">
+            <label htmlFor="employeeId" className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">Empleado <span aria-label="Ayuda" tabIndex="0" role="tooltip" className="ml-1 text-blue-500 cursor-pointer" title="Selecciona el empleado al que se le asigna el turno.">ⓘ</span></label>
             <select 
               name="employeeId" 
+              id="employeeId"
               value={form.employeeId} 
               onChange={handleChange} 
-              className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+              className={`w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 ${errors.employeeId ? 'border-red-500 ring-2 ring-red-300' : ''}`}
               required
+              aria-invalid={!!errors.employeeId}
+              aria-describedby="error-employeeId"
             >
               <option value="">Selecciona un empleado...</option>
               {employees.map(emp => (
@@ -152,7 +153,7 @@ const WorkShiftModal = ({ isOpen, onClose, onSave, onDelete, employees, initialD
                 </option>
               ))}
             </select>
-            {errors.employeeId && <span className="text-xs text-red-500">{errors.employeeId}</span>}
+            {errors.employeeId && <span id="error-employeeId" className="text-red-500 text-xs flex items-center gap-1 mt-1"><span role="img" aria-label="error">❌</span> {errors.employeeId}</span>}
           </div>
           {/* Fechas y horas */}
           <div className="grid grid-cols-2 gap-2">

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
 import { useState as useAutocompleteState } from 'react';
 import { showToast } from '../../../../../shared/utils/alertas';
+import { mockUsuarios } from '../../users/data/User_data';
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -256,6 +257,20 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     if (!sedeModalOpen) return null;
     // Materiales disponibles para asignar
     const materialesDisponibles = projectData.materiales;
+    // Nueva función: cantidad asignada al proyecto para cada material
+    const getCantidadAsignadaProyecto = (itemName) => {
+      return (projectData.materiales.find(m => m.item === itemName)?.cantidad) || 0;
+    };
+    // Nueva función: cantidad ya asignada a otras sedes (excepto la actual edición)
+    const getCantidadAsignadaOtrasSedes = (itemName) => {
+      let usado = 0;
+      projectData.sedes.forEach((sede, idx) => {
+        if (editingSede !== null && idx === editingSede) return;
+        const mat = sede.materialesAsignados.find(m => m.item === itemName);
+        if (mat) usado += Number(mat.cantidad);
+      });
+      return usado;
+    };
     return (
       <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 relative">
@@ -277,10 +292,19 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                 {materialesDisponibles.map((mat, idx) => {
                   const asignadoIdx = sedeForm.materialesAsignados.findIndex(m => m.item === mat.item);
                   const cantidadAsignada = asignadoIdx !== -1 ? sedeForm.materialesAsignados[asignadoIdx].cantidad : 0;
-                  const maxDisponible = getMaterialDisponible(mat.item) + (editingSede !== null ? Number(projectData.sedes[editingSede].materialesAsignados.find(m => m.item === mat.item)?.cantidad || 0) : 0);
+                  // Cantidad máxima para esta sede: lo asignado al proyecto menos lo ya asignado a otras sedes
+                  const cantidadProyecto = Number(getCantidadAsignadaProyecto(mat.item));
+                  const cantidadOtrasSedes = Number(getCantidadAsignadaOtrasSedes(mat.item));
+                  // Si estamos editando, sumamos lo que ya tenía esta sede
+                  const cantidadEstaSede = editingSede !== null ? Number(projectData.sedes[editingSede].materialesAsignados.find(m => m.item === mat.item)?.cantidad || 0) : 0;
+                  const maxDisponible = cantidadProyecto - cantidadOtrasSedes + cantidadEstaSede;
+                  // Color de advertencia para stock
+                  let stockColor = 'text-green-600';
+                  if (maxDisponible === 0) stockColor = 'text-red-600 font-bold';
+                  else if (maxDisponible > 0 && maxDisponible < 10) stockColor = 'text-yellow-500 font-semibold';
                   return (
                     <div key={mat.item} className="flex items-center gap-2">
-                      <span className="w-32 font-medium">{mat.item}</span>
+                      <span className={`w-32 font-medium ${stockColor}`}>{mat.item} <span className="text-xs">(Asignado al proyecto: {cantidadProyecto})</span></span>
                       <input
                         type="number"
                         min="0"
@@ -298,8 +322,9 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                           }
                         }}
                         className="w-24 border rounded p-1 text-sm"
+                        disabled={maxDisponible === 0}
                       />
-                      <span className="text-xs text-gray-500">/ {maxDisponible} disponibles</span>
+                      <span className={`text-xs ${stockColor}`}>/ {maxDisponible} disponibles</span>
                       {asignadoIdx !== -1 && (
                         <button type="button" className="ml-2 text-red-500 hover:text-red-700" onClick={() => handleRemoveMaterialFromSede(asignadoIdx)}><FaTrash /></button>
                       )}
@@ -329,10 +354,22 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
           <FormSection title="Información Principal">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5">
-                <div><FormLabel htmlFor="nombre">Nombre del Proyecto</FormLabel><input id="nombre" type="text" name="nombre" value={projectData.nombre} onChange={handleChange} className={inputBaseStyle} required /></div>
+                <div className="relative">
+                  <FormLabel htmlFor="nombre">Nombre del Proyecto <span aria-label="Ayuda" tabIndex="0" role="tooltip" className="ml-1 text-blue-500 cursor-pointer" title="El nombre debe ser único y descriptivo.">ⓘ</span></FormLabel>
+                  <input id="nombre" type="text" name="nombre" value={projectData.nombre} onChange={handleChange} className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500 ring-2 ring-red-300' : ''}`} required aria-invalid={!!errors.nombre} aria-describedby="error-nombre" />
+                  {errors.nombre && <span id="error-nombre" className="text-red-500 text-xs flex items-center gap-1 mt-1"><span role="img" aria-label="error">❌</span> {errors.nombre}</span>}
+                </div>
                 <div><FormLabel htmlFor="numeroContrato">Número de Contrato</FormLabel><input id="numeroContrato" type="text" name="numeroContrato" value={projectData.numeroContrato} onChange={handleChange} className={inputBaseStyle} /></div>
                 <div><FormLabel htmlFor="cliente">Cliente</FormLabel><select id="cliente" name="cliente" value={projectData.cliente} onChange={handleChange} className={inputBaseStyle} required><option value="" disabled>Selecciona un cliente...</option>{mockClientes.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
-                <div><FormLabel htmlFor="responsable">Responsable</FormLabel><select id="responsable" name="responsable" value={projectData.responsable} onChange={handleChange} className={inputBaseStyle} required><option value="" disabled>Selecciona un responsable...</option>{mockResponsables.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                <div><FormLabel htmlFor="responsable">Responsable</FormLabel>
+  <select id="responsable" name="responsable" value={projectData.responsable} onChange={handleChange} className={inputBaseStyle} required>
+    <option value="" disabled>Selecciona un responsable...</option>
+    {mockUsuarios.filter(u => u.rol === 'Admin').map(u => (
+      <option key={u.id} value={`${u.nombre} ${u.apellido}`}>{u.nombre} {u.apellido}</option>
+    ))}
+  </select>
+  <span className="text-red-500 text-xs">{errors.responsable}</span>
+</div>
                 <div><FormLabel htmlFor="fechaInicio">Fecha de Inicio</FormLabel><input id="fechaInicio" type="date" name="fechaInicio" value={projectData.fechaInicio} onChange={handleChange} className={inputBaseStyle} required /></div>
                 <div><FormLabel htmlFor="fechaFin">Fecha de Fin</FormLabel><input id="fechaFin" type="date" name="fechaFin" value={projectData.fechaFin} onChange={handleChange} className={inputBaseStyle} required /></div>
                 <div><FormLabel htmlFor="estado">Estado Inicial</FormLabel><select id="estado" name="estado" value={projectData.estado} onChange={handleChange} className={inputBaseStyle}><option>Pendiente</option><option>En Progreso</option><option>Completado</option></select></div>

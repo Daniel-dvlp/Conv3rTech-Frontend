@@ -113,12 +113,24 @@ const ProjectDetailModal = ({ project, onClose, onEdit }) => {
               {Array.isArray(project.sedes) && project.sedes.length > 0 && (
                 <DetailCard title="Sedes y Distribución de Materiales" icon={<FaMapMarkerAlt className="text-blue-500" />}>
                   <div className="space-y-4">
+                    {/* Mostrar resumen de materiales asignados al proyecto */}
+                    {Array.isArray(project.materiales) && project.materiales.length > 0 && (
+                      <div className="mb-2">
+                        <span className="font-semibold">Materiales asignados al proyecto:</span>
+                        <ul className="ml-2 list-disc">
+                          {project.materiales.map((mat, i) => (
+                            <li key={i}>{mat.item}: <span className="font-bold">{mat.cantidad}</span></li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {/* Mostrar distribución por sede */}
                     {project.sedes.map((sede, idx) => (
                       <div key={idx} className="border rounded-lg p-3 bg-gray-50">
                         <div className="font-bold text-md text-gray-800">{sede.nombre}</div>
                         <div className="text-gray-600 text-sm mb-1">Ubicación: {sede.ubicacion || <span className='italic text-gray-400'>No especificada</span>}</div>
                         <div className="text-sm">
-                          <span className="font-semibold">Materiales asignados:</span>
+                          <span className="font-semibold">Materiales asignados a esta sede:</span>
                           {Array.isArray(sede.materialesAsignados) && sede.materialesAsignados.length > 0 ? (
                             <ul className="ml-2 list-disc">
                               {sede.materialesAsignados.map((mat, i) => (
@@ -135,23 +147,6 @@ const ProjectDetailModal = ({ project, onClose, onEdit }) => {
                 </DetailCard>
               )}
 
-              <DetailCard title="Equipo Asignado" icon={<FaUsers className="text-teal-500" />}>
-                <div className={`grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3`}>
-                  {(project.empleadosAsociados ?? []).map(empleado => (
-                    <div key={empleado.nombre} className="flex items-center gap-2">
-                      <img
-                        className={`rounded-full object-cover transition-all duration-300 ${
-                          project.empleadosAsociados.length > 8 ? 'w-7 h-7' : 'w-9 h-9'
-                        }`}
-                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${empleado.avatarSeed}`}
-                        alt={empleado.nombre}
-                      />
-                      <span className="text-sm font-medium text-gray-800 truncate">{empleado.nombre}</span>
-                    </div>
-                  ))}
-                </div>
-              </DetailCard>
-
               <DetailCard title="Costos y Presupuesto" icon={<FaDollarSign className="text-red-500" />}>
                 <ul className="text-sm space-y-3 text-gray-700">
                   <li className="flex justify-between"><span>Materiales</span> <span>{formatCurrency(costoMateriales)}</span></li>
@@ -166,7 +161,29 @@ const ProjectDetailModal = ({ project, onClose, onEdit }) => {
             </div>
 
             {/* Columna derecha (1/3) */}
-            <div className="flex flex-col space-y-6 h-full">
+            <div className="space-y-6 flex flex-col">
+              {/* Equipo asignado */}
+              <DetailCard title="Equipo Asignado" icon={<FaUsers className="text-teal-500" />}>
+                <div className="flex flex-col gap-3">
+                  {(project.empleadosAsociados ?? []).slice(0, 3).map((empleado, idx) => (
+                    <div key={empleado.nombre || empleado} className="flex items-center gap-2">
+                      <img
+                        className="rounded-full object-cover w-9 h-9"
+                        src={`https://api.dicebear.com/7.x/initials/svg?seed=${empleado.avatarSeed || empleado}`}
+                        alt={empleado.nombre || empleado}
+                      />
+                      <span className="text-sm font-medium text-gray-800 truncate">{empleado.nombre || empleado}</span>
+                    </div>
+                  ))}
+                  {(project.empleadosAsociados?.length || 0) > 3 && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <span className="w-9 h-9 flex items-center justify-center rounded-full bg-gray-200 text-gray-600 font-bold text-lg">+{project.empleadosAsociados.length - 3}</span>
+                      <span className="text-xs text-gray-500">más</span>
+                    </div>
+                  )}
+                </div>
+              </DetailCard>
+
               <DetailCard title="Información General" icon={<FaInfoCircle className="text-gray-500" />}>
                 <InfoRow icon={<FaUser />} label="Responsable">{project.responsable?.nombre}</InfoRow>
                 <InfoRow icon={<FaCalendar />} label="Inicio">{project.fechaInicio}</InfoRow>

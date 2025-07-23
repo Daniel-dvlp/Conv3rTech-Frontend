@@ -249,18 +249,9 @@ const NewRoleModal = ({ isOpen, onClose, onSave }) => {
             {/* Información Básica */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre del Rol *
-                </label>
-                <input 
-                  type="text" 
-                  value={roleName} 
-                  onChange={(e) => setRoleName(e.target.value)} 
-                  className="block w-full text-sm border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold transition-colors" 
-                  placeholder="Ej: Administrador, Vendedor, etc."
-                  required 
-                  disabled={isSubmitting}
-                />
+                <label htmlFor="nombreRol" className="block text-sm font-medium text-gray-700 mb-1">Nombre del Rol <span aria-label="Ayuda" tabIndex="0" role="tooltip" className="ml-1 text-blue-500 cursor-pointer" title="El nombre del rol debe ser único y representativo.">ⓘ</span></label>
+                <input id="nombreRol" name="nombreRol" type="text" value={roleName} onChange={(e) => setRoleName(e.target.value)} className={`block w-full text-sm border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold transition-colors ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`} placeholder="Ej: Administrador, Vendedor, etc." required aria-invalid={!!roleName.trim()} aria-describedby="error-nombreRol" />
+                {roleName.trim() && !roleName.trim().length && <span id="error-nombreRol" className="text-red-500 text-xs flex items-center gap-1 mt-1"><span role="img" aria-label="error">❌</span> El nombre del rol es obligatorio.</span>}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
