@@ -1,7 +1,7 @@
 // src/features/dashboard/pages/project/ProjectPage.jsx
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaPlus, FaSearch, FaFileExcel } from 'react-icons/fa';
+import { FaPlus, FaSearch, FaFileExcel, FaTruck } from 'react-icons/fa';
 import { mockProjects } from './data/projects.data';
 import ProjectsTable from './components/ProjectsTable';
 import TableSkeleton from '../../../../shared/components/TableSkeleton';
@@ -9,13 +9,16 @@ import Pagination from '../../../../shared/components/Pagination';
 import ProjectDetailModal from './components/ProjectDetailModal';
 import NewProjectModal from './components/NewProjectModal';
 import EditProjectModal from './components/EditProjectModal';
+import SalidaMaterialModal from './components/SalidaMaterialModal';
 import * as XLSX from 'xlsx';
 import { showToast, showAlert } from '../../../../shared/utils/alertas';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 // --- CONSTANTE PARA EL NÚMERO DE ELEMENTOS POR PÁGINA ---
 const ITEMS_PER_PAGE = 5;
 
 const ProjectPage = () => {
+  const { checkManage } = usePermissions();
   // --- TODA TU LÓGICA DE ESTADO Y FUNCIONES PERMANECE EXACTAMENTE IGUAL ---
   const [loading, setLoading] = useState(true);
   const [allProjects, setAllProjects] = useState([]);
@@ -24,6 +27,7 @@ const ProjectPage = () => {
   const [selectedProject, setSelectedProject] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
+  const [showSalidaModal, setShowSalidaModal] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
@@ -106,6 +110,49 @@ const ProjectPage = () => {
     }
   };
 
+  // Manejar salida de material
+  const handleSaveSalida = (nuevaSalida) => {
+    try {
+      // Encontrar el proyecto y la sede
+      const proyectoIndex = allProjects.findIndex(p => p.nombre === nuevaSalida.proyecto);
+      if (proyectoIndex === -1) {
+        showToast('Proyecto no encontrado', 'error');
+        return;
+      }
+
+      const proyecto = allProjects[proyectoIndex];
+      const sedeIndex = proyecto.sedes.findIndex(s => s.nombre === nuevaSalida.sede);
+      if (sedeIndex === -1) {
+        showToast('Sede no encontrada', 'error');
+        return;
+      }
+
+      // Actualizar el proyecto con la nueva salida
+      const proyectosActualizados = [...allProjects];
+      const proyectoActualizado = { ...proyecto };
+      const sedeActualizada = { ...proyecto.sedes[sedeIndex] };
+
+      // Agregar la salida al historial
+      if (!sedeActualizada.salidasMaterial) {
+        sedeActualizada.salidasMaterial = [];
+      }
+      sedeActualizada.salidasMaterial.push(nuevaSalida);
+
+      // Actualizar presupuesto restante
+      if (sedeActualizada.presupuesto) {
+        sedeActualizada.presupuesto.restante = (sedeActualizada.presupuesto.restante || sedeActualizada.presupuesto.total) - nuevaSalida.costoTotal;
+      }
+
+      proyectoActualizado.sedes[sedeIndex] = sedeActualizada;
+      proyectosActualizados[proyectoIndex] = proyectoActualizado;
+
+      setAllProjects(proyectosActualizados);
+      showToast('Salida de material registrada exitosamente', 'success');
+    } catch (error) {
+      showToast('Error al registrar la salida de material', 'error');
+    }
+  };
+
   const projectTableHeaders = ['Proyecto', 'Responsable', 'Fechas', 'Estado', 'Prioridad', 'Progreso', 'Acciones'];
   // --------------------------------------------------------------------
 
@@ -139,6 +186,15 @@ const ProjectPage = () => {
             <FaFileExcel />
             Exportar
           </button>
+          {checkManage('salida_material') && (
+            <button
+              onClick={() => setShowSalidaModal(true)}
+              className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors text-sm"
+            >
+              <FaTruck />
+              Salida de Material
+            </button>
+          )}
           <button
             onClick={() => setShowNewModal(true)}
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors text-sm"
@@ -204,6 +260,14 @@ const ProjectPage = () => {
                 : [],
             };
           })()}
+        />
+      )}
+
+      {showSalidaModal && (
+        <SalidaMaterialModal
+          isOpen={showSalidaModal}
+          onClose={() => setShowSalidaModal(false)}
+          onSaveSalida={handleSaveSalida}
         />
       )}
     </div>

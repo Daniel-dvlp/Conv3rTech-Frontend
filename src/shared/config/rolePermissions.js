@@ -29,7 +29,8 @@ export const rolePermissions = {
       'productos',
       'servicios',
       'clientes',
-      'proyectos'
+      'proyectos',
+      'salida_material'
     ]
   },
 
@@ -58,7 +59,8 @@ export const rolePermissions = {
       'productos',
       'servicios',
       'clientes',
-      'proyectos'
+      'proyectos',
+      'salida_material'
     ]
   },
 

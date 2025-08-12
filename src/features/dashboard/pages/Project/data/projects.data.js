@@ -38,6 +38,35 @@ export const mockProjects = [
           { item: 'Cámara IP Domo 4MP', cantidad: 20 },
           { item: 'DVR 32 Canales', cantidad: 1 },
           { item: 'Cable UTP Cat 6 (caja)', cantidad: 3 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Instalación por punto de cámara', cantidad: 20, precio: 50000 },
+          { servicio: 'Configuración de red y DVR', cantidad: 1, precio: 300000 },
+        ],
+        presupuesto: {
+          materiales: 3500000, // 20*150000 + 1*800000 + 3*100000
+          servicios: 1300000,  // 20*50000 + 1*300000
+          total: 4800000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-001',
+            fecha: '2025-01-15T10:30:00',
+            material: 'Cámara IP Domo 4MP',
+            cantidad: 5,
+            entregador: 'Carlos R.',
+            receptor: 'Juan Pérez',
+            observaciones: 'Entrega para instalación inicial'
+          },
+          {
+            id: 'SM-002',
+            fecha: '2025-01-16T14:15:00',
+            material: 'Cable UTP Cat 6 (caja)',
+            cantidad: 1,
+            entregador: 'Luis P.',
+            receptor: 'María González',
+            observaciones: 'Material adicional para ampliación'
+          }
         ]
       },
       {
@@ -46,6 +75,25 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Cámara IP Domo 4MP', cantidad: 12 },
           { item: 'Cable UTP Cat 6 (caja)', cantidad: 2 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Instalación por punto de cámara', cantidad: 12, precio: 50000 },
+        ],
+        presupuesto: {
+          materiales: 2000000, // 12*150000 + 2*100000
+          servicios: 600000,   // 12*50000
+          total: 2600000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-003',
+            fecha: '2025-01-17T09:45:00',
+            material: 'Cámara IP Domo 4MP',
+            cantidad: 8,
+            entregador: 'Daniela V.',
+            receptor: 'Ana López',
+            observaciones: 'Entrega para oficina secundaria'
+          }
         ]
       }
     ]
@@ -82,6 +130,34 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Breakers 20A', cantidad: 10 },
           { item: 'Terminales de Cobre', cantidad: 30 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Revisión por punto eléctrico', cantidad: 100, precio: 15000 },
+        ],
+        presupuesto: {
+          materiales: 160000, // 10*10000 + 30*2000
+          servicios: 1500000, // 100*15000
+          total: 1660000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-004',
+            fecha: '2025-01-18T08:00:00',
+            material: 'Breakers 20A',
+            cantidad: 5,
+            entregador: 'Carlos R.',
+            receptor: 'Dr. Roberto Silva',
+            observaciones: 'Entrega para mantenimiento preventivo'
+          },
+          {
+            id: 'SM-005',
+            fecha: '2025-01-19T11:20:00',
+            material: 'Terminales de Cobre',
+            cantidad: 25,
+            entregador: 'Carlos R.',
+            receptor: 'Ing. Patricia Morales',
+            observaciones: 'Material para conexiones eléctricas'
+          }
         ]
       },
       {
@@ -90,6 +166,25 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Breakers 20A', cantidad: 5 },
           { item: 'Terminales de Cobre', cantidad: 20 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Revisión por punto eléctrico', cantidad: 50, precio: 15000 },
+        ],
+        presupuesto: {
+          materiales: 90000,  // 5*10000 + 20*2000
+          servicios: 750000,  // 50*15000
+          total: 840000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-006',
+            fecha: '2025-01-20T13:45:00',
+            material: 'Breakers 20A',
+            cantidad: 3,
+            entregador: 'Carlos R.',
+            receptor: 'Dr. Laura Martínez',
+            observaciones: 'Entrega para ala de hospitalización'
+          }
         ]
       }
     ]

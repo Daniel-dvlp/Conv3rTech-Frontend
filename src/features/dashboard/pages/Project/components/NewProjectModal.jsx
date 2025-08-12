@@ -45,9 +45,30 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   const [empleadoSearch, setEmpleadoSearch] = useState('');
   const [sedeModalOpen, setSedeModalOpen] = useState(false);
   const [editingSede, setEditingSede] = useState(null); // null o índice de sede
-  const [sedeForm, setSedeForm] = useState({ nombre: '', ubicacion: '', materialesAsignados: [] });
+  const [sedeForm, setSedeForm] = useState({ 
+    nombre: '', 
+    ubicacion: '', 
+    materialesAsignados: [],
+    serviciosAsignados: []
+  });
 
   if (!isOpen) return null;
+
+  // Función helper para obtener las sedes de un cliente
+  const getSedesFromCliente = (nombreCliente) => {
+    const cliente = mockClientes.find(c => c.nombre === nombreCliente);
+    return cliente?.direcciones?.map(direccion => ({
+      nombre: direccion.nombre,
+      ubicacion: `${direccion.direccion}, ${direccion.ciudad}`,
+      materialesAsignados: [],
+      serviciosAsignados: [],
+      presupuesto: {
+        materiales: 0,
+        servicios: 0,
+        total: 0
+      }
+    })) || [];
+  };
 
   // --- VALIDACIONES EN TIEMPO REAL ---
   const todayStr = new Date().toISOString().split('T')[0];
@@ -67,6 +88,15 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     const { name, value } = e.target;
     if (name === 'manoDeObra') {
       setProjectData(prev => ({ ...prev, costos: { ...prev.costos, manoDeObra: value }}));
+    } else if (name === 'cliente') {
+      // Cuando se selecciona un cliente, precargar las sedes basándose en sus direcciones
+      const sedesPrecargadas = getSedesFromCliente(value);
+      
+      setProjectData(prev => ({ 
+        ...prev, 
+        [name]: value,
+        sedes: sedesPrecargadas
+      }));
     } else {
       setProjectData(prev => ({ ...prev, [name]: value }));
     }
@@ -169,10 +199,13 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   // --- LÓGICA PARA SEDES Y ASIGNACIÓN DE MATERIALES ---
   const openSedeModal = (sedeIdx = null) => {
     if (sedeIdx !== null) {
-      setSedeForm({ ...projectData.sedes[sedeIdx] });
+      setSedeForm({ 
+        ...projectData.sedes[sedeIdx],
+        serviciosAsignados: projectData.sedes[sedeIdx].serviciosAsignados || []
+      });
       setEditingSede(sedeIdx);
     } else {
-      setSedeForm({ nombre: '', ubicacion: '', materialesAsignados: [] });
+      setSedeForm({ nombre: '', ubicacion: '', materialesAsignados: [], serviciosAsignados: [] });
       setEditingSede(null);
     }
     setSedeModalOpen(true);
@@ -180,7 +213,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   const closeSedeModal = () => {
     setSedeModalOpen(false);
     setEditingSede(null);
-    setSedeForm({ nombre: '', ubicacion: '', materialesAsignados: [] });
+    setSedeForm({ nombre: '', ubicacion: '', materialesAsignados: [], serviciosAsignados: [] });
   };
   const handleSedeFormChange = (e) => {
     const { name, value } = e.target;
@@ -218,6 +251,48 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
       return { ...prev, materialesAsignados };
     });
   };
+
+  // Funciones para manejar servicios en sedes
+  const handleServicioAsignadoChange = (idx, value) => {
+    setSedeForm(prev => {
+      const serviciosAsignados = [...prev.serviciosAsignados];
+      let val = Number(value);
+      const serv = serviciosAsignados[idx];
+      // Calcular cantidad disponible para este servicio
+      const cantidadDisponible = getServicioDisponible(serv.servicio);
+      const maxDisponible = cantidadDisponible + (editingSede !== null ? Number(projectData.sedes[editingSede].serviciosAsignados.find(s => s.servicio === serv.servicio)?.cantidad || 0) : 0);
+      if (val > maxDisponible) val = maxDisponible;
+      serviciosAsignados[idx].cantidad = val;
+      return { ...prev, serviciosAsignados };
+    });
+  };
+
+  const handleAddServicioToSede = (servicio) => {
+    setSedeForm(prev => {
+      if (prev.serviciosAsignados.some(s => s.servicio === servicio.servicio)) return prev;
+      return { ...prev, serviciosAsignados: [...prev.serviciosAsignados, { servicio: servicio.servicio, cantidad: 0, precio: servicio.precio }] };
+    });
+  };
+
+  const handleRemoveServicioFromSede = (idx) => {
+    setSedeForm(prev => {
+      const serviciosAsignados = [...prev.serviciosAsignados];
+      serviciosAsignados.splice(idx, 1);
+      return { ...prev, serviciosAsignados };
+    });
+  };
+
+  const getServicioDisponible = (servicioName) => {
+    // Total global - suma en todas las sedes (excepto la actual edición)
+    const total = (projectData.servicios.find(s => s.servicio === servicioName)?.cantidad) || 0;
+    let usado = 0;
+    projectData.sedes.forEach((sede, idx) => {
+      if (editingSede !== null && idx === editingSede) return;
+      const serv = sede.serviciosAsignados?.find(s => s.servicio === servicioName);
+      if (serv) usado += Number(serv.cantidad);
+    });
+    return total - usado;
+  };
   const getMaterialDisponible = (itemName) => {
     // Total global - suma en todas las sedes (excepto la actual edición)
     const total = (projectData.materiales.find(m => m.item === itemName)?.cantidad) || 0;
@@ -229,13 +304,20 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     });
     return total - usado;
   };
-  const handleSedeSubmit = (e) => {
-    e.preventDefault();
+  const handleSedeSubmit = () => {
     // Validar que no se excedan los materiales
-    for (const mat of sedeForm.materialesAsignados) {
-      const disponible = getMaterialDisponible(mat.item) + (editingSede !== null ? Number(projectData.sedes[editingSede].materialesAsignados.find(m => m.item === mat.item)?.cantidad || 0) : 0);
+    for (const mat of sedeForm.materialesAsignados || []) {
+      const disponible = getMaterialDisponible(mat.item) + (editingSede !== null ? Number(projectData.sedes[editingSede].materialesAsignados?.find(m => m.item === mat.item)?.cantidad || 0) : 0);
       if (Number(mat.cantidad) > disponible) {
         showToast(`No puedes asignar más de ${disponible} unidades de ${mat.item} a esta sede.`, 'error');
+        return;
+      }
+    }
+    // Validar que no se excedan los servicios
+    for (const serv of sedeForm.serviciosAsignados || []) {
+      const disponible = getServicioDisponible(serv.servicio) + (editingSede !== null ? Number(projectData.sedes[editingSede].serviciosAsignados?.find(s => s.servicio === serv.servicio)?.cantidad || 0) : 0);
+      if (Number(serv.cantidad) > disponible) {
+        showToast(`No puedes asignar más de ${disponible} unidades de ${serv.servicio} a esta sede.`, 'error');
         return;
       }
     }
@@ -243,16 +325,37 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
       showToast('El nombre de la sede es obligatorio', 'error');
       return;
     }
+
+    // Calcular presupuesto de la sede
+    const presupuestoMateriales = (sedeForm.materialesAsignados || []).reduce((sum, mat) => {
+      const materialProyecto = projectData.materiales.find(m => m.item === mat.item);
+      return sum + (mat.cantidad * (materialProyecto?.precio || 0));
+    }, 0);
+
+    const presupuestoServicios = (sedeForm.serviciosAsignados || []).reduce((sum, serv) => {
+      const servicioProyecto = projectData.servicios.find(s => s.servicio === serv.servicio);
+      return sum + (serv.cantidad * (servicioProyecto?.precio || serv.precio || 0));
+    }, 0);
+
+    const sedeConPresupuesto = {
+      ...sedeForm,
+      presupuesto: {
+        materiales: presupuestoMateriales,
+        servicios: presupuestoServicios,
+        total: presupuestoMateriales + presupuestoServicios
+      }
+    };
+
     if (editingSede !== null) {
       // Editar sede existente
       setProjectData(prev => {
         const sedes = [...prev.sedes];
-        sedes[editingSede] = { ...sedeForm };
+        sedes[editingSede] = sedeConPresupuesto;
         return { ...prev, sedes };
       });
     } else {
       // Agregar nueva sede
-      setProjectData(prev => ({ ...prev, sedes: [...prev.sedes, { ...sedeForm }] }));
+      setProjectData(prev => ({ ...prev, sedes: [...prev.sedes, sedeConPresupuesto] }));
     }
     closeSedeModal();
   };
@@ -373,76 +476,131 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     );
   };
 
-  // --- SECCIÓN DE SEDES (sin modal, usando direcciones del cliente) ---
+  // --- SECCIÓN DE SEDES CON PRESUPUESTO ---
   const renderSedesSection = () => {
-    // Buscar el cliente seleccionado
-    const clienteObj = mockClientes.find(c => c.nombre === projectData.cliente);
-    const sedes = clienteObj?.direcciones || [];
-    // Para cada sede, permitir asignar materiales del proyecto
     return (
-      <FormSection title={<span>Sedes del Cliente <span aria-label="Ayuda" tabIndex="0" role="tooltip" className="ml-1 text-blue-500 cursor-pointer" title="Las sedes se obtienen automáticamente de las direcciones del cliente seleccionado. Puedes asignar materiales a cada sede.">ⓘ</span></span>}>
-        {sedes.length === 0 && <div className="text-gray-400 italic">Selecciona un cliente con direcciones registradas para ver sus sedes.</div>}
-        <div className="space-y-6">
-          {sedes.map((sede, idx) => {
-            // Buscar materiales ya asignados a esta sede
-            const materialesAsignados = projectData.sedes?.[idx]?.materialesAsignados || [];
-            return (
-              <div key={idx} className="border rounded-lg p-4 bg-white flex flex-col gap-2">
-                <div className="font-bold text-lg text-gray-800 flex items-center gap-2">{sede.nombre}
-                  <span className="text-xs text-gray-500">({sede.direccion}, {sede.ciudad})</span>
+      <FormSection title="Sedes y Presupuesto por Sede">
+        <div className="flex gap-2 mb-4">
+          <button type="button" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700" onClick={() => openSedeModal()}>Agregar Sede</button>
+          {projectData.cliente && (
+            <button 
+              type="button" 
+              className="bg-green-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-green-700" 
+              onClick={() => {
+                const sedesPrecargadas = getSedesFromCliente(projectData.cliente);
+                setProjectData(prev => ({ ...prev, sedes: sedesPrecargadas }));
+                showToast('Sedes recargadas desde la información del cliente', 'success');
+              }}
+            >
+              Recargar Sedes del Cliente
+            </button>
+          )}
+        </div>
+        
+        {projectData.cliente && Array.isArray(projectData.sedes) && projectData.sedes.length > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="text-sm text-blue-800">
+              <strong>ℹ️ Información:</strong> Las sedes se han precargado automáticamente desde la información del cliente "{projectData.cliente}". 
+              Puedes editar cada sede para asignar materiales y servicios, o agregar nuevas sedes manualmente.
+            </div>
+          </div>
+        )}
+        
+        {!(Array.isArray(projectData.sedes) && projectData.sedes.length > 0) && (
+          <div className="text-gray-500 italic">
+            {projectData.cliente ? 'No hay sedes disponibles para este cliente.' : 'Selecciona un cliente para precargar las sedes automáticamente.'}
+          </div>
+        )}
+        <div className="space-y-4">
+          {(Array.isArray(projectData.sedes) ? projectData.sedes : []).map((sede, idx) => (
+            <div key={idx} className="border rounded-lg p-4 bg-white">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-3">
+                <div>
+                  <div className="font-bold text-lg text-gray-800">{sede.nombre}</div>
+                  <div className="text-gray-600 text-sm">Ubicación: {sede.ubicacion}</div>
                 </div>
-                <div className="mt-2 text-sm">
-                  <span className="font-semibold">Materiales asignados <span aria-label='Ayuda' tabIndex='0' role='tooltip' className='ml-1 text-blue-500 cursor-pointer' title='Solo puedes asignar materiales previamente agregados al proyecto. La cantidad máxima es la disponible para el proyecto.'>ⓘ</span>:</span>
-                  <div className="space-y-2 mt-2">
-                    {projectData.materiales.length === 0 && <span className="text-gray-400 italic">Agrega materiales al proyecto para poder asignar.</span>}
-                    {projectData.materiales.map((mat, mIdx) => {
-                      const asignado = materialesAsignados.find(m => m.item === mat.item)?.cantidad || 0;
-                      // Calcular máximo disponible para esta sede
-                      const totalAsignadoOtras = (projectData.sedes || []).reduce((acc, s, sidx) => {
-                        if (sidx === idx) return acc;
-                        const found = s.materialesAsignados?.find(m => m.item === mat.item);
-                        return acc + (found ? Number(found.cantidad) : 0);
-                      }, 0);
-                      const maxDisponible = Number(mat.cantidad) - totalAsignadoOtras;
-                      return (
-                        <div key={mat.item} className="flex items-center gap-2">
-                          <span className="w-32 font-medium">{mat.item}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max={maxDisponible}
-                            value={asignado}
-                            onChange={e => {
-                              // Actualizar materialesAsignados de la sede
-                              const val = Math.max(0, Math.min(Number(e.target.value), maxDisponible));
-                              setProjectData(prev => {
-                                const sedesArr = [...(prev.sedes || [])];
-                                if (!sedesArr[idx]) sedesArr[idx] = { ...sede, materialesAsignados: [] };
-                                const mats = [...(sedesArr[idx].materialesAsignados || [])];
-                                const matIdx = mats.findIndex(m => m.item === mat.item);
-                                if (matIdx !== -1) {
-                                  mats[matIdx].cantidad = val;
-                                } else {
-                                  mats.push({ item: mat.item, cantidad: val });
-                                }
-                                sedesArr[idx] = { ...sede, materialesAsignados: mats };
-                                return { ...prev, sedes: sedesArr };
-                              });
-                            }}
-                            className="w-24 border rounded p-1 text-sm"
-                            aria-label={`Cantidad de ${mat.item} para ${sede.nombre}`}
-                            aria-describedby={`tooltip-mat-${idx}-${mIdx}`}
-                          />
-                          <span id={`tooltip-mat-${idx}-${mIdx}`} className="text-xs text-gray-500">/ {maxDisponible} disponibles</span>
-                        </div>
-                      );
-                    })}
-                  </div>
+                <div className="flex gap-2">
+                  <button type="button" className="bg-yellow-400 text-gray-800 px-3 py-1 rounded-lg font-bold hover:bg-yellow-500" onClick={() => openSedeModal(idx)}>Editar</button>
+                  <button type="button" className="bg-red-500 text-white px-3 py-1 rounded-lg font-bold hover:bg-red-600" onClick={() => handleDeleteSede(idx)}>Eliminar</button>
                 </div>
               </div>
-            );
-          })}
+              
+              {/* Materiales asignados */}
+              <div className="mb-3">
+                <span className="font-semibold text-sm">Materiales asignados:</span>
+                {Array.isArray(sede.materialesAsignados) && sede.materialesAsignados.length > 0 ? (
+                  <ul className="ml-2 list-disc text-sm mt-1">
+                    {sede.materialesAsignados.map((mat, i) => (
+                      <li key={i}>{mat.item}: <span className="font-bold">{mat.cantidad}</span></li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="ml-2 text-gray-400 italic text-sm">Ninguno</span>
+                )}
+              </div>
+
+              {/* Servicios asignados */}
+              <div className="mb-3">
+                <span className="font-semibold text-sm">Servicios asignados:</span>
+                {Array.isArray(sede.serviciosAsignados) && sede.serviciosAsignados.length > 0 ? (
+                  <ul className="ml-2 list-disc text-sm mt-1">
+                    {sede.serviciosAsignados.map((serv, i) => (
+                      <li key={i}>{serv.servicio}: <span className="font-bold">{serv.cantidad}</span></li>
+                    ))}
+                  </ul>
+                ) : (
+                  <span className="ml-2 text-gray-400 italic text-sm">Ninguno</span>
+                )}
+              </div>
+
+              {/* Presupuesto por sede */}
+              {sede.presupuesto && (
+                <div className="border-t pt-3 mt-3">
+                  <div className="font-semibold text-sm mb-2 text-gray-700">Presupuesto de esta sede:</div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Materiales:</span>
+                      <span className="font-semibold">{sede.presupuesto.materiales.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Servicios:</span>
+                      <span className="font-semibold">{sede.presupuesto.servicios.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</span>
+                    </div>
+                    <div className="flex justify-between col-span-2 border-t pt-1 font-bold text-gray-900">
+                      <span>Total sede:</span>
+                      <span>{sede.presupuesto.total.toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
+
+        {/* Resumen total de sedes */}
+        {projectData.sedes.some(sede => sede.presupuesto) && (
+          <div className="border-t-2 border-gray-300 pt-4 mt-4">
+            <div className="font-bold text-lg text-gray-800 mb-3">Resumen de Presupuesto por Sedes</div>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="flex justify-between">
+                <span>Total Materiales:</span>
+                <span className="font-semibold">
+                  {projectData.sedes.reduce((sum, sede) => sum + (sede.presupuesto?.materiales || 0), 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span>Total Servicios:</span>
+                <span className="font-semibold">
+                  {projectData.sedes.reduce((sum, sede) => sum + (sede.presupuesto?.servicios || 0), 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}
+                </span>
+              </div>
+              <div className="flex justify-between col-span-2 border-t pt-2 font-bold text-lg text-gray-900">
+                <span>Total Sedes:</span>
+                <span>{projectData.sedes.reduce((sum, sede) => sum + (sede.presupuesto?.total || 0), 0).toLocaleString('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0 })}</span>
+              </div>
+            </div>
+          </div>
+        )}
       </FormSection>
     );
   };
@@ -452,6 +610,9 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     if (!sedeModalOpen) return null;
     // Materiales disponibles para asignar
     const materialesDisponibles = projectData.materiales;
+    // Servicios disponibles para asignar
+    const serviciosDisponibles = projectData.servicios;
+    
     // Nueva función: cantidad asignada al proyecto para cada material
     const getCantidadAsignadaProyecto = (itemName) => {
       return (projectData.materiales.find(m => m.item === itemName)?.cantidad) || 0;
@@ -466,12 +627,27 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
       });
       return usado;
     };
+
+    // Funciones para servicios
+    const getCantidadServicioAsignadaProyecto = (servicioName) => {
+      return (projectData.servicios.find(s => s.servicio === servicioName)?.cantidad) || 0;
+    };
+    const getCantidadServicioAsignadaOtrasSedes = (servicioName) => {
+      let usado = 0;
+      projectData.sedes.forEach((sede, idx) => {
+        if (editingSede !== null && idx === editingSede) return;
+        const serv = sede.serviciosAsignados?.find(s => s.servicio === servicioName);
+        if (serv) usado += Number(serv.cantidad);
+      });
+      return usado;
+    };
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-25 flex justify-center items-center z-50">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-6 relative">
+        <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
           <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl" onClick={closeSedeModal}><FaTimes /></button>
           <h3 className="text-xl font-bold mb-4">{editingSede !== null ? 'Editar Sede' : 'Agregar Sede'}</h3>
-          <form onSubmit={handleSedeSubmit} className="space-y-4">
+          <div className="space-y-6">
             <div>
               <FormLabel htmlFor="nombre">Nombre de la Sede</FormLabel>
               <input id="nombre" name="nombre" type="text" value={sedeForm.nombre} onChange={handleSedeFormChange} className={inputBaseStyle} required />
@@ -480,6 +656,8 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
               <FormLabel htmlFor="ubicacion">Ubicación</FormLabel>
               <input id="ubicacion" name="ubicacion" type="text" value={sedeForm.ubicacion} onChange={handleSedeFormChange} className={inputBaseStyle} />
             </div>
+            
+            {/* Sección de Materiales */}
             <div>
               <FormLabel>Materiales a asignar</FormLabel>
               {materialesDisponibles.length === 0 && <div className="text-gray-400 italic">Primero agrega materiales al proyecto.</div>}
@@ -528,11 +706,62 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
                 })}
               </div>
             </div>
+
+            {/* Sección de Servicios */}
+            <div>
+              <FormLabel>Servicios a asignar</FormLabel>
+              {serviciosDisponibles.length === 0 && <div className="text-gray-400 italic">Primero agrega servicios al proyecto.</div>}
+              <div className="space-y-2">
+                {serviciosDisponibles.map((serv, idx) => {
+                  const asignadoIdx = sedeForm.serviciosAsignados.findIndex(s => s.servicio === serv.servicio);
+                  const cantidadAsignada = asignadoIdx !== -1 ? sedeForm.serviciosAsignados[asignadoIdx].cantidad : 0;
+                  // Cantidad máxima para esta sede: lo asignado al proyecto menos lo ya asignado a otras sedes
+                  const cantidadProyecto = Number(getCantidadServicioAsignadaProyecto(serv.servicio));
+                  const cantidadOtrasSedes = Number(getCantidadServicioAsignadaOtrasSedes(serv.servicio));
+                  // Si estamos editando, sumamos lo que ya tenía esta sede
+                  const cantidadEstaSede = editingSede !== null ? Number(projectData.sedes[editingSede].serviciosAsignados?.find(s => s.servicio === serv.servicio)?.cantidad || 0) : 0;
+                  const maxDisponible = cantidadProyecto - cantidadOtrasSedes + cantidadEstaSede;
+                  // Color de advertencia para disponibilidad
+                  let stockColor = 'text-green-600';
+                  if (maxDisponible === 0) stockColor = 'text-red-600 font-bold';
+                  else if (maxDisponible > 0 && maxDisponible < 5) stockColor = 'text-yellow-500 font-semibold';
+                  return (
+                    <div key={serv.servicio} className="flex items-center gap-2">
+                      <span className={`w-32 font-medium ${stockColor}`}>{serv.servicio} <span className="text-xs">(Asignado al proyecto: {cantidadProyecto})</span></span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={maxDisponible}
+                        value={cantidadAsignada}
+                        onChange={e => {
+                          const val = Math.max(0, Math.min(Number(e.target.value), maxDisponible));
+                          if (asignadoIdx !== -1) {
+                            handleServicioAsignadoChange(asignadoIdx, val);
+                          } else {
+                            setSedeForm(prev => ({
+                              ...prev,
+                              serviciosAsignados: [...prev.serviciosAsignados, { servicio: serv.servicio, cantidad: val, precio: serv.precio }]
+                            }));
+                          }
+                        }}
+                        className="w-24 border rounded p-1 text-sm"
+                        disabled={maxDisponible === 0}
+                      />
+                      <span className={`text-xs ${stockColor}`}>/ {maxDisponible} disponibles</span>
+                      {asignadoIdx !== -1 && (
+                        <button type="button" className="ml-2 text-red-500 hover:text-red-700" onClick={() => handleRemoveServicioFromSede(asignadoIdx)}><FaTrash /></button>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             <div className="flex justify-end gap-2 mt-4">
               <button type="button" className="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg font-bold hover:bg-gray-300" onClick={closeSedeModal}>Cancelar</button>
-              <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700">{editingSede !== null ? 'Guardar Cambios' : 'Agregar Sede'}</button>
+              <button type="button" className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold hover:bg-blue-700" onClick={handleSedeSubmit}>{editingSede !== null ? 'Guardar Cambios' : 'Agregar Sede'}</button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     );
