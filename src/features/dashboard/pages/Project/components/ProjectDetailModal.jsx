@@ -516,13 +516,24 @@ const ProjectDetailModal = ({ project, onClose }) => {
               icon={<FaDollarSign className="text-red-500" />}
             >
               <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <div className="text-sm text-blue-600 font-medium">
                       Presupuesto Inicial
                     </div>
                     <div className="text-xl font-bold text-blue-800">
                       {formatCurrency(sede.presupuesto.total)}
+                    </div>
+                  </div>
+                  <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                    <div className="text-sm text-orange-600 font-medium">
+                      Presupuesto Ejecutado
+                    </div>
+                    <div className="text-xl font-bold text-orange-800">
+                      {formatCurrency(
+                        sede.presupuesto.total -
+                          (sede.presupuesto.restante || sede.presupuesto.total)
+                      )}
                     </div>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">

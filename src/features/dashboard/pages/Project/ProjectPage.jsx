@@ -1,18 +1,18 @@
 // src/features/dashboard/pages/project/ProjectPage.jsx
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { FaPlus, FaSearch, FaFileExcel, FaTruck } from 'react-icons/fa';
-import { mockProjects } from './data/projects.data';
-import ProjectsTable from './components/ProjectsTable';
-import TableSkeleton from '../../../../shared/components/TableSkeleton';
-import Pagination from '../../../../shared/components/Pagination';
-import ProjectDetailModal from './components/ProjectDetailModal';
-import NewProjectModal from './components/NewProjectModal';
-import EditProjectModal from './components/EditProjectModal';
-import SalidaMaterialModal from './components/SalidaMaterialModal';
-import * as XLSX from 'xlsx';
-import { showToast, showAlert } from '../../../../shared/utils/alertas';
-import { usePermissions } from '../../../../shared/hooks/usePermissions';
+import React, { useState, useEffect, useMemo } from "react";
+import { FaPlus, FaSearch, FaFileExcel } from "react-icons/fa";
+import { mockProjects } from "./data/projects.data";
+import ProjectsTable from "./components/ProjectsTable";
+import TableSkeleton from "../../../../shared/components/TableSkeleton";
+import Pagination from "../../../../shared/components/Pagination";
+import ProjectDetailModal from "./components/ProjectDetailModal";
+import NewProjectModal from "./components/NewProjectModal";
+import EditProjectModal from "./components/EditProjectModal";
+import SalidaMaterialModal from "./components/SalidaMaterialModal";
+import * as XLSX from "xlsx";
+import { showToast, showAlert } from "../../../../shared/utils/alertas";
+import { usePermissions } from "../../../../shared/hooks/usePermissions";
 
 // --- CONSTANTE PARA EL NÚMERO DE ELEMENTOS POR PÁGINA ---
 const ITEMS_PER_PAGE = 5;
@@ -22,12 +22,14 @@ const ProjectPage = () => {
   // --- TODA TU LÓGICA DE ESTADO Y FUNCIONES PERMANECE EXACTAMENTE IGUAL ---
   const [loading, setLoading] = useState(true);
   const [allProjects, setAllProjects] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProject, setSelectedProject] = useState(null);
   const [showNewModal, setShowNewModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [showSalidaModal, setShowSalidaModal] = useState(false);
+  const [selectedProjectForSalida, setSelectedProjectForSalida] =
+    useState(null);
 
   useEffect(() => {
     setTimeout(() => {
@@ -36,19 +38,26 @@ const ProjectPage = () => {
     }, 1500);
   }, []);
 
-  // --- AQUÍ ES DONDE SE AÑADE LA LÓGICA DE FILTRADO Y PÁGINACIÓN --- 
+  // --- AQUÍ ES DONDE SE AÑADE LA LÓGICA DE FILTRADO Y PÁGINACIÓN ---
 
-  const filteredProjects = useMemo(() =>
-  allProjects.filter(p =>
-    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.responsable?.nombre?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-    p.responsable?.apellido?.toLowerCase()?.includes(searchTerm.toLowerCase()) ||
-    p.numeroContrato.toString().includes(searchTerm) ||
-    p.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.prioridad.toLowerCase().includes(searchTerm.toLowerCase())
-  ), [allProjects, searchTerm]
-);
+  const filteredProjects = useMemo(
+    () =>
+      allProjects.filter(
+        (p) =>
+          p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.responsable?.nombre
+            ?.toLowerCase()
+            ?.includes(searchTerm.toLowerCase()) ||
+          p.responsable?.apellido
+            ?.toLowerCase()
+            ?.includes(searchTerm.toLowerCase()) ||
+          p.numeroContrato.toString().includes(searchTerm) ||
+          p.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.prioridad.toLowerCase().includes(searchTerm.toLowerCase())
+      ),
+    [allProjects, searchTerm]
+  );
 
   // --- AQUÍ SE CALCULA EL NÚMERO TOTAL DE PÁGINAS Y SE REALIZA LA PÁGINACIÓN ---
   // --- NO CAMBIA NADA MÁS EN ESTA SECCIÓN ---
@@ -71,59 +80,71 @@ const ProjectPage = () => {
   // --- AQUÍ SE MANTIENE LA FUNCIÓN PARA AÑADIR NUEVOS PROYECTOS ---
   const handleAddProject = (newProject) => {
     try {
-      setAllProjects(prev => [newProject, ...prev]);
+      setAllProjects((prev) => [newProject, ...prev]);
       setShowNewModal(false);
-      showToast('Proyecto creado exitosamente', 'success');
-    } catch (error) {
-      showToast('Error al crear el proyecto', 'error');
+      showToast("Proyecto creado exitosamente", "success");
+    } catch {
+      showToast("Error al crear el proyecto", "error");
     }
   };
 
   // Editar proyecto
   const handleUpdateProject = (updatedProject) => {
     try {
-      setAllProjects(prev => prev.map(p => p.id === updatedProject.id ? updatedProject : p));
+      setAllProjects((prev) =>
+        prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+      );
       setEditingProject(null);
-      showToast('Proyecto actualizado exitosamente', 'success');
-    } catch (error) {
-      showToast('Error al actualizar el proyecto', 'error');
+      showToast("Proyecto actualizado exitosamente", "success");
+    } catch {
+      showToast("Error al actualizar el proyecto", "error");
     }
   };
 
   // Eliminar proyecto
   const handleDeleteProject = async (project) => {
     const result = await showAlert({
-      title: '¿Estás seguro?',
+      title: "¿Estás seguro?",
       text: `¿Seguro que deseas eliminar el proyecto "${project.nombre}"?`,
-      icon: 'warning',
+      icon: "warning",
       showCancelButton: true,
-      confirmButtonText: 'Sí, eliminar',
-      cancelButtonText: 'Cancelar',
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
     });
     if (result.isConfirmed) {
       try {
-        setAllProjects(prev => prev.filter(p => p.id !== project.id));
-        showToast('Proyecto eliminado exitosamente', 'success');
-      } catch (error) {
-        showToast('Error al eliminar el proyecto', 'error');
+        setAllProjects((prev) => prev.filter((p) => p.id !== project.id));
+        showToast("Proyecto eliminado exitosamente", "success");
+      } catch {
+        showToast("Error al eliminar el proyecto", "error");
       }
     }
+  };
+
+  // Manejar apertura de modal de salida de material para un proyecto específico
+  const handleOpenSalidaModal = (project) => {
+    setSelectedProjectForSalida(project);
+    setShowSalidaModal(true);
   };
 
   // Manejar salida de material
   const handleSaveSalida = (nuevaSalida) => {
     try {
       // Encontrar el proyecto y la sede
-      const proyectoIndex = allProjects.findIndex(p => p.nombre === nuevaSalida.proyecto);
+      const proyectoIndex = allProjects.findIndex(
+        (p) => p.nombre === nuevaSalida.proyecto
+      );
       if (proyectoIndex === -1) {
-        showToast('Proyecto no encontrado', 'error');
+        showToast("Proyecto no encontrado", "error");
         return;
       }
 
       const proyecto = allProjects[proyectoIndex];
-      const sedeIndex = proyecto.sedes.findIndex(s => s.nombre === nuevaSalida.sede);
+      const sedeIndex = proyecto.sedes.findIndex(
+        (s) => s.nombre === nuevaSalida.sede
+      );
       if (sedeIndex === -1) {
-        showToast('Sede no encontrada', 'error');
+        showToast("Sede no encontrada", "error");
         return;
       }
 
@@ -140,30 +161,38 @@ const ProjectPage = () => {
 
       // Actualizar presupuesto restante
       if (sedeActualizada.presupuesto) {
-        sedeActualizada.presupuesto.restante = (sedeActualizada.presupuesto.restante || sedeActualizada.presupuesto.total) - nuevaSalida.costoTotal;
+        sedeActualizada.presupuesto.restante =
+          (sedeActualizada.presupuesto.restante ||
+            sedeActualizada.presupuesto.total) - nuevaSalida.costoTotal;
       }
 
       proyectoActualizado.sedes[sedeIndex] = sedeActualizada;
       proyectosActualizados[proyectoIndex] = proyectoActualizado;
 
       setAllProjects(proyectosActualizados);
-      showToast('Salida de material registrada exitosamente', 'success');
-    } catch (error) {
-      showToast('Error al registrar la salida de material', 'error');
+      showToast("Salida de material registrada exitosamente", "success");
+    } catch {
+      showToast("Error al registrar la salida de material", "error");
     }
   };
 
-  const projectTableHeaders = ['Proyecto', 'Responsable', 'Fechas', 'Estado', 'Prioridad', 'Progreso', 'Acciones'];
+  const projectTableHeaders = [
+    "Proyecto",
+    "Responsable",
+    "Fechas",
+    "Estado",
+    "Prioridad",
+    "Progreso",
+    "Acciones",
+  ];
   // --------------------------------------------------------------------
 
   return (
     <div className="p-4 md:p-8 relative">
-      
       {/* --- ESTA LÍNEA ES LA ÚNICA QUE CAMBIA PARA EL DISEÑO RESPONSIVE --- */}
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-8">
-      
-        <h1 className="text-3xl font-bold text-gray-800 text-m">Proyectos</h1>
-        
+        <h1 className="text-3xl font-bold text-gray-800">Proyectos</h1>
+
         {/* El contenedor de los botones ya es responsive con 'flex-wrap' */}
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative">
@@ -186,15 +215,6 @@ const ProjectPage = () => {
             <FaFileExcel />
             Exportar
           </button>
-          {checkManage('salida_material') && (
-            <button
-              onClick={() => setShowSalidaModal(true)}
-              className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors text-sm"
-            >
-              <FaTruck />
-              Salida de Material
-            </button>
-          )}
           <button
             onClick={() => setShowNewModal(true)}
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors text-sm"
@@ -207,13 +227,17 @@ const ProjectPage = () => {
 
       {/* El resto del componente no cambia */}
       {loading ? (
-        <TableSkeleton headers={projectTableHeaders} rowCount={ITEMS_PER_PAGE} />
+        <TableSkeleton
+          headers={projectTableHeaders}
+          rowCount={ITEMS_PER_PAGE}
+        />
       ) : (
         <ProjectsTable
           projects={paginatedProjects}
           onViewDetails={(project) => setSelectedProject(project)}
           onEditProject={(project) => setEditingProject(project)}
           onDeleteProject={handleDeleteProject}
+          onCreateSalida={handleOpenSalidaModal}
         />
       )}
 
@@ -254,20 +278,29 @@ const ProjectPage = () => {
             const p = editingProject;
             return {
               ...p,
-              responsable: typeof p.responsable === 'object' && p.responsable?.nombre ? p.responsable.nombre : (p.responsable || ''),
+              responsable:
+                typeof p.responsable === "object" && p.responsable?.nombre
+                  ? p.responsable.nombre
+                  : p.responsable || "",
               empleadosAsociados: Array.isArray(p.empleadosAsociados)
-                ? p.empleadosAsociados.map(emp => typeof emp === 'object' && emp.nombre ? emp.nombre : emp)
+                ? p.empleadosAsociados.map((emp) =>
+                    typeof emp === "object" && emp.nombre ? emp.nombre : emp
+                  )
                 : [],
             };
           })()}
         />
       )}
 
-      {showSalidaModal && (
+      {showSalidaModal && selectedProjectForSalida && (
         <SalidaMaterialModal
           isOpen={showSalidaModal}
-          onClose={() => setShowSalidaModal(false)}
+          onClose={() => {
+            setShowSalidaModal(false);
+            setSelectedProjectForSalida(null);
+          }}
           onSaveSalida={handleSaveSalida}
+          selectedProject={selectedProjectForSalida}
         />
       )}
     </div>
