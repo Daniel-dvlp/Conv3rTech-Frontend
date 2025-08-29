@@ -214,7 +214,7 @@ const SalidaMaterialModal = ({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
         <header className="flex justify-between items-center p-6 border-b bg-gradient-to-r from-green-50 to-green-100">
@@ -237,7 +237,7 @@ const SalidaMaterialModal = ({
           </button>
         </header>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+        <div className="p-6 overflow-y-auto custom-scroll flex-1 min-h-0">
           <div className="space-y-6">
             {/* Información del Proyecto */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
