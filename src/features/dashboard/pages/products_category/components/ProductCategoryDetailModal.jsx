@@ -35,7 +35,7 @@ const ProductCategoryDetailModal = ({ category, onClose }) => {
         <header className="flex justify-between items-center p-4 sm:p-6 border-b bg-white rounded-t-xl">
           <div>
             <h2 className="text-3xl font-bold text-gray-800">{category.nombre}</h2>
-            <p className="text-md text-gray-600">ID: {category.id}</p>
+            <p className="text-md text-gray-600">ID: {category.id_categoria}</p>
           </div>
           <button
             onClick={onClose}

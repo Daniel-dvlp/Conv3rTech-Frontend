@@ -22,6 +22,8 @@ const ToggleSwitch = ({ checked, onChange }) => (
     </Switch>
 );
 
+const API_URL = 'https://backend-conv3rtech.onrender.com/api/productsCategory';
+
 const ProductCategoryEditModal = ({
     isOpen,
     onClose,
@@ -33,13 +35,19 @@ const ProductCategoryEditModal = ({
         nombre: '',
         descripcion: '',
         estado: true,
+        id_categoria: null,
     });
 
     const [errors, setErrors] = useState({});
 
     useEffect(() => {
         if (categoryToEdit) {
-            setCategoryData(categoryToEdit);
+            setCategoryData({
+                nombre: categoryToEdit.nombre || '',
+                descripcion: categoryToEdit.descripcion || '',
+                estado: typeof categoryToEdit.estado === 'boolean' ? categoryToEdit.estado : true,
+                id_categoria: categoryToEdit.id_categoria,
+            });
             setErrors({});
         }
     }, [categoryToEdit]);
@@ -56,7 +64,7 @@ const ProductCategoryEditModal = ({
                 existingCategories.some(
                     (cat) =>
                         normalizeText(cat.nombre) === normalizeText(value) &&
-                        cat.id !== categoryToEdit.id
+                        cat.id_categoria !== categoryToEdit.id_categoria
                 )
             ) {
                 newErrors.nombre = 'Ya existe otra categoría con este nombre';
@@ -79,6 +87,7 @@ const ProductCategoryEditModal = ({
     const handleChange = (e) => {
         const { name, value } = e.target;
         setCategoryData((prev) => ({ ...prev, [name]: value }));
+        validateField(name, value);
     };
 
     const handleBlur = (e) => {
@@ -90,9 +99,35 @@ const ProductCategoryEditModal = ({
         e.preventDefault();
         validateField('nombre', categoryData.nombre);
         validateField('descripcion', categoryData.descripcion);
-        if (Object.keys(errors).length > 0) return;
-        onSave({ ...categoryData });
-        onClose();
+        // Espera a que los errores se actualicen antes de continuar
+        setTimeout(() => {
+            if (Object.keys(errors).length === 0) {
+                onSave({ ...categoryData });
+                onClose();
+            }
+        }, 0);
+    };
+
+    const handleEstadoPatch = (id_categoria, nuevoEstado) => {
+        fetch(`${API_URL}/${id_categoria}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: nuevoEstado }),
+        })
+            .then(res => res.json())
+            .then(() => {
+                setCategoryData((prev) => ({
+                    ...prev,
+                    estado: nuevoEstado,
+                }));
+            })
+            .catch(() => {
+                // Opcional: mostrar error
+                setCategoryData((prev) => ({
+                    ...prev,
+                    estado: !nuevoEstado, // Revierte el cambio si falla
+                }));
+            });
     };
 
     return (
@@ -161,12 +196,10 @@ const ProductCategoryEditModal = ({
                         <label className="text-sm font-medium text-gray-700">Estado:</label>
                         <ToggleSwitch
                             checked={categoryData.estado}
-                            onChange={() =>
-                                setCategoryData((prev) => ({
-                                    ...prev,
-                                    estado: !prev.estado,
-                                }))
-                            }
+                            onChange={() => {
+                                const nuevoEstado = !categoryData.estado;
+                                handleEstadoPatch(categoryData.id_categoria, nuevoEstado);
+                            }}
                         />
                     </div>
 

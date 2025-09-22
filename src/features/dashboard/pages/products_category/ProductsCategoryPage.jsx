@@ -13,6 +13,7 @@ import { showSuccess, showError, showInfo, confirmDelete } from '../../../../sha
 
 
 const ITEMS_PER_PAGE = 5;
+const API_URL = 'https://backend-conv3rtech.onrender.com/api/productsCategory';
 
 const ProductsCategoryPage = () => {
   const [categories, setCategories] = useState([]);
@@ -23,27 +24,70 @@ const ProductsCategoryPage = () => {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isEditing, setIsEditing] = useState(false); // ✅ Nuevo estado para edición
 
-  useEffect(() => {
-    setTimeout(() => {
-      setCategories(mockProductsCategory);
-      setLoading(false);
-    }, 1500);
-  }, []);
+  // Helpers: extractor and normalizer for API
+  const extractList = (res) => {
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res.rows)) return res.rows;
+    if (Array.isArray(res.result)) return res.result;
+    if (res && typeof res.data === 'object' && res.data !== null) return [res.data];
+    return [];
+  };
 
-  const normalize = (text) =>
-    text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const normalizeCategory = (cat = {}) => ({
+    id_categoria: cat.id_categoria ?? cat.id ?? cat._id ?? cat.idCategoria ?? cat.idcategory,
+    nombre: cat.nombre ?? cat.name ?? '',
+    descripcion: cat.descripcion ?? cat.description ?? '',
+    estado: typeof cat.estado === 'boolean' ? cat.estado : (cat.estado === 1 || cat.active === true || cat.status === true),
+  });
 
-  const filteredProductsCategory = useMemo(() => {
-    const normalizedSearch = normalize(searchTerm);
-    return categories.filter((cat) => {
-      const estadoLegible = cat.estado ? 'activo' : 'inactivo';
-      return (
-        normalize(cat.nombre).includes(normalizedSearch) ||
-        normalize(cat.descripcion).includes(normalizedSearch) ||
-        normalize(estadoLegible).startsWith(normalizedSearch)
-      );
-    });
-  }, [categories, searchTerm]);
+  // Listar categorías
+useEffect(() => {
+  let cancelled = false;
+
+  const load = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(API_URL);
+      const json = await res.json().catch(() => ({}));
+      const listRaw = extractList(json);
+      const list = listRaw.map(normalizeCategory).filter(c => c.id_categoria != null);
+      if (!cancelled) {
+        setCategories(list);
+      }
+    } catch (e) {
+      if (!cancelled) {
+        showError('Error al cargar las categorías');
+      }
+    } finally {
+      if (!cancelled) {
+        setLoading(false);
+      }
+    }
+  };
+
+  load();
+  return () => { cancelled = true; };
+}, []);
+
+const normalize = (text) =>
+  text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+
+const filteredProductsCategory = useMemo(() => {
+  const normalizedSearch = normalize(searchTerm);
+
+  return (Array.isArray(categories) ? categories : []).filter((cat) => {
+    const nombre = cat?.nombre || '';
+    const descripcion = cat?.descripcion || '';
+    const estadoLegible = cat?.estado ? 'activo' : 'inactivo';
+
+    const nameIncludes = normalize(nombre).includes(normalizedSearch);
+    const descriptionIncludes = normalize(descripcion).includes(normalizedSearch);
+    const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch);
+
+    return nameIncludes || descriptionIncludes || stateIncludes;
+  });
+}, [categories, searchTerm]);
 
   const totalPages = Math.ceil(filteredProductsCategory.length / ITEMS_PER_PAGE);
 
@@ -52,29 +96,59 @@ const ProductsCategoryPage = () => {
     return filteredProductsCategory.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredProductsCategory, currentPage]);
 
-  const handleAddCategory = (newCategory) => {
-    try {
-      setCategories(prev => [newCategory, ...prev]);
-      showSuccess('Categoría creada exitosamente');
-    } catch (error) {
-      showError('Error al crear la categoría');
-    } finally {
-      setShowNewModal(false);
+  // Agregar categoría
+const handleAddCategory = async (newCategory) => {
+  try {
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre: newCategory.nombre,
+        descripcion: newCategory.descripcion,
+        estado: true, // por compatibilidad si el backend lo requiere
+      }),
+    });
+    const json = await res.json().catch(() => ({}));
+    const created = normalizeCategory(json.data || json);
+    if (!created || created.id_categoria == null) {
+      showError('No se pudo crear la categoría');
+      return false;
     }
-  };
+    setCategories(prev => [created, ...prev]);
+    showSuccess('Categoría creada exitosamente');
+    return true;
+  } catch {
+    showError('Error al crear la categoría');
+    return false;
+  }
+};
 
   const handleEditCategory = (category) => {
     setSelectedCategory(category);
     setIsEditing(true);
   };
 
-  const handleUpdateCategory = (updatedCategory) => {
+  // Editar categoría
+  const handleUpdateCategory = async (updatedCategory) => {
     try {
+      const res = await fetch(`${API_URL}/${updatedCategory.id_categoria}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nombre: updatedCategory.nombre,
+          descripcion: updatedCategory.descripcion
+          // No envíes estado si la API no lo espera
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      const updated = normalizeCategory(json.data || json);
       setCategories(prev =>
-        prev.map(cat => (cat.id === updatedCategory.id ? updatedCategory : cat))
+        prev.map(cat =>
+          cat.id_categoria === updated.id_categoria ? updated : cat
+        )
       );
       showSuccess('Categoría actualizada exitosamente');
-    } catch (error) {
+    } catch {
       showError('Error al actualizar la categoría');
     } finally {
       setIsEditing(false);
@@ -82,16 +156,17 @@ const ProductsCategoryPage = () => {
     }
   };
 
+  // Eliminar categoría
   const handleDeleteCategory = async (categoryId) => {
     const confirmed = await confirmDelete('¿Estás seguro de eliminar esta categoría?');
     if (!confirmed) return;
 
-    try {
-      setCategories(prev => prev.filter(cat => cat.id !== categoryId));
-      showSuccess('Categoría eliminada exitosamente');
-    } catch (error) {
-      showError('Error al eliminar la categoría');
-    }
+    fetch(`${API_URL}/${categoryId}`, { method: 'DELETE' })
+      .then(() => {
+        setCategories(prev => prev.filter(cat => Number(cat.id_categoria) !== Number(categoryId)));
+        showSuccess('Categoría eliminada exitosamente');
+      })
+      .catch(() => showError('Error al eliminar la categoría'));
   };
 
   return (
