@@ -4,7 +4,7 @@ import { FaTimes } from 'react-icons/fa';
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
 const normalizeText = (text) =>
-  text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+  (text ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
 const NewCategoryModal = ({ isOpen, onClose, onSave, existingCategories }) => {
   const initialState = {
@@ -54,20 +54,40 @@ const NewCategoryModal = ({ isOpen, onClose, onSave, existingCategories }) => {
     validateField(name, value);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  // ...existing code...
+const handleSubmit = (e) => {
+  e.preventDefault();
 
-    // Validar todos los campos antes de enviar
-    validateField("nombre", categoryData.nombre);
-    validateField("descripcion", categoryData.descripcion);
+  // Validación sincrónica y determinística
+  const newErrors = {};
 
-    if (Object.keys(errors).length > 0) return;
+  if (!categoryData.nombre) {
+    newErrors.nombre = "El nombre es obligatorio";
+  } else if (
+    Array.isArray(existingCategories) &&
+    existingCategories.some(cat => normalizeText(cat?.nombre) === normalizeText(categoryData.nombre))
+  ) {
+    newErrors.nombre = "Ya existe una categoría con este nombre";
+  }
 
-    onSave({ ...categoryData, id: `CP-${Date.now()}` });
-    setCategoryData(initialState);
-    setErrors({});
-    onClose();
-  };
+  if (!categoryData.descripcion) {
+    newErrors.descripcion = "La descripción es obligatoria";
+  }
+
+  setErrors(newErrors);
+  if (Object.keys(newErrors).length > 0) return;
+
+  // Solo envía nombre y descripcion
+  onSave({
+    nombre: categoryData.nombre,
+    descripcion: categoryData.descripcion,
+  });
+
+  setCategoryData(initialState);
+  setErrors({});
+  onClose();
+};
+// ...existing code...
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-20" onClick={onClose}>
