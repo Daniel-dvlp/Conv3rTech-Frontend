@@ -3,76 +3,62 @@ import { FaPlus, FaSearch } from 'react-icons/fa';
 import UsersTable from './components/UsersTable';
 import SkeletonRow from './components/SkeletonRow';
 import CreateUserModal from './components/CreateUserModal';
-import { mockUsuarios } from './data/User_data';
 import { mockRoles } from '../roles/data/Roles_data';
 import Pagination from '../../../../shared/components/Pagination';
-import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js'; // asegúrate de importar confirmDelete
-import { toast } from 'react-hot-toast'; // si usas toast
+import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
+import { toast } from 'react-hot-toast';
+import { useUsers } from './hooks/useUsers';
 
 const ITEMS_PER_PAGE = 5;
 
 const UsuariosPage = () => {
-  const [usuarios, setUsuarios] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    usuarios,
+    roles,
+    loading,
+    createUser,
+    updateUser,
+    deleteUser,
+    changeUserStatus,
+    searchUsers
+  } = useUsers();
+  
   const [openModal, setOpenModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleEliminarUsuario = async (usuarioId) => {
-  const confirmed = await confirmDelete('¿Deseas eliminar este usuario?');
+    const confirmed = await confirmDelete('¿Deseas eliminar este usuario?');
 
-  console.log('Intentando eliminar', usuarioId); // para verificar en consola
+    if (confirmed) {
+      try {
+        await deleteUser(usuarioId);
+      } catch (error) {
+        console.error('Error al eliminar usuario:', error);
+      }
+    }
+  };
 
-  if (confirmed) {
-    setUsuarios(prev => {
-      const updated = prev.filter(u => u.id !== usuarioId);
-      console.log('Usuarios actualizados:', updated);
-      return updated;
-    });
+  // Los usuarios se cargan automáticamente con el hook useUsers
 
-    toast.success('Usuario eliminado exitosamente');
-  }
-};
-
-  useEffect(() => {
-    setTimeout(() => {
-      setUsuarios(mockUsuarios);
-      setLoading(false);
-    }, 1500);
-  }, []);
-
-  const handleCreateUser = (nuevoUsuario) => {
-    const nuevoId = usuarios.length ? usuarios[usuarios.length - 1].id + 1 : 1;
-
-    const fechaActual = new Date();
-    const fechaFormateada = `${String(fechaActual.getDate()).padStart(2, '0')}-${String(fechaActual.getMonth() + 1).padStart(2, '0')}-${String(fechaActual.getFullYear()).slice(2)}`;
-
-    const usuarioConFormato = {
-      id: nuevoId,
-      ...nuevoUsuario,
-      status: 'Activo',
-      fechaCreacion: fechaFormateada
-    };
-
-
-    setUsuarios((prev) => {
-      const updated = [...prev, usuarioConFormato];
-      setCurrentPage(Math.ceil(updated.length / ITEMS_PER_PAGE));
-      return updated;
-    });
-    showSuccess('Usuario creado correctamente');
-    console.log("✅ Usuario creado:", usuarioConFormato);
+  const handleCreateUser = async (nuevoUsuario) => {
+    try {
+      await createUser(nuevoUsuario);
+      setCurrentPage(Math.ceil((usuarios.length + 1) / ITEMS_PER_PAGE));
+    } catch (error) {
+      console.error('Error al crear usuario:', error);
+    }
   };
 
   const filteredUsers = useMemo(() =>
     usuarios.filter(u =>
-      u.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.tipoDocumento.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.documento.toString().includes(searchTerm) ||
-      u.rol.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.status.toLowerCase().includes(searchTerm.toLowerCase())
+      u.nombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.tipo_documento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.apellido?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.documento?.toString().includes(searchTerm) ||
+      u.rol?.nombre_rol?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.correo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      u.estado_usuario?.toLowerCase().includes(searchTerm.toLowerCase())
     ), [usuarios, searchTerm]
   );
 
@@ -138,8 +124,10 @@ const UsuariosPage = () => {
             usuariosFiltrados={filteredUsers}
             paginaActual={currentPage}
             itemsPorPagina={ITEMS_PER_PAGE}
-            setUsuarios={setUsuarios}
             onDelete={handleEliminarUsuario}
+            onUpdate={updateUser}
+            onChangeStatus={changeUserStatus}
+            roles={roles}
           />
           {totalPages > 1 && (
             <Pagination
@@ -154,12 +142,12 @@ const UsuariosPage = () => {
       <CreateUserModal
         isOpen={openModal}
         onClose={() => setOpenModal(false)}
-        roles={mockRoles}
+        roles={roles}
         onSubmit={handleCreateUser}
         usuariosExistentes={usuarios.map(u => ({
           documento: u.documento,
-          tipoDocumento: u.tipoDocumento,
-          email: u.email,
+          tipoDocumento: u.tipo_documento,
+          email: u.correo,
           celular: u.celular,
           contrasena: u.contrasena
         }))}

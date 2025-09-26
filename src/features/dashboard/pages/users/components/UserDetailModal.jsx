@@ -18,7 +18,7 @@ const UserDetailModal = ({ user, onClose }) => {
   const getStatusClass = (estado) => {
     return estado === 'Activo'
       ? 'bg-green-100 text-green-800'
-      :    estado === 'Inactivo'
+      : estado === 'Inactivo'
         ? 'bg-yellow-100 text-red-800'
         : 'bg-yellow-100 text-yellow-800'
   };
@@ -28,9 +28,10 @@ const UserDetailModal = ({ user, onClose }) => {
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
 
         {/* Header */}
-        <header className="flex justify-between items-center p-7 border-b bg-white rounded-t-xl">
+        <header className="flex justify-between items-center py-3 px-3 border-b bg-white rounded-t-xl">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">{user.nombre} {user.apellido}</h2>
+            <p className="text-sm text-gray-500 mt-1 text-left">ID: {user.id_usuario}</p>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-800 text-2xl p-2 rounded-full">
             <FaTimes />
@@ -45,33 +46,44 @@ const UserDetailModal = ({ user, onClose }) => {
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-1">
               <FaUser className="text-blue-500" /> Información del Usuario
             </h3>
-            <InfoCard icon={<FaIdCard />} label="Tipo de Documento" value={user.tipoDocumento} />
+            <InfoCard icon={<FaIdCard />} label="Tipo de Documento" value={user.tipo_documento} />
             <InfoCard icon={<FaIdCard />} label="Documento" value={user.documento} />
             <InfoCard icon={<FaPhone />} label="Celular" value={user.celular} />
-            <InfoCard icon={<FaEnvelope />} label="Correo" value={user.email} />
+            <InfoCard icon={<FaEnvelope />} label="Correo" value={user.correo} />
           </div>
 
           {/* Tarjeta derecha: Rol */}
           <div className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
               <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <FaUserShield className="text-purple-500" /> Rol
+                <FaUserShield className="text-purple-500" /> Rol y Permisos
               </h3>
-              <InfoCard icon={<FaUserShield />} label="Rol" value={user.rol} />
-              <InfoCard icon={<FaHistory />} label="Fecha de Creación" value={user.fechaCreacion} />
+              <InfoCard icon={<FaUserShield />} label="Rol" value={user.rol?.nombre_rol || 'Sin rol'} />
+              <InfoCard icon={<FaHistory />} label="Fecha de Creación" value={new Date(user.fecha_creacion).toLocaleDateString('es-ES')} />
+
+              {/* Información adicional del rol si está disponible */}
+              {user.rol?.descripcion && (
+                <div className="mt-3 p-2 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600 mb-2 font-medium text-left">Descripción del Rol:</p>
+                  <p className="text-sm text-gray-800 break-words whitespace-pre-line text-left">
+                    {user.rol.descripcion}
+                  </p>
+                </div>
+              )}
+
             </div>
 
             {/* Tarjeta Estado */}
-            <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+            <div className="bg-white border border-gray-200 rounded-xl px-6 py-3 space-y-5">
               <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                 <FaToggleOn className="text-green-500" /> Estado
               </h3>
               <InfoCard
-                
-                
+                icon={<FaToggleOn />}
+                label="Estado"
                 value={
-                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(user.status)}`}>
-                    {user.status}
+                  <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(user.estado_usuario)}`}>
+                    {user.estado_usuario}
                   </span>
                 }
               />

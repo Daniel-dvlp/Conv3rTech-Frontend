@@ -47,14 +47,14 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
   useEffect(() => {
     if (isOpen && userData) {
       setFormData({
-        tipoDocumento: userData.tipoDocumento || '',
+        tipoDocumento: userData.tipo_documento || '',
         documento: userData.documento || '',
         nombre: userData.nombre || '',
         apellido: userData.apellido || '',
         celular: userData.celular || '',
-        rol: typeof userData.rol === 'object' ? userData.rol.name : userData.rol || '',
-        email: userData.email || '',
-        status: userData.status || '',
+        rol: userData.id_rol || '',
+        email: userData.correo || '',
+        status: userData.estado_usuario || '',
         nuevaContrasena: '',
         confirmarContrasena: ''
       });
@@ -132,15 +132,20 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
       return;
     }
 
-    const { nuevaContrasena, confirmarContrasena, ...data } = formData;
-    const datosFinales = {
-      ...data,
-      ...(nuevaContrasena && { contrasena: nuevaContrasena })
+    // Transformar los datos al formato que espera la API
+    const userDataForApi = {
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      correo: formData.email,
+      id_rol: parseInt(formData.rol),
+      documento: formData.documento,
+      tipo_documento: formData.tipoDocumento,
+      celular: formData.celular,
+      estado_usuario: formData.status,
+      ...(formData.nuevaContrasena && { contrasena: formData.nuevaContrasena })
     };
 
-    // onSubmit(datosFinales);
-    onSubmit({ ...formData, id: userData.id });
-    showSuccess('Cambios guardados correctamente');
+    onSubmit(userDataForApi);
     onClose();
   };
 
@@ -205,11 +210,10 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
                   onChange={handleChange}
                   className={inputBaseStyle}
                 >
-                  <option value="">{formData.rol}</option>
                   <option value="">Seleccionar...</option>
                   {roles.map((rol) => (
-                    <option key={rol.id} value={rol.name}>
-                      {rol.name}
+                    <option key={rol.id_rol} value={rol.id_rol}>
+                      {rol.nombre_rol}
                     </option>
                   ))}
                 </select>
