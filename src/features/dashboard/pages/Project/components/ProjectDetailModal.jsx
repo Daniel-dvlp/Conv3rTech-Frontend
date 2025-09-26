@@ -1,6 +1,6 @@
 // src/features/dashboard/pages/project/components/ProjectDetailModal.jsx
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaTimes,
   FaUser,
@@ -19,8 +19,11 @@ import {
   FaHome,
   FaBuilding,
   FaCrown,
+  FaRegSquare,
+  FaCheckSquare,
 } from "react-icons/fa";
 import HistorialSalidasModal from "./HistorialSalidasModal";
+import { showSuccess, showError } from "../../../../../shared/utils/alerts.js";
 
 const DetailCard = ({ title, icon, children, className = "" }) => (
   <div
@@ -67,6 +70,12 @@ const ProjectDetailModal = ({ project, onClose }) => {
   const [historialModalOpen, setHistorialModalOpen] = useState(false);
   const [selectedHistorialSedeIndex, setSelectedHistorialSedeIndex] =
     useState(null);
+  // Local copy of sedes for offline UI updates
+  const [localSedes, setLocalSedes] = useState(project?.sedes || []);
+
+  useEffect(() => {
+    setLocalSedes(project?.sedes || []);
+  }, [project]);
 
   if (!project) return null;
 
@@ -109,6 +118,52 @@ const ProjectDetailModal = ({ project, onClose }) => {
   const handleCloseHistorialModal = () => {
     setHistorialModalOpen(false);
     setSelectedHistorialSedeIndex(null);
+  };
+
+  // Función para marcar servicio como completado
+  const handleMarkServiceCompleted = (sedeIndex, servIndex) => {
+    setLocalSedes((prevSedes) =>
+      prevSedes.map((sede, index) => {
+        if (index === sedeIndex) {
+          return {
+            ...sede,
+            serviciosAsignados: (sede.serviciosAsignados || []).map(
+              (serv, idx) =>
+                idx === servIndex
+                  ? {
+                      ...serv,
+                      estado: "completado",
+                      fechaCompletado: new Date().toISOString(),
+                    }
+                  : serv
+            ),
+          };
+        }
+        return sede;
+      })
+    );
+    showSuccess("Estado cambiado: Completado");
+  };
+
+  // Función para marcar servicio como pendiente
+  const handleMarkServicePending = (sedeIndex, servIndex) => {
+    setLocalSedes((prevSedes) =>
+      prevSedes.map((sede, index) => {
+        if (index === sedeIndex) {
+          return {
+            ...sede,
+            serviciosAsignados: (sede.serviciosAsignados || []).map(
+              (serv, idx) =>
+                idx === servIndex
+                  ? { ...serv, estado: "pendiente", fechaCompletado: undefined }
+                  : serv
+            ),
+          };
+        }
+        return sede;
+      })
+    );
+    showSuccess("Estado cambiado: Pendiente");
   };
 
   // Generar pestañas dinámicamente
@@ -406,7 +461,7 @@ const ProjectDetailModal = ({ project, onClose }) => {
       );
     } else if (activeTab.startsWith("sede-")) {
       const sedeIndex = parseInt(activeTab.split("-")[1]);
-      const sede = project.sedes[sedeIndex];
+      const sede = localSedes[sedeIndex];
 
       if (!sede) return <div>Sede no encontrada</div>;
 
@@ -477,30 +532,125 @@ const ProjectDetailModal = ({ project, onClose }) => {
           >
             {Array.isArray(sede.serviciosAsignados) &&
             sede.serviciosAsignados.length > 0 ? (
-              <div className="space-y-3">
-                {sede.serviciosAsignados.map((serv, i) => (
-                  <div
-                    key={i}
-                    className="flex justify-between items-center p-3 bg-purple-50 rounded-lg border border-purple-200"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FaCogs className="text-purple-600" />
-                      <div>
-                        <span className="font-semibold text-gray-800">
-                          {serv.servicio}
-                        </span>
-                        <div className="text-sm text-gray-600">
-                          Cantidad asignada: {serv.cantidad}
+              <div className="space-y-4">
+                {(() => {
+                  // Agrupar servicios por categoría
+                  const serviciosPorCategoria = sede.serviciosAsignados.reduce(
+                    (acc, serv) => {
+                      const categoriaNombre =
+                        serv.categoria?.nombre || "Sin categoría";
+                      if (!acc[categoriaNombre]) {
+                        acc[categoriaNombre] = [];
+                      }
+                      acc[categoriaNombre].push(serv);
+                      return acc;
+                    },
+                    {}
+                  );
+
+                  return Object.entries(serviciosPorCategoria).map(
+                    ([categoriaNombre, servicios]) => (
+                      <div
+                        key={categoriaNombre}
+                        className="border border-gray-200 rounded-lg p-3"
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                          <h4 className="font-semibold text-gray-800">
+                            {categoriaNombre}
+                          </h4>
+                          <span className="text-sm text-gray-500">
+                            ({servicios.length} servicios)
+                          </span>
+                        </div>
+                        <div className="space-y-2">
+                          {servicios.map((serv, i) => (
+                            <div
+                              key={i}
+                              className={`flex justify-between items-center p-3 rounded-lg border ${
+                                serv.estado === "completado"
+                                  ? "bg-green-50 border-green-200"
+                                  : "bg-purple-50 border-purple-200"
+                              }`}
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                <div
+                                  className={`w-2 h-2 rounded-full ${
+                                    serv.estado === "completado"
+                                      ? "bg-green-500"
+                                      : "bg-purple-500"
+                                  }`}
+                                ></div>
+                                <div className="flex-1">
+                                  <span
+                                    className={`font-medium ${
+                                      serv.estado === "completado"
+                                        ? "text-green-800"
+                                        : "text-gray-800"
+                                    }`}
+                                  >
+                                    {serv.servicio}
+                                  </span>
+                                  <div className="text-sm text-gray-600">
+                                    Cantidad: {serv.cantidad}
+                                    {serv.estado === "completado" &&
+                                      serv.fechaCompletado && (
+                                        <span className="text-green-600 ml-2">
+                                          ✓ Completado el{" "}
+                                          {new Date(
+                                            serv.fechaCompletado
+                                          ).toLocaleDateString()}
+                                        </span>
+                                      )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="text-right">
+                                  <div className="font-semibold text-gray-800">
+                                    {formatCurrency(
+                                      serv.cantidad * (serv.precio || 0)
+                                    )}
+                                  </div>
+                                  {serv.estado === "completado" && (
+                                    <div className="text-xs text-green-600 font-medium">
+                                      Completado
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex gap-1">
+                                  {serv.estado === "pendiente" ? (
+                                    <button
+                                      onClick={() =>
+                                        handleMarkServiceCompleted(sedeIndex, i)
+                                      }
+                                      className="p-2 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 transition-colors"
+                                      title="Marcar como completado"
+                                      aria-label="Marcar como completado"
+                                    >
+                                      <FaRegSquare className="text-lg" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() =>
+                                        handleMarkServicePending(sedeIndex, i)
+                                      }
+                                      className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 border border-green-300 transition-colors"
+                                      title="Marcar como pendiente"
+                                      aria-label="Marcar como pendiente"
+                                    >
+                                      <FaCheckSquare className="text-lg" />
+                                    </button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-semibold text-gray-800">
-                        {formatCurrency(serv.cantidad * (serv.precio || 0))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                    )
+                  );
+                })()}
               </div>
             ) : (
               <p className="text-sm text-gray-500 italic">

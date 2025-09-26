@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import ServicesTable from './components/ServicesTable';
-import SkeletonCard from './components/SkeletonCard';
-import MockServices from './data/Services_data';
-import ServiceFormModal from './components/ServiceFormModal';
-import ServiceViewModal from './components/ServiceViewModal';
-import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js'
+import React, { useState, useEffect } from "react";
+import ServicesTable from "./components/ServicesTable";
+import SkeletonCard from "./components/SkeletonCard";
+import MockServices from "./data/Services_data";
+import ServiceFormModal from "./components/ServiceFormModal";
+import ServiceViewModal from "./components/ServiceViewModal";
+import { showSuccess, confirmDelete } from "../../../../shared/utils/alerts.js";
 
 const ServiciosLoading = () => {
   return (
@@ -19,7 +19,7 @@ const ServiciosLoading = () => {
 const ServicesPage = () => {
   const [loading, setLoading] = useState(true);
   const [servicios, setServicios] = useState([]);
-  const [filtro, setFiltro] = useState('todos');
+  const [filtro, setFiltro] = useState("todos");
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   const [viewModalOpen, setViewModalOpen] = useState(false);
@@ -27,10 +27,29 @@ const ServicesPage = () => {
 
   useEffect(() => {
     setTimeout(() => {
-      setServicios(MockServices);
+      const persisted = localStorage.getItem("services_completed_state");
+      if (persisted) {
+        const completedMap = JSON.parse(persisted);
+        const merged = MockServices.map((svc) => ({
+          ...svc,
+          completed: Boolean(completedMap[svc.id]),
+        }));
+        setServicios(merged);
+      } else {
+        setServicios(MockServices);
+      }
       setLoading(false);
-    }, 1500);
+    }, 500);
   }, []);
+
+  useEffect(() => {
+    if (servicios.length === 0) return;
+    const map = servicios.reduce((acc, svc) => {
+      acc[svc.id] = Boolean(svc.completed);
+      return acc;
+    }, {});
+    localStorage.setItem("services_completed_state", JSON.stringify(map));
+  }, [servicios]);
 
   const handleVer = (id) => {
     const servicio = servicios.find((s) => s.id === id);
@@ -45,22 +64,27 @@ const ServicesPage = () => {
     setModalOpen(true);
   };
 
-const handleEliminar = async (id) => {
-  const confirmed = await confirmDelete('¿Deseas eliminar este servicio?');
-  if (confirmed) {
-    setServicios((prev) => prev.filter((s) => s.id !== id));
-    showSuccess('Servicio eliminado correctamente');
-  }
-};    
+  const handleToggleCompletado = (id) => {
+    setServicios((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
+    );
+  };
 
+  const handleEliminar = async (id) => {
+    const confirmed = await confirmDelete("¿Deseas eliminar este servicio?");
+    if (confirmed) {
+      setServicios((prev) => prev.filter((s) => s.id !== id));
+      showSuccess("Servicio eliminado correctamente");
+    }
+  };
 
   const handleAgregarServicio = (nuevoServicio) => {
     const nuevo = {
       id: servicios.length + 1,
       ...nuevoServicio,
-      tipo: nuevoServicio.categoria.toLowerCase().includes('mantenimiento')
-        ? 'mantenimiento'
-        : 'instalacion',
+      tipo: nuevoServicio.categoria.toLowerCase().includes("mantenimiento")
+        ? "mantenimiento"
+        : "instalacion",
     };
     setServicios((prev) => [...prev, nuevo]);
   };
@@ -68,9 +92,9 @@ const handleEliminar = async (id) => {
   const handleActualizarServicio = (servicioEditado) => {
     const actualizado = {
       ...servicioEditado,
-      tipo: servicioEditado.categoria.toLowerCase().includes('mantenimiento')
-        ? 'mantenimiento'
-        : 'instalacion',
+      tipo: servicioEditado.categoria.toLowerCase().includes("mantenimiento")
+        ? "mantenimiento"
+        : "instalacion",
     };
 
     setServicios((prevServicios) =>
@@ -82,9 +106,7 @@ const handleEliminar = async (id) => {
   };
 
   const serviciosFiltrados =
-    filtro === 'todos'
-      ? servicios
-      : servicios.filter((s) => s.tipo === filtro);
+    filtro === "todos" ? servicios : servicios.filter((s) => s.tipo === filtro);
 
   return (
     <div className="p-6">
@@ -110,9 +132,9 @@ const handleEliminar = async (id) => {
       {/* Filtros con estilo mejorado */}
       <div className="flex justify-center gap-3 mb-8">
         {[
-          { tipo: 'todos', label: 'Todos' },
-          { tipo: 'instalacion', label: 'Servicio de instalación' },
-          { tipo: 'mantenimiento', label: 'Servicio de mantenimiento' },
+          { tipo: "todos", label: "Todos" },
+          { tipo: "instalacion", label: "Servicio de instalación" },
+          { tipo: "mantenimiento", label: "Servicio de mantenimiento" },
         ].map(({ tipo, label }) => (
           <button
             key={tipo}
@@ -120,8 +142,8 @@ const handleEliminar = async (id) => {
             className={`px-5 py-1.5 rounded-full text-sm font-semibold transition border shadow-sm
               ${
                 filtro === tipo
-                  ? 'bg-[#000435] text-white border-[#000435]'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-[#e0e7ff] hover:text-[#000435] hover:border-[#cbd5e1]'
+                  ? "bg-[#000435] text-white border-[#000435]"
+                  : "bg-white text-gray-600 border-gray-300 hover:bg-[#e0e7ff] hover:text-[#000435] hover:border-[#cbd5e1]"
               }`}
           >
             {label}
@@ -138,6 +160,7 @@ const handleEliminar = async (id) => {
           onVer={handleVer}
           onEditar={handleEditar}
           onEliminar={handleEliminar}
+          onToggleCompletado={handleToggleCompletado}
         />
       )}
 
