@@ -5,111 +5,15 @@ import CreatePaymentsModal from './components/CreatePaymentsModal';
 import Pagination from '../../../../shared/components/Pagination'; // Asegúrate de que esta ruta sea correcta
 import toast from 'react-hot-toast'; // Importar react-hot-toast
 import PaymentsDetailModal from './components/PaymentsDetailModal'; // Importa el nuevo modal de detalles
-
-// Mock de datos mejorado para simular la estructura real
-const mockPagosIntegrado = [
-  {
-    cliente: { id: 1, nombre: 'Juan', apellido: 'Pérez', documento: '1012345678' },
-    contratos: [
-      {
-        numero: 'CON-001',
-        pagos: [
-          {
-            id: 1,
-            fecha: '2024-01-15',
-            montoTotal: 1000000, // Monto total del contrato
-            montoAbonado: 250000, // Monto de este pago/abono
-            montoRestante: 750000, // Restante del contrato después de este pago
-            metodoPago: 'Transferencia',
-            estado: 'Registrado',
-            concepto: 'Abono inicial contrato CON-001',
-          },
-          {
-            id: 2,
-            fecha: '2024-02-10',
-            montoTotal: 1000000,
-            montoAbonado: 150000,
-            montoRestante: 600000,
-            metodoPago: 'Efectivo',
-            estado: 'Registrado',
-            concepto: 'Abono cuota febrero CON-001',
-          },
-        ],
-      },
-      {
-        numero: 'CON-002',
-        pagos: [
-          {
-            id: 3,
-            fecha: '2024-03-01',
-            montoTotal: 500000,
-            montoAbonado: 500000,
-            montoRestante: 0,
-            metodoPago: 'PSE',
-            estado: 'Completado',
-            concepto: 'Pago completo contrato CON-002',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    cliente: { id: 2, nombre: 'María', apellido: 'González', documento: '2023456789' },
-    contratos: [
-      {
-        numero: 'CON-003',
-        pagos: [
-          {
-            id: 4,
-            fecha: '2024-04-05',
-            montoTotal: 1200000,
-            montoAbonado: 300000,
-            montoRestante: 900000,
-            metodoPago: 'Tarjeta',
-            estado: 'Registrado',
-            concepto: 'Abono inicial contrato CON-003',
-          },
-          {
-            id: 5,
-            fecha: '2024-05-20',
-            montoTotal: 1200000,
-            montoAbonado: 200000,
-            montoRestante: 700000,
-            metodoPago: 'Transferencia',
-            estado: 'Cancelado', // Ejemplo de pago cancelado
-            concepto: 'Abono cuota mayo CON-003 (cancelado)',
-          },
-        ],
-      },
-    ],
-  },
-  {
-    cliente: { id: 3, nombre: 'Pedro', apellido: 'Ramírez', documento: '3034567890' },
-    contratos: [
-      {
-        numero: 'CON-004',
-        pagos: [
-          {
-            id: 6,
-            fecha: '2024-06-10',
-            montoTotal: 800000,
-            montoAbonado: 800000,
-            montoRestante: 0,
-            metodoPago: 'Efectivo',
-            estado: 'Completado',
-            concepto: 'Pago final contrato CON-004',
-          },
-        ],
-      },
-    ],
-  },
-];
+import { paymentsApi } from './services/paymentsApi';
+import { projectsApi } from '../../../../shared/services/projectsApi';
+import { projectPaymentsApi } from './services/projectPaymentsApi';
 
 const ITEMS_PER_PAGE = 5;
 
 const Payments_InstallmentsPage = () => {
-  const [clientesConContratosYPagos, setClientesConContratosYPagos] = useState(JSON.parse(JSON.stringify(mockPagosIntegrado)));
-  const [loading, setLoading] = useState(false); // Podrías usarlo para estados de carga reales
+  const [clientesConContratosYPagos, setClientesConContratosYPagos] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [mostrarModalPago, setMostrarModalPago] = useState(false);
@@ -117,37 +21,196 @@ const Payments_InstallmentsPage = () => {
   const [showDetailModal, setShowDetailModal] = useState(false); // Data completa del contrato para el modal
   const [detailContractData, setDetailContractData] = useState(null);
 
+  // Cargar datos al montar el componente
+  useEffect(() => {
+    loadPaymentsData();
+  }, []);
+
+  const loadPaymentsData = async () => {
+    try {
+      setLoading(true);
+      
+      // Primero cargar todos los proyectos
+      const projectsResponse = await projectsApi.getAllProjects();
+      const projects = projectsResponse.data || [];
+      
+      console.log('Proyectos obtenidos del backend:', projects);
+      
+      if (projects.length === 0) {
+        setClientesConContratosYPagos([]);
+        return;
+      }
+
+      // Para cada proyecto, obtener sus pagos usando las rutas anidadas
+      const projectsWithPayments = await Promise.all(
+        projects.map(async (project) => {
+          try {
+            console.log(`Obteniendo pagos para proyecto ${project.id}:`, project);
+            const paymentsResponse = await projectPaymentsApi.getProjectPayments(project.id);
+            console.log(`Pagos obtenidos para proyecto ${project.id}:`, paymentsResponse);
+            return {
+              ...project,
+              pagos: paymentsResponse.data || []
+            };
+          } catch (error) {
+            console.warn(`No se pudieron cargar los pagos del proyecto ${project.id}:`, error);
+            return {
+              ...project,
+              pagos: []
+            };
+          }
+        })
+      );
+      
+      console.log('Proyectos con pagos:', projectsWithPayments);
+
+      // Agrupar proyectos por cliente y contrato
+      const grouped = {};
+      projectsWithPayments.forEach(proyecto => {
+        // Si el cliente es solo un string (nombre), crear un objeto cliente temporal
+        let cliente;
+        if (typeof proyecto.cliente === 'string') {
+          cliente = {
+            id_cliente: proyecto.id, // Usar el ID del proyecto como ID temporal del cliente
+            nombre: proyecto.cliente,
+            apellido: '',
+            documento: ''
+          };
+        } else {
+          cliente = proyecto.cliente;
+        }
+        
+        if (!cliente) return;
+        
+        const clienteId = cliente.id_cliente || proyecto.id; // Usar ID del proyecto si no hay ID de cliente
+        
+        if (!grouped[clienteId]) {
+          grouped[clienteId] = {
+            cliente: {
+              id: clienteId,
+              id_cliente: clienteId,
+              nombre: cliente.nombre || '',
+              apellido: cliente.apellido || '',
+              documento: cliente.documento || ''
+            },
+            contratos: {}
+          };
+        }
+        
+        const contratoNumero = proyecto.numeroContrato || proyecto.numero_contrato;
+        if (!grouped[clienteId].contratos[contratoNumero]) {
+          grouped[clienteId].contratos[contratoNumero] = {
+            numero: contratoNumero,
+            id_proyecto: proyecto.id, // Usar el campo 'id' en lugar de 'id_proyecto'
+            montoTotal: Number(proyecto.costos?.total || 0), // Usar la estructura de costos del JSON
+            pagos: []
+          };
+        }
+        
+        // Procesar pagos del proyecto
+        const pagosProcesados = proyecto.pagos.map(pago => {
+          const totalPagado = proyecto.pagos
+            .filter(p => p.estado)
+            .reduce((sum, p) => sum + Number(p.monto), 0);
+          const montoTotal = Number(proyecto.costos?.total || 0);
+          const montoRestante = Math.max(0, montoTotal - totalPagado);
+          
+          return {
+            id: pago.id_pago_abono || pago.id,
+            fecha: pago.fecha,
+            montoTotal: montoTotal,
+            montoAbonado: Number(pago.monto),
+            montoRestante: montoRestante,
+            metodoPago: pago.metodo_pago,
+            estado: pago.estado ? 'Registrado' : 'Cancelado',
+            concepto: `Pago ${pago.metodo_pago}`
+          };
+        });
+        
+        // Si no hay pagos, crear un pago "virtual" para mostrar el proyecto
+        if (pagosProcesados.length === 0) {
+          const montoTotal = Number(proyecto.costos?.total || 0);
+          pagosProcesados.push({
+            id: `virtual-${proyecto.id}`,
+            fecha: 'Sin pagos',
+            montoTotal: montoTotal,
+            montoAbonado: 0,
+            montoRestante: montoTotal,
+            metodoPago: 'Pendiente',
+            estado: 'Sin pagos',
+            concepto: 'Proyecto sin pagos registrados',
+            isVirtual: true, // Marcar como virtual para identificar
+            projectId: proyecto.id // Incluir el ID del proyecto
+          });
+        }
+        
+        grouped[clienteId].contratos[contratoNumero].pagos = pagosProcesados;
+      });
+      
+      // Convertir grouped a array
+      const result = Object.values(grouped).map(clienteEntry => ({
+        cliente: clienteEntry.cliente,
+        contratos: Object.values(clienteEntry.contratos)
+      }));
+      
+      setClientesConContratosYPagos(result);
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+      toast.error('Error al cargar los datos de pagos');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Aplanar los datos para la tabla principal
   const flatPaymentsData = useMemo(() => {
     const allFlatPayments = [];
+    console.log('Procesando clientesConContratosYPagos:', clientesConContratosYPagos);
+    
     clientesConContratosYPagos.forEach(clienteEntry => {
       const { cliente, contratos } = clienteEntry;
+      console.log('Procesando cliente:', cliente);
+      
       contratos.forEach(contrato => {
+        console.log('Procesando contrato:', contrato);
+        
         contrato.pagos.forEach(pago => {
-          allFlatPayments.push({
-            ...pago,
-            numeroContrato: contrato.numero,
-            nombre: cliente.nombre,
-            apellido: cliente.apellido,
-            clienteId: cliente.id,
-            contratoNumero: contrato.numero, // Redundante pero útil para consistencia
-          });
+          const pagoFlat = {
+            id: pago.id || '',
+            fecha: pago.fecha || '',
+            montoTotal: pago.montoTotal || 0,
+            montoAbonado: pago.montoAbonado || 0,
+            montoRestante: pago.montoRestante || 0,
+            metodoPago: pago.metodoPago || '',
+            estado: pago.estado || '',
+            concepto: pago.concepto || '',
+            numeroContrato: contrato.numero || '',
+            nombre: cliente.nombre || '',
+            apellido: cliente.apellido || '',
+            clienteId: cliente.id || '',
+            contratoNumero: contrato.numero || '',
+          };
+          
+          console.log('Pago aplanado creado:', pagoFlat);
+          allFlatPayments.push(pagoFlat);
         });
       });
     });
+    
+    console.log('Todos los pagos aplanados:', allFlatPayments);
     return allFlatPayments;
   }, [clientesConContratosYPagos]);
 
   // Filtrar los pagos según el término de búsqueda
   const filteredPagos = useMemo(() =>
     flatPaymentsData.filter(p =>
-      p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.apellido.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.fecha.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.numeroContrato.toString().includes(searchTerm) ||
-      p.metodoPago.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.concepto.toLowerCase().includes(searchTerm.toLowerCase())
+      (p.nombre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.apellido || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.fecha || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.numeroContrato || '').toString().includes(searchTerm) ||
+      (p.metodoPago || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.estado || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.concepto || '').toLowerCase().includes(searchTerm.toLowerCase())
     ), [flatPaymentsData, searchTerm]);
 
   // Calcular total de páginas para la paginación
@@ -161,10 +224,40 @@ const Payments_InstallmentsPage = () => {
 
   // Manejador para abrir el modal de registro de pago para un contrato específico
   const handleOpenRegisterPaymentForContract = (pagoDeLaFila) => {
+    console.log('Pago de la fila:', pagoDeLaFila);
+    console.log('Clientes disponibles:', clientesConContratosYPagos);
+    
+    // Si es un pago virtual, usar el projectId directamente
+    if (pagoDeLaFila.isVirtual) {
+      const projectId = pagoDeLaFila.projectId;
+      const contratoNumero = pagoDeLaFila.numeroContrato;
+      
+      // Crear datos del modal para proyecto sin pagos
+      setModalContractData({
+        cliente: {
+          id: pagoDeLaFila.clienteId,
+          nombre: pagoDeLaFila.nombre,
+          apellido: pagoDeLaFila.apellido
+        },
+        contrato: {
+          numero: contratoNumero,
+          id_proyecto: projectId,
+          pagos: [],
+          montoTotal: pagoDeLaFila.montoTotal,
+          montoAbonado: 0,
+          montoRestante: pagoDeLaFila.montoRestante,
+        },
+      });
+      setMostrarModalPago(true);
+      return;
+    }
+    
     // 1. Encontrar el cliente y el contrato en la estructura anidada
     const clienteFound = clientesConContratosYPagos.find(c => c.cliente.id === pagoDeLaFila.clienteId);
     if (!clienteFound) {
       console.error('Cliente no encontrado para el pago seleccionado.');
+      console.error('ClienteId buscado:', pagoDeLaFila.clienteId);
+      console.error('IDs de clientes disponibles:', clientesConContratosYPagos.map(c => c.cliente.id));
       toast.error('Error: Cliente no encontrado para el contrato.');
       return;
     }
@@ -193,6 +286,7 @@ const Payments_InstallmentsPage = () => {
       cliente: clienteFound.cliente,
       contrato: {
         numero: contratoFound.numero,
+        id_proyecto: contratoFound.id_proyecto,
         pagos: contratoFound.pagos, // Pasamos TODOS los pagos del contrato
         montoTotal: montoTotalContrato,
         montoAbonado: montoAbonadoContrato,
@@ -256,127 +350,49 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
   };
 
   // Manejador para añadir un nuevo abono a la data principal
-  const handleAddPagoToData = (newAbonoInfo) => {
+  const handleAddPagoToData = async (newAbonoInfo) => {
     console.log('Recibido en el padre para guardar (nuevo abono):', newAbonoInfo);
 
-    setClientesConContratosYPagos(prevClientesData => {
-      const updatedClientes = JSON.parse(JSON.stringify(prevClientesData)); // Copia profunda
-
-      const clienteIndex = updatedClientes.findIndex(c => c.cliente.id === newAbonoInfo.clienteId);
-      if (clienteIndex === -1) {
-        console.error('Cliente no encontrado para el nuevo abono.');
-        toast.error('Error al guardar: Cliente no encontrado.');
-        return prevClientesData;
-      }
-      const cliente = updatedClientes[clienteIndex];
-
-      const contratoIndex = cliente.contratos.findIndex(c => c.numero === newAbonoInfo.numeroContrato);
-      if (contratoIndex === -1) {
-        console.error('Contrato no encontrado para el nuevo abono.');
-        toast.error('Error al guardar: Contrato no encontrado.');
-        return prevClientesData;
-      }
-      const contrato = cliente.contratos[contratoIndex];
-
-      // Calcular el nuevo ID para el abono
-      let newId = 1;
-      if (flatPaymentsData.length > 0) {
-        newId = Math.max(...flatPaymentsData.map(p => p.id)) + 1;
-      }
-
-      // Crear el nuevo registro de abono
-      const newAbonoRecord = {
-        id: newId,
+    try {
+      // Usar la ruta anidada para crear el pago
+      await projectPaymentsApi.createProjectPayment(newAbonoInfo.id_proyecto, {
         fecha: newAbonoInfo.fecha,
-        montoTotal: newAbonoInfo.montoTotalContrato, // El monto total del contrato original
-        montoAbonado: newAbonoInfo.montoAbonado, // El monto de ESTE abono
-        montoRestante: newAbonoInfo.montoRestanteCalculado, // El restante después de este abono
-        metodoPago: newAbonoInfo.metodoPago,
-        estado: 'Registrado', // Nuevo abono siempre inicia como 'Registrado'
-        concepto: newAbonoInfo.concepto,
-      };
-
-      contrato.pagos.push(newAbonoRecord); // Añadir el nuevo abono a la lista de pagos del contrato
-
-      // Opcional: Actualizar el estado del pago principal si lo modelaras como un solo pago principal
-      // y abonos como sub-registros. En tu modelo actual, cada abono es un pago.
-      // El estado del contrato como "pagado/parcial" se refleja en el montoRestante.
-
-      // Después de añadir el abono, actualizamos la `modalContractData` para que el modal se refresque
-      // con el historial y los montos actualizados.
-      const updatedMontoAbonadoContrato = contrato.pagos
-        .filter(p => p.estado !== 'Cancelado')
-        .reduce((sum, p) => sum + p.montoAbonado, 0);
-      const updatedMontoRestanteContrato = Math.max(0, newAbonoInfo.montoTotalContrato - updatedMontoAbonadoContrato);
-
-      setModalContractData(prevData => ({
-        ...prevData,
-        contrato: {
-          ...prevData.contrato,
-          pagos: [...contrato.pagos], // Asegura que es una nueva referencia
-          montoAbonado: updatedMontoAbonadoContrato,
-          montoRestante: updatedMontoRestanteContrato,
-        }
-      }));
-
-      return updatedClientes;
-    });
-
-    toast.success('Abono registrado correctamente.');
-    // No cerramos el modal aquí, el usuario puede seguir agregando abonos
-    // setMostrarModalPago(false);
-    // setModalContractData(null);
+        monto: newAbonoInfo.montoAbonado,
+        metodo_pago: newAbonoInfo.metodoPago,
+        estado: true
+      });
+      toast.success('Abono registrado correctamente.');
+      loadPaymentsData(); // Recargar datos
+    } catch (error) {
+      console.error('Error registrando pago:', error);
+      toast.error('Error al registrar el abono');
+    }
   };
 
   // Manejador para cancelar un pago
-  const handleCancelPayment = (paymentIdToCancel, contratoNumero, clienteId) => {
-    setClientesConContratosYPagos(prevClientesData => {
-      const updatedClientes = JSON.parse(JSON.stringify(prevClientesData));
-
-      const clienteIndex = updatedClientes.findIndex(c => c.cliente.id === clienteId);
-      if (clienteIndex === -1) {
-        toast.error('Error: Cliente no encontrado para la cancelación.');
-        return prevClientesData;
+  const handleCancelPayment = async (paymentIdToCancel, contratoNumero, clienteId) => {
+    try {
+      // Buscar el proyecto para obtener el projectId
+      const clienteFound = clientesConContratosYPagos.find(c => c.cliente.id === clienteId);
+      if (!clienteFound) {
+        toast.error('Cliente no encontrado.');
+        return;
       }
-      const cliente = updatedClientes[clienteIndex];
-
-      const contratoIndex = cliente.contratos.findIndex(c => c.numero === contratoNumero);
-      if (contratoIndex === -1) {
-        toast.error('Error: Contrato no encontrado para la cancelación.');
-        return prevClientesData;
-      }
-      const contrato = cliente.contratos[contratoIndex];
-
-      const pagoIndex = contrato.pagos.findIndex(p => p.id === paymentIdToCancel);
-      if (pagoIndex === -1) {
-        toast.error('Error: Pago no encontrado para la cancelación.');
-        return prevClientesData;
-      }
-
-      // Marcar el pago como cancelado
-      contrato.pagos[pagoIndex].estado = 'Cancelado';
-
-      // Recalcular los montos del contrato después de la cancelación
-      const montoTotalContrato = contrato.pagos[0]?.montoTotal || 0;
-      const montoAbonadoContrato = contrato.pagos
-        .filter(p => p.estado !== 'Cancelado')
-        .reduce((sum, p) => sum + p.montoAbonado, 0);
-      const montoRestanteContrato = Math.max(0, montoTotalContrato - montoAbonadoContrato);
-
-      // Actualizar la `modalContractData` para reflejar los cambios en el modal
-      setModalContractData(prevData => ({
-        ...prevData,
-        contrato: {
-          ...prevData.contrato,
-          pagos: [...contrato.pagos], // Pasamos la nueva referencia para forzar re-render
-          montoAbonado: montoAbonadoContrato,
-          montoRestante: montoRestanteContrato,
-        }
-      }));
-
       
-      return updatedClientes;
-    });
+      const contratoFound = clienteFound.contratos.find(c => c.numero === contratoNumero);
+      if (!contratoFound) {
+        toast.error('Contrato no encontrado.');
+        return;
+      }
+      
+      // Usar la ruta anidada para cancelar el pago
+      await projectPaymentsApi.cancelProjectPayment(contratoFound.id_proyecto, paymentIdToCancel);
+      toast.success('Pago cancelado correctamente.');
+      loadPaymentsData();
+    } catch (error) {
+      console.error('Error cancelando pago:', error);
+      toast.error('Error al cancelar el pago');
+    }
   };
 
 

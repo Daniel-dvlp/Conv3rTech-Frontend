@@ -35,38 +35,25 @@ const PagosTable = ({ pagos, onRegisterNewAbono, handleOpenPaymentDetails  }) =>
               <td className="px-4 py-2">{p.fecha}</td>
               <td className="px-4 py-2">{p.numeroContrato}</td>
               <td className="px-4 py-2">{p.nombre} {p.apellido}</td>
-              <td className="px-4 py-2">{formatCurrency(p.montoAbonado)}</td> {/* Formato de moneda */}
+              <td className="px-4 py-2">{formatCurrency(p.montoAbonado)}</td>
               <td className="px-4 py-2">{p.metodoPago}</td>
               <td className="px-4 py-2">
-                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full
-                  ${p.estado === 'Registrado'
-                    ? 'bg-green-100 text-green-800'
-                    : p.estado === 'Cancelado'
-                      ? 'bg-red-100 text-red-800'
-                      : p.estado === 'Completado' // Nuevo estado si el montoRestante es 0
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                  }`}>
+                <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${p.estado === 'Registrado' ? 'bg-green-100 text-green-800' : p.estado === 'Cancelado' ? 'bg-red-100 text-red-800' : p.estado === 'Completado' ? 'bg-blue-100 text-blue-800' : p.estado === 'Sin pagos' ? 'bg-gray-100 text-gray-800' : 'bg-yellow-100 text-yellow-800'}`}>
                   {p.estado}
                 </span>
               </td>
               <td className="px-4 py-2">
-                <div className="flex items-center justify-center gap-2"> {/* Contenedor para los botones */}
-                  {/* Botón Ver Detalles */}
+                <div className="flex items-center justify-center gap-2">
                   <button className='text-blue-600 hover:text-blue-800' onClick={() => handleOpenPaymentDetails(p.numeroContrato, p.clienteId)}>
                     <FaEye />
                   </button>
-                  {/* Nuevo Botón para Registrar Abono */}
-                  {/* {p.estado !== 'Completado' && p.estado !== 'Cancelado' && ( // Solo si no está completado/cancelado */}
-                    <button
-                      // Deshabilitado si ya está completado o cancelado
-                      className="text-conv3rge-drak hover:text-conv3ge-dark-800"
-                      onClick={() => onRegisterNewAbono(p)} // Llama a la función del padre y pasa el pago actual
-                      title="Registrar Abono"
-                    >
-                      <FaPlus />
-                    </button>
-                  
+                  <button
+                    className="text-conv3rge-drak hover:text-conv3ge-dark-800"
+                    onClick={() => onRegisterNewAbono(p)}
+                    title="Registrar Abono"
+                  >
+                    <FaPlus />
+                  </button>
                 </div>
               </td>
             </tr>
