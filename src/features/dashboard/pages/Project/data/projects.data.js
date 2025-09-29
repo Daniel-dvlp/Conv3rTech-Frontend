@@ -11,7 +11,6 @@ export const mockProjects = [
     fechaFin: '2025-07-15',
     estado: 'En Progreso',
     progreso: 75,
-    // --- CAMPOS AÑADIDOS ---
     prioridad: 'Alta',
     ubicacion: 'Carrera 48 #20-115, Oficinas 801-805, Medellín',
     empleadosAsociados: [
@@ -19,7 +18,6 @@ export const mockProjects = [
         { nombre: 'Carlos R.', avatarSeed: 'Carlos' },
         { nombre: 'Luis P.', avatarSeed: 'Luis' },
     ],
-    // ----------------------
     descripcion: 'Instalación completa de 32 cámaras de seguridad IP, DVR y centro de monitoreo para las nuevas oficinas de la constructora.',
     materiales: [
       { item: 'Cámara IP Domo 4MP', cantidad: 32, precio: 150000 },
@@ -31,7 +29,26 @@ export const mockProjects = [
       { servicio: 'Configuración de red y DVR', cantidad: 1, precio: 300000 },
     ],
     costos: { manoDeObra: 500000 },
-    observaciones: 'El cliente solicitó añadir 2 cámaras exteriores adicionales. Pendiente de cotización.'
+    observaciones: 'El cliente solicitó añadir 2 cámaras exteriores adicionales. Pendiente de cotización.',
+    sedes: [
+      {
+        nombre: 'Oficina Principal',
+        ubicacion: 'Carrera 48 #20-115, Oficina 801',
+        materialesAsignados: [
+          { item: 'Cámara IP Domo 4MP', cantidad: 20 },
+          { item: 'DVR 32 Canales', cantidad: 1 },
+          { item: 'Cable UTP Cat 6 (caja)', cantidad: 3 },
+        ]
+      },
+      {
+        nombre: 'Oficina Secundaria',
+        ubicacion: 'Carrera 48 #20-115, Oficina 805',
+        materialesAsignados: [
+          { item: 'Cámara IP Domo 4MP', cantidad: 12 },
+          { item: 'Cable UTP Cat 6 (caja)', cantidad: 2 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-002',
@@ -57,7 +74,25 @@ export const mockProjects = [
       { servicio: 'Revisión por punto eléctrico', cantidad: 150, precio: 15000 },
     ],
     costos: { manoDeObra: 800000 },
-    observaciones: 'Se completó el trabajo sin contratiempos y dentro del presupuesto.'
+    observaciones: 'Se completó el trabajo sin contratiempos y dentro del presupuesto.',
+    sedes: [
+      {
+        nombre: 'Ala de Emergencias',
+        ubicacion: 'Piso 1',
+        materialesAsignados: [
+          { item: 'Breakers 20A', cantidad: 10 },
+          { item: 'Terminales de Cobre', cantidad: 30 },
+        ]
+      },
+      {
+        nombre: 'Ala de Hospitalización',
+        ubicacion: 'Piso 2',
+        materialesAsignados: [
+          { item: 'Breakers 20A', cantidad: 5 },
+          { item: 'Terminales de Cobre', cantidad: 20 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-003',
@@ -85,7 +120,25 @@ export const mockProjects = [
       { servicio: 'Instalación por punto de luz', cantidad: 250, precio: 20000 },
     ],
     costos: { manoDeObra: 1200000 },
-    observaciones: 'Pendiente de aprobación final del diseño por parte del cliente.'
+    observaciones: 'Pendiente de aprobación final del diseño por parte del cliente.',
+    sedes: [
+      {
+        nombre: 'Piso 1',
+        ubicacion: 'Oficinas A',
+        materialesAsignados: [
+          { item: 'Panel LED 60x60', cantidad: 100 },
+          { item: 'Tira LED 5m', cantidad: 25 },
+        ]
+      },
+      {
+        nombre: 'Piso 2',
+        ubicacion: 'Oficinas B',
+        materialesAsignados: [
+          { item: 'Panel LED 60x60', cantidad: 100 },
+          { item: 'Tira LED 5m', cantidad: 25 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-004',
@@ -112,7 +165,23 @@ export const mockProjects = [
       { servicio: 'Revisión de protocolo de CCTV', cantidad: 1, precio: 1500000 },
     ],
     costos: { manoDeObra: 2500000 },
-    observaciones: 'Se encontraron 3 vulnerabilidades críticas. Se entregó informe detallado.'
+    observaciones: 'Se encontraron 3 vulnerabilidades críticas. Se entregó informe detallado.',
+    sedes: [
+      {
+        nombre: 'Sede Principal',
+        ubicacion: 'Calle 43A #7-50, Medellín',
+        materialesAsignados: [
+          { item: 'Licencia Software de Vulnerabilidades', cantidad: 1 },
+        ]
+      },
+      {
+        nombre: 'Sucursal Norte',
+        ubicacion: 'Carrera 43A #7-50, Medellín',
+        materialesAsignados: [
+          { item: 'Licencia Software de Vulnerabilidades', cantidad: 1 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-005',
@@ -141,7 +210,27 @@ export const mockProjects = [
       { servicio: 'Conexión e interconexión del sistema', cantidad: 1, precio: 2000000 },
     ],
     costos: { manoDeObra: 3000000 },
-    observaciones: 'El sistema está generando un 15% más de la energía proyectada.'
+    observaciones: 'El sistema está generando un 15% más de la energía proyectada.',
+    sedes: [
+      {
+        nombre: 'Granja Principal',
+        ubicacion: 'Vereda El Salado, Copacabana',
+        materialesAsignados: [
+          { item: 'Panel Solar 550W', cantidad: 20 },
+          { item: 'Inversor de Corriente 10kW', cantidad: 1 },
+          { item: 'Batería de Litio', cantidad: 4 },
+        ]
+      },
+      {
+        nombre: 'Granja Secundaria',
+        ubicacion: 'Vereda El Salado, Copacabana',
+        materialesAsignados: [
+          { item: 'Panel Solar 550W', cantidad: 20 },
+          { item: 'Inversor de Corriente 10kW', cantidad: 1 },
+          { item: 'Batería de Litio', cantidad: 4 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-006',
@@ -170,7 +259,27 @@ export const mockProjects = [
       { servicio: 'Configuración de software y tarjetas', cantidad: 1, precio: 400000 },
     ],
     costos: { manoDeObra: 600000 },
-    observaciones: 'A la espera del primer pago para comprar los materiales.'
+    observaciones: 'A la espera del primer pago para comprar los materiales.',
+    sedes: [
+      {
+        nombre: 'Edificio Principal',
+        ubicacion: 'Calle 50 # 52-21, Itagüí',
+        materialesAsignados: [
+          { item: 'Lector de Tarjetas RFID', cantidad: 12 },
+          { item: 'Cerradura Electromagnética', cantidad: 12 },
+          { item: 'Controlador de Acceso', cantidad: 1 },
+        ]
+      },
+      {
+        nombre: 'Edificio Secundario',
+        ubicacion: 'Calle 50 # 52-21, Itagüí',
+        materialesAsignados: [
+          { item: 'Lector de Tarjetas RFID', cantidad: 12 },
+          { item: 'Cerradura Electromagnética', cantidad: 12 },
+          { item: 'Controlador de Acceso', cantidad: 1 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-007',
@@ -201,7 +310,27 @@ export const mockProjects = [
       { servicio: 'Certificación de Red', cantidad: 1, precio: 1800000 },
     ],
     costos: { manoDeObra: 5000000 },
-    observaciones: 'Proyecto entregado exitosamente dos semanas antes de la fecha límite.'
+    observaciones: 'Proyecto entregado exitosamente dos semanas antes de la fecha límite.',
+    sedes: [
+      {
+        nombre: 'Campus Principal',
+        ubicacion: 'Campus Principal, Km 5 Vía a Puerto Colombia',
+        materialesAsignados: [
+          { item: 'Cable Fibra Óptica (metro)', cantidad: 2000 },
+          { item: 'Switch de Fibra 24-Port', cantidad: 4 },
+          { item: 'Conectores LC', cantidad: 96 },
+        ]
+      },
+      {
+        nombre: 'Edificio A',
+        ubicacion: 'Edificio A, Campus Principal',
+        materialesAsignados: [
+          { item: 'Cable Fibra Óptica (metro)', cantidad: 1000 },
+          { item: 'Switch de Fibra 24-Port', cantidad: 2 },
+          { item: 'Conectores LC', cantidad: 48 },
+        ]
+      }
+    ]
   },
     {
     id: 'P-008',
@@ -228,7 +357,25 @@ export const mockProjects = [
       { servicio: 'Instalación y configuración por punto', cantidad: 20, precio: 70000 }
     ],
     costos: { manoDeObra: 1600000 },
-    observaciones: 'Se requiere visita técnica para optimizar cobertura en bodegas.'
+    observaciones: 'Se requiere visita técnica para optimizar cobertura en bodegas.',
+    sedes: [
+      {
+        nombre: 'Parque Industrial Zona Franca',
+        ubicacion: 'Parque Industrial Zona Franca, Rionegro',
+        materialesAsignados: [
+          { item: 'Access Point WiFi 6', cantidad: 20 },
+          { item: 'Router Empresarial', cantidad: 2 },
+        ]
+      },
+      {
+        nombre: 'Edificio B',
+        ubicacion: 'Edificio B, Parque Industrial Zona Franca',
+        materialesAsignados: [
+          { item: 'Access Point WiFi 6', cantidad: 10 },
+          { item: 'Router Empresarial', cantidad: 1 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-009',
@@ -254,7 +401,25 @@ export const mockProjects = [
       { servicio: 'Instalación de sensores', cantidad: 25, precio: 30000 }
     ],
     costos: { manoDeObra: 1000000 },
-    observaciones: 'El cliente pidió incluir sensores perimetrales adicionales.'
+    observaciones: 'El cliente pidió incluir sensores perimetrales adicionales.',
+    sedes: [
+      {
+        nombre: 'Residencial Altos del Norte',
+        ubicacion: 'Calle 24 #65-100, Medellín',
+        materialesAsignados: [
+          { item: 'Sensor Movimiento Inalámbrico', cantidad: 25 },
+          { item: 'Central de Alarma', cantidad: 1 },
+        ]
+      },
+      {
+        nombre: 'Residencial Centro',
+        ubicacion: 'Calle 24 #65-100, Medellín',
+        materialesAsignados: [
+          { item: 'Sensor Movimiento Inalámbrico', cantidad: 25 },
+          { item: 'Central de Alarma', cantidad: 1 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-010',
@@ -280,7 +445,23 @@ export const mockProjects = [
       { servicio: 'Desmonte e instalación de tableros', cantidad: 10, precio: 150000 }
     ],
     costos: { manoDeObra: 2000000 },
-    observaciones: 'Esperando aprobación de planos eléctricos actualizados.'
+    observaciones: 'Esperando aprobación de planos eléctricos actualizados.',
+    sedes: [
+      {
+        nombre: 'Centro Comercial La Estación',
+        ubicacion: 'Cra. 49 #33-50, Itagüí',
+        materialesAsignados: [
+          { item: 'Tablero Inteligente 3F', cantidad: 10 },
+        ]
+      },
+      {
+        nombre: 'Centro Comercial Sur',
+        ubicacion: 'Cra. 49 #33-50, Itagüí',
+        materialesAsignados: [
+          { item: 'Tablero Inteligente 3F', cantidad: 10 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-011',
@@ -306,7 +487,23 @@ export const mockProjects = [
       { servicio: 'Instalación de postes', cantidad: 40, precio: 80000 }
     ],
     costos: { manoDeObra: 2500000 },
-    observaciones: 'Proyecto completado antes de temporada vacacional.'
+    observaciones: 'Proyecto completado antes de temporada vacacional.',
+    sedes: [
+      {
+        nombre: 'Parque Ecológico El Encanto',
+        ubicacion: 'Kilómetro 6, Vía Las Palmas',
+        materialesAsignados: [
+          { item: 'Poste Solar Autónomo', cantidad: 40 },
+        ]
+      },
+      {
+        nombre: 'Parque Sur',
+        ubicacion: 'Kilómetro 6, Vía Las Palmas',
+        materialesAsignados: [
+          { item: 'Poste Solar Autónomo', cantidad: 40 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-012',
@@ -331,7 +528,23 @@ export const mockProjects = [
       { servicio: 'Instalación y configuración por punto', cantidad: 10, precio: 100000 }
     ],
     costos: { manoDeObra: 1200000 },
-    observaciones: 'Requiere conexión con software interno de la empresa.'
+    observaciones: 'Requiere conexión con software interno de la empresa.',
+    sedes: [
+      {
+        nombre: 'Torre Empresarial Nova',
+        ubicacion: 'Calle 50 # 36-40, Medellín',
+        materialesAsignados: [
+          { item: 'Lector Biométrico Facial', cantidad: 10 },
+        ]
+      },
+      {
+        nombre: 'Edificio A',
+        ubicacion: 'Edificio A, Torre Empresarial Nova',
+        materialesAsignados: [
+          { item: 'Lector Biométrico Facial', cantidad: 5 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-013',
@@ -357,7 +570,23 @@ export const mockProjects = [
       { servicio: 'Instalación y calibración', cantidad: 15, precio: 70000 }
     ],
     costos: { manoDeObra: 1800000 },
-    observaciones: 'Se realizará capacitación al personal interno.'
+    observaciones: 'Se realizará capacitación al personal interno.',
+    sedes: [
+      {
+        nombre: 'Fábrica de Plásticos Norte',
+        ubicacion: 'Zona Industrial Norte, Medellín',
+        materialesAsignados: [
+          { item: 'Medidor Inteligente Trifásico', cantidad: 15 },
+        ]
+      },
+      {
+        nombre: 'Almacén Central',
+        ubicacion: 'Almacén Central, Zona Industrial Norte',
+        materialesAsignados: [
+          { item: 'Medidor Inteligente Trifásico', cantidad: 15 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-014',
@@ -382,7 +611,23 @@ export const mockProjects = [
       { servicio: 'Instalación y programación', cantidad: 3, precio: 200000 }
     ],
     costos: { manoDeObra: 1000000 },
-    observaciones: 'Pendiente integración con asistentes de voz.'
+    observaciones: 'Pendiente integración con asistentes de voz.',
+    sedes: [
+      {
+        nombre: 'Vereda El Tablazo, Rionegro',
+        ubicacion: 'Vereda El Tablazo, Rionegro',
+        materialesAsignados: [
+          { item: 'Controlador Smart Home', cantidad: 3 },
+        ]
+      },
+      {
+        nombre: 'Vereda Sur',
+        ubicacion: 'Vereda Sur, Rionegro',
+        materialesAsignados: [
+          { item: 'Controlador Smart Home', cantidad: 3 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-015',
@@ -407,7 +652,23 @@ export const mockProjects = [
       { servicio: 'Revisión por cámara', cantidad: 24, precio: 30000 }
     ],
     costos: { manoDeObra: 900000 },
-    observaciones: 'Se reemplazaron 2 cámaras por fallas técnicas.'
+    observaciones: 'Se reemplazaron 2 cámaras por fallas técnicas.',
+    sedes: [
+      {
+        nombre: 'Colegio San Rafael',
+        ubicacion: 'Calle 12 #34-89, Bello',
+        materialesAsignados: [
+          { item: 'Cable Coaxial RG6', cantidad: 10 },
+        ]
+      },
+      {
+        nombre: 'Edificio A',
+        ubicacion: 'Edificio A, Colegio San Rafael',
+        materialesAsignados: [
+          { item: 'Cable Coaxial RG6', cantidad: 5 },
+        ]
+      }
+    ]
   },
   {
     id: 'P-016',
@@ -432,6 +693,22 @@ export const mockProjects = [
       { servicio: 'Instalación y prueba por punto', cantidad: 10, precio: 90000 }
     ],
     costos: { manoDeObra: 1200000 },
-    observaciones: 'Importante integrarlo con alarma general del edificio.'
+    observaciones: 'Importante integrarlo con alarma general del edificio.',
+    sedes: [
+      {
+        nombre: 'Centro de Datos NetPro',
+        ubicacion: 'Carrera 42 #8-35, Medellín',
+        materialesAsignados: [
+          { item: 'Sensor de Inundación', cantidad: 10 },
+        ]
+      },
+      {
+        nombre: 'Servidor Principal',
+        ubicacion: 'Servidor Principal, Carrera 42 #8-35',
+        materialesAsignados: [
+          { item: 'Sensor de Inundación', cantidad: 10 },
+        ]
+      }
+    ]
   }
 ];

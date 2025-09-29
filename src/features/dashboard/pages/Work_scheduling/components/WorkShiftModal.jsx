@@ -1,126 +1,124 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaSave, FaTrash, FaSyncAlt, FaUser, FaCalendarAlt, FaClock } from 'react-icons/fa';
-import { RRule, RRuleSet, rrulestr } from 'rrule';
-
-const frequencies = [
-  { value: 'DAILY', label: 'Diariamente' },
-  { value: 'WEEKLY', label: 'Semanalmente' },
-  { value: 'MONTHLY', label: 'Mensualmente' },
-];
-const weekDays = [
-  { value: 'MO', label: 'L' },
-  { value: 'TU', label: 'M' },
-  { value: 'WE', label: 'X' },
-  { value: 'TH', label: 'J' },
-  { value: 'FR', label: 'V' },
-  { value: 'SA', label: 'S' },
-  { value: 'SU', label: 'D' },
-];
+import { FaTimes, FaSave, FaTrash, FaUser, FaCalendarAlt, FaClock } from 'react-icons/fa';
+import { showToast, showAlert } from '../../../../../shared/utils/alertas';
 
 const WorkShiftModal = ({ isOpen, onClose, onSave, onDelete, employees, initialData, mode = 'create' }) => {
   const [form, setForm] = useState({
     employeeId: '',
-    role: '',
     start: '',
     end: '',
-    repeat: false,
-    freq: 'WEEKLY',
-    interval: 1,
-    byweekday: [],
-    until: '',
   });
   const [errors, setErrors] = useState({});
+  const [recurrence, setRecurrence] = useState({ repeat: false, frequency: 'weekly', days: [], until: '' });
 
   useEffect(() => {
     if (initialData) {
       setForm({
         employeeId: initialData.employeeId || '',
-        role: initialData.role || '',
         start: initialData.start || '',
         end: initialData.end || '',
-        repeat: !!initialData.rrule,
-        freq: initialData.rrule ? rrulestr(initialData.rrule).options.freq === 2 ? 'WEEKLY' : (rrulestr(initialData.rrule).options.freq === 3 ? 'MONTHLY' : 'DAILY') : 'WEEKLY',
-        interval: initialData.rrule ? rrulestr(initialData.rrule).options.interval : 1,
-        byweekday: initialData.rrule ? (rrulestr(initialData.rrule).options.byweekday || []) : [],
-        until: initialData.rrule ? (rrulestr(initialData.rrule).options.until ? rrulestr(initialData.rrule).options.until.toISOString().slice(0,10) : '') : '',
       });
+      setRecurrence({ repeat: false, frequency: 'weekly', days: [], until: '' });
     } else {
-      setForm({
-        employeeId: '', role: '', start: '', end: '', repeat: false, freq: 'WEEKLY', interval: 1, byweekday: [], until: ''
-      });
+      setForm({ employeeId: '', start: '', end: '' });
+      setRecurrence({ repeat: false, frequency: 'weekly', days: [], until: '' });
     }
     setErrors({});
   }, [initialData, isOpen]);
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-    setErrors(prev => ({ ...prev, [name]: undefined }));
-  };
-  
-  const handleWeekdayToggle = (day) => {
-    setForm(prev => ({
-      ...prev,
-      byweekday: prev.byweekday.includes(day)
-        ? prev.byweekday.filter(d => d !== day)
-        : [...prev.byweekday, day]
-    }));
-  };
-  
   const validate = () => {
     const errs = {};
     if (!form.employeeId) errs.employeeId = 'Selecciona un empleado';
     if (!form.start) errs.start = 'Selecciona fecha y hora de inicio';
     if (!form.end) errs.end = 'Selecciona fecha y hora de fin';
-    if (form.repeat && form.byweekday.length === 0 && form.freq === 'WEEKLY') errs.byweekday = 'Selecciona al menos un día';
-    if (form.repeat && !form.until) errs.until = 'Selecciona fecha de finalización';
+    if (form.start && form.end && new Date(form.start) >= new Date(form.end)) errs.end = 'La hora de fin debe ser mayor a la de inicio';
+    // Recurrence validations
+    if (recurrence.repeat) {
+      if (recurrence.frequency === 'weekly' && (!recurrence.days || recurrence.days.length === 0)) {
+        errs.recurrence = 'Selecciona al menos un día para la recurrencia semanal';
+      }
+      if (recurrence.until && form.start && new Date(recurrence.until) < new Date(form.start)) {
+        errs.until = 'La fecha de fin de recurrencia debe ser igual o posterior a la fecha de inicio';
+      }
+    }
     return errs;
   };
-  
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: undefined }));
+  };
+
+  const handleRecurrenceChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    if (name === 'repeat') {
+      setRecurrence(prev => ({ ...prev, repeat: checked }));
+    } else if (name === 'frequency') {
+      setRecurrence(prev => ({ ...prev, frequency: value }));
+    } else if (name.startsWith('day-')) {
+      const day = value;
+      setRecurrence(prev => ({
+        ...prev,
+        days: checked ? [...prev.days, day] : prev.days.filter(d => d !== day)
+      }));
+    } else if (name === 'until') {
+      setRecurrence(prev => ({ ...prev, until: value }));
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const errs = validate();
     setErrors(errs);
-    if (Object.keys(errs).length > 0) return;
-    
-    // RRULE
-    let rrule = undefined;
-    if (form.repeat) {
-      const options = {
-        freq: form.freq === 'DAILY' ? RRule.DAILY : form.freq === 'WEEKLY' ? RRule.WEEKLY : RRule.MONTHLY,
-        interval: Number(form.interval),
-        dtstart: new Date(form.start),
-        until: form.until ? new Date(form.until + 'T23:59:59') : undefined,
-      };
-      if (form.freq === 'WEEKLY') options.byweekday = form.byweekday;
-      rrule = new RRule(options).toString();
+    if (Object.keys(errs).length > 0) {
+      showToast('Por favor, corrige los errores del formulario.', 'error');
+      return;
     }
-    
     const employee = employees.find(e => e.id === Number(form.employeeId));
+    // Recurrence logic (for now, just pass recurrence info)
     onSave({
       id: initialData?.id || `shift-${Date.now()}`,
       title: employee?.name || '',
       start: form.start,
       end: form.end,
-      rrule,
       backgroundColor: employee?.color,
       borderColor: employee?.color,
       extendedProps: {
         employeeId: Number(form.employeeId),
         role: employee?.role || '',
-        type: 'regular'
+        documento: employee?.documento || '',
+        recurrence: recurrence.repeat ? { frequency: recurrence.frequency, days: recurrence.days, until: recurrence.until } : null
       }
     });
+    showToast(mode === 'edit' ? 'Turno actualizado exitosamente' : 'Turno creado exitosamente', 'success');
   };
 
-  return isOpen ? (
+  const handleDelete = async () => {
+    const result = await showAlert({
+      title: '¿Estás seguro?',
+      text: '¿Deseas eliminar este turno? Esta acción no se puede deshacer.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+    });
+    if (result.isConfirmed) {
+      onDelete(initialData?.id);
+      showToast('Turno eliminado exitosamente', 'success');
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-sm flex flex-col max-h-[85vh]" onClick={e => e.stopPropagation()}>
         {/* Header */}
         <header className="flex justify-between items-center p-3 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-lg flex items-center justify-center">
-              <FaSyncAlt className="text-white text-xs" />
+              <FaUser className="text-white text-xs" />
             </div>
             <h2 className="text-base font-bold text-gray-800">
               {mode === 'edit' ? 'Editar Turno' : 'Crear Turno'}
@@ -133,21 +131,20 @@ const WorkShiftModal = ({ isOpen, onClose, onSave, onDelete, employees, initialD
             <FaTimes />
           </button>
         </header>
-
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex-1 p-3 space-y-3">
           {/* Empleado */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
-              <FaUser className="text-yellow-600" />
-              Empleado
-            </label>
+          <div className="relative">
+            <label htmlFor="employeeId" className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">Empleado <span aria-label="Ayuda" tabIndex="0" role="tooltip" className="ml-1 text-blue-500 cursor-pointer" title="Selecciona el empleado al que se le asigna el turno.">ⓘ</span></label>
             <select 
               name="employeeId" 
+              id="employeeId"
               value={form.employeeId} 
               onChange={handleChange} 
-              className="w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400"
+              className={`w-full border border-gray-200 rounded-lg p-2 text-sm focus:ring-2 focus:ring-yellow-400 focus:border-yellow-400 ${errors.employeeId ? 'border-red-500 ring-2 ring-red-300' : ''}`}
               required
+              aria-invalid={!!errors.employeeId}
+              aria-describedby="error-employeeId"
             >
               <option value="">Selecciona un empleado...</option>
               {employees.map(emp => (
@@ -156,26 +153,13 @@ const WorkShiftModal = ({ isOpen, onClose, onSave, onDelete, employees, initialD
                 </option>
               ))}
             </select>
-            {errors.employeeId && <span className="text-xs text-red-500">{errors.employeeId}</span>}
+            {errors.employeeId && <span id="error-employeeId" className="text-red-500 text-xs flex items-center gap-1 mt-1"><span role="img" aria-label="error">❌</span> {errors.employeeId}</span>}
           </div>
-
-          {/* Rol */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-700 mb-1">Rol</label>
-            <input 
-              type="text" 
-              value={form.role || (employees.find(e => e.id === Number(form.employeeId))?.role || '')} 
-              readOnly 
-              className="w-full border border-gray-200 rounded-lg p-2 text-sm bg-gray-50" 
-            />
-          </div>
-
           {/* Fechas y horas */}
           <div className="grid grid-cols-2 gap-2">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
-                <FaCalendarAlt className="text-yellow-600" />
-                Inicio
+                <FaCalendarAlt className="text-yellow-600" /> Inicio
               </label>
               <input 
                 type="datetime-local" 
@@ -189,8 +173,7 @@ const WorkShiftModal = ({ isOpen, onClose, onSave, onDelete, employees, initialD
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1 flex items-center gap-1">
-                <FaClock className="text-yellow-600" />
-                Fin
+                <FaClock className="text-yellow-600" /> Fin
               </label>
               <input 
                 type="datetime-local" 
@@ -203,110 +186,74 @@ const WorkShiftModal = ({ isOpen, onClose, onSave, onDelete, employees, initialD
               {errors.end && <span className="text-xs text-red-500">{errors.end}</span>}
             </div>
           </div>
-
-          {/* Repetición */}
-          <div>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input 
-                type="checkbox" 
-                name="repeat" 
-                checked={form.repeat} 
-                onChange={handleChange} 
-                className="w-4 h-4 text-yellow-600 bg-gray-100 border-gray-300 rounded focus:ring-yellow-500 focus:ring-2" 
-              />
-              <span className="text-sm font-medium text-gray-700">Se repite</span>
+          {/* Recurrencia */}
+          <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-1">
+              <input type="checkbox" name="repeat" checked={recurrence.repeat} onChange={handleRecurrenceChange} />
+              ¿Este turno se repite?
             </label>
-          </div>
-
-          {/* Configuración de repetición */}
-          {form.repeat && (
-            <div className="space-y-2 border border-gray-200 rounded-lg p-2 bg-gray-50">
-              <div className="flex gap-1 items-center">
-                <label className="block text-xs font-medium text-gray-700">Frecuencia</label>
-                <select 
-                  name="freq" 
-                  value={form.freq} 
-                  onChange={handleChange} 
-                  className="border border-gray-200 rounded p-1 text-xs"
-                >
-                  {frequencies.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}
-                </select>
-                <span className="text-xs text-gray-500">cada</span>
-                <input 
-                  type="number" 
-                  name="interval" 
-                  value={form.interval} 
-                  min={1} 
-                  onChange={handleChange} 
-                  className="w-10 border border-gray-200 rounded p-1 text-xs" 
-                />
-                <span className="text-xs text-gray-500">
-                  {form.freq === 'DAILY' ? 'día(s)' : form.freq === 'WEEKLY' ? 'semana(s)' : 'mes(es)'}
-                </span>
-              </div>
-              
-              {form.freq === 'WEEKLY' && (
-                <div className="flex gap-1">
-                  {weekDays.map(day => (
-                    <button
-                      type="button"
-                      key={day.value}
-                      className={`w-6 h-6 rounded-full border text-xs font-bold transition-all ${
-                        form.byweekday.includes(day.value) 
-                          ? 'bg-gradient-to-r from-yellow-400 to-yellow-600 text-white border-yellow-600' 
-                          : 'bg-white text-gray-700 border-gray-200 hover:border-yellow-400'
-                      }`}
-                      onClick={() => handleWeekdayToggle(day.value)}
-                    >
-                      {day.label}
-                    </button>
+            {recurrence.repeat && (
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center gap-4">
+                  <label className="text-xs font-medium">Frecuencia:</label>
+                  <select name="frequency" value={recurrence.frequency} onChange={handleRecurrenceChange} className="border border-gray-200 rounded-lg p-1 text-xs">
+                    <option value="weekly">Semanal</option>
+                    <option value="daily">Diaria</option>
+                  </select>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {["Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo"].map((day, idx) => (
+                    <label key={day} className="flex items-center gap-1 text-xs">
+                      <input
+                        type="checkbox"
+                        name={`day-${idx}`}
+                        value={day}
+                        checked={recurrence.days.includes(day)}
+                        onChange={handleRecurrenceChange}
+                        disabled={recurrence.frequency !== 'weekly'}
+                      />
+                      {day}
+                    </label>
                   ))}
                 </div>
-              )}
-              
-              <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Hasta</label>
-                <input 
-                  type="date" 
-                  name="until" 
-                  value={form.until} 
-                  onChange={handleChange} 
-                  className="border border-gray-200 rounded p-1.5 text-sm w-full" 
-                />
+                {errors.recurrence && <span className="text-xs text-red-500">{errors.recurrence}</span>}
+                <div className="flex items-center gap-2 mt-2">
+                  <label className="text-xs font-medium">Repetir hasta:</label>
+                  <input
+                    type="date"
+                    name="until"
+                    value={recurrence.until}
+                    onChange={handleRecurrenceChange}
+                    className="border border-gray-200 rounded-lg p-1 text-xs"
+                    min={form.start ? form.start.split('T')[0] : ''}
+                  />
+                </div>
                 {errors.until && <span className="text-xs text-red-500">{errors.until}</span>}
               </div>
-            </div>
-          )}
-
-          {/* Botones */}
-          <div className="flex justify-end gap-2 pt-2">
+            )}
+          </div>
+          {/* Acciones */}
+          <div className="flex gap-2 pt-2 border-t border-gray-100 mt-2">
+            <button
+              type="submit"
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold shadow hover:shadow-lg transition-all"
+            >
+              <FaSave /> {mode === 'edit' ? 'Actualizar' : 'Crear'}
+            </button>
             {mode === 'edit' && (
-              <button 
-                type="button" 
-                onClick={onDelete} 
-                className="flex items-center gap-1 px-2 py-1.5 bg-red-100 text-red-700 rounded-lg font-bold text-xs hover:bg-red-200 transition-colors"
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-100 text-red-700 font-bold shadow hover:bg-red-200 transition-all"
               >
-                <FaTrash className="text-xs" /> Eliminar
+                <FaTrash /> Eliminar
               </button>
             )}
-            <button 
-              type="submit" 
-              className="flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold rounded-lg hover:shadow-md transition-all text-sm"
-            >
-              <FaSave className="text-xs" /> Guardar
-            </button>
-            <button 
-              type="button" 
-              onClick={onClose} 
-              className="px-3 py-1.5 border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors text-sm"
-            >
-              Cancelar
-            </button>
           </div>
         </form>
       </div>
     </div>
-  ) : null;
+  );
 };
 
 export default WorkShiftModal; 

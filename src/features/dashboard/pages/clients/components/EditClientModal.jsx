@@ -7,15 +7,15 @@ const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
 
 const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
     const [formData, setFormData] = useState({
-        tipoDocumento: '',
+        tipo_documento: '',
         documento: '',
         nombre: '',
         apellido: '',
-        email: '',
-        celular: '',
+        correo: '',
+        telefono: '',
         credito: false,
-        estado: true,
-        direcciones: [],
+        estado_cliente: true,
+        addresses: [],
     });
 
     const [errors, setErrors] = useState({});
@@ -24,8 +24,15 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
         if (isOpen && clientData) {
             console.log('Client Data:', clientData); // DEBUG
             setFormData({
-                ...clientData,
-                direcciones: clientData.direcciones ?? [],
+                tipo_documento: clientData.tipo_documento || '',
+                documento: clientData.documento || '',
+                nombre: clientData.nombre || '',
+                apellido: clientData.apellido || '',
+                correo: clientData.correo || '',
+                telefono: clientData.telefono || '',
+                credito: clientData.credito || false,
+                estado_cliente: clientData.estado_cliente ?? true,
+                addresses: clientData.AddressClients || [],
             });
             setErrors({});
         }
@@ -41,36 +48,36 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
 
     const handleDireccionChange = (index, e) => {
         const { name, value } = e.target;
-        const updated = [...formData.direcciones];
+        const updated = [...formData.addresses];
         updated[index][name] = value;
-        setFormData(prev => ({ ...prev, direcciones: updated }));
+        setFormData(prev => ({ ...prev, addresses: updated }));
     };
 
     const addDireccion = () => {
         setFormData(prev => ({
             ...prev,
-            direcciones: [...prev.direcciones, { nombre: '', direccion: '', ciudad: '' }]
+            addresses: [...prev.addresses, { nombre_direccion: '', direccion: '', ciudad: '' }]
         }));
     };
 
     const removeDireccion = (index) => {
-        const updated = [...formData.direcciones];
+        const updated = [...formData.addresses];
         updated.splice(index, 1);
-        setFormData(prev => ({ ...prev, direcciones: updated }));
+        setFormData(prev => ({ ...prev, addresses: updated }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const newErrors = {};
 
-        if (!formData.tipoDocumento) newErrors.tipoDocumento = "Selecciona un tipo de documento";
+        if (!formData.tipo_documento) newErrors.tipo_documento = "Selecciona un tipo de documento";
         if (!formData.documento) newErrors.documento = "El documento es obligatorio";
         if (!formData.nombre) newErrors.nombre = "El nombre es obligatorio";
-        if (!formData.email) newErrors.email = "El correo es obligatorio";
-        if (!formData.celular) newErrors.celular = "El celular es obligatorio";
+        if (!formData.correo) newErrors.correo = "El correo es obligatorio";
+        if (!formData.telefono) newErrors.telefono = "El teléfono es obligatorio";
 
-        formData.direcciones.forEach((dir, i) => {
-            if (!dir.nombre || !dir.direccion || !dir.ciudad) {
+        formData.addresses.forEach((dir, i) => {
+            if (!dir.nombre_direccion || !dir.direccion || !dir.ciudad) {
                 newErrors[`direccion-${i}`] = "Todos los campos de dirección son obligatorios";
             }
         });
@@ -80,9 +87,23 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
             return;
         }
 
-        onSubmit(formData); // ✅
+        // Transformar los datos al formato que espera la API
+        const clientDataForApi = {
+            documento: formData.documento,
+            tipo_documento: formData.tipo_documento,
+            nombre: formData.nombre,
+            apellido: formData.apellido,
+            telefono: formData.telefono,
+            correo: formData.correo,
+            credito: formData.credito,
+            estado_cliente: formData.estado_cliente,
+            addresses: formData.addresses.filter(addr =>
+              addr.nombre_direccion && addr.direccion && addr.ciudad
+            )
+          };
+        
+        onSubmit(clientDataForApi);
         console.log("Se actualizó cliente, cerrando modal...");
-        showSuccess('Cambios guardados correctamente');
         onClose();
         // onSubmit debe ser una función que maneje la actualización del cliente
        
@@ -105,14 +126,14 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className={labelStyle}>Tipo de Documento</label>
-                                <select name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
+                                <select name="tipo_documento" value={formData.tipo_documento} onChange={handleChange} className={inputBaseStyle}>
                                     <option value="">Seleccionar...</option>
                                     <option value="CC">Cédula de Ciudadanía</option>
                                     <option value="TI">Tarjeta de Identidad</option>
                                     <option value="CE">Cédula de Extranjería</option>
                                     <option value="NIT">NIT</option>
                                 </select>
-                                {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
+                                {errors.tipo_documento && <p className="text-red-500 text-sm mt-1">{errors.tipo_documento}</p>}
                             </div>
 
                             <div>
@@ -133,14 +154,14 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
 
                             <div>
                                 <label className={labelStyle}>Correo</label>
-                                <input type="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
-                                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                                <input type="email" name="correo" value={formData.correo} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.correo && <p className="text-red-500 text-sm mt-1">{errors.correo}</p>}
                             </div>
 
                             <div>
                                 <label className={labelStyle}>Celular</label>
-                                <input type="text" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
-                                {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
+                                <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.telefono && <p className="text-red-500 text-sm mt-1">{errors.telefono}</p>}
                             </div>
                         </div>
                     </div>
@@ -149,12 +170,12 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
                         <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Direcciones del Cliente</h3>
                         <div className="space-y-4">
-                            {Array.isArray(formData.direcciones) &&
-                                formData.direcciones.map((dir, index) => (
+                            {Array.isArray(formData.addresses) &&
+                                formData.addresses.map((dir, index) => (
                                     <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr,1fr,1fr,auto] gap-4 items-end">
                                         <div>
                                             <label className={labelStyle}>Nombre</label>
-                                            <input type="text" name="nombre" value={dir.nombre} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} />
+                                            <input type="text" name="nombre_direccion" value={dir.nombre_direccion} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} />
                                         </div>
                                         <div>
                                             <label className={labelStyle}>Dirección</label>

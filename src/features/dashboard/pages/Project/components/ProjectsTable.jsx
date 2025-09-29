@@ -37,34 +37,34 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-      <table className="w-full text-m">
+      <table className="w-full text-sm">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider">Numero de Contrato</th>
-            <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider">Proyecto</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Numero de Contrato</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Proyecto</th>
             {/* --- COLUMNAS REINTEGRADAS --- */}
-            <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider">Responsable</th>
-            <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider">Fechas</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Responsable</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Fechas</th>
             {/* --------------------------- */}
-            <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider">Prioridad</th>
-            <th className="px-6 py-4 text-left text-m font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">Progreso</th>
-            <th className="px-6 py-4 text-right text-m font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Prioridad</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider min-w-[200px]">Progreso</th>
+            <th className="px-6 py-4 text-right text-sm font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {projects.map((project) => (
             <tr key={project.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-6 py-4">
-                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600 text-left text-m">
+                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600 text-left text-sm">
                   {project.numeroContrato}
                 </button>
               </td>
               <td className="px-6 py-4">
-                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600  text-left text-m">
+                <button onClick={() => onViewDetails(project)} className="font-bold text-blue-600  text-left text-sm">
                   {project.nombre}
                 </button>
-                <div className="text-m text-gray-500">Cliente: {project.cliente}</div>
+                <div className="text-sm text-gray-500">Cliente: {project.cliente}</div>
               </td>
               {/* --- CELDAS REINTEGRADAS --- */}
               <td className="px-6 py-4">
@@ -74,37 +74,37 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                     src={`https://api.dicebear.com/7.x/initials/svg?seed=${project.responsable.avatarSeed}`}
                     alt={project.responsable.nombre}
                   />
-                  <span className="text-m">{project.responsable.nombre}</span>
+                  <span className="text-sm">{project.responsable.nombre}</span>
                 </div>
               </td>
               <td className="px-6 py-4 text-gray-600">
-                <div className="text-m">Inicio: {project.fechaInicio}</div>
-                <div className="text-m">Fin: {project.fechaFin}</div>
+                <div className="text-sm">Inicio: {project.fechaInicio}</div>
+                <div className="text-sm">Fin: {project.fechaFin}</div>
               </td>
               {/* ------------------------- */}
               <td className="px-6 py-4">
-                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getStatusClass(project.estado)} text-m`}>
+                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getStatusClass(project.estado)} text-sm`}>
                   {project.estado}
                 </span>
               </td>
               <td className="px-6 py-4">
-                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getPriorityClass(project.prioridad)} text-m`}>
+                <span className={`px-2 py-1 font-semibold leading-tight rounded-full ${getPriorityClass(project.prioridad)} text-sm`}>
                   {project.prioridad}
                 </span>
               </td>
               <td className="px-6 py-4">
                 <div className="flex items-center gap-3">
                   <ProgressBar progress={project.progreso} />
-                  <span className="text-m font-semibold">{project.progreso}%</span>
+                  <span className="text-sm font-semibold">{project.progreso}%</span>
                 </div>
               </td>
               <td className="px-6 py-4">
                 <div className="flex items-center justify-end gap-4">
-                   <button onClick={() => onViewDetails(project)} className="text-blue-400 hover:text-blue-600 text-m" title="Ver Detalles">
+                   <button onClick={() => onViewDetails(project)} className="text-blue-400 hover:text-blue-600 text-sm" title="Ver Detalles">
                     <FaEye size={16} />
                   </button>
-                   <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-m" title="Editar"><FaEdit size={16} /></button>
-                   <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-m" title="Eliminar"><FaTrashAlt size={16} /></button>
+                   <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-sm" title="Editar"><FaEdit size={16} /></button>
+                   <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-sm" title="Eliminar"><FaTrashAlt size={16} /></button>
                 </div>
               </td>
             </tr>

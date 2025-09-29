@@ -14,8 +14,8 @@ const ProductsCategoryTable = ({ categories, onViewDetails, onEditCategory, onDe
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {categories.map((category) => (
-            <tr key={category.id} className="hover:bg-gray-50 transition-colors">
+           {(Array.isArray(categories) ? categories : []).map((category) => (
+            <tr key={category.id_categoria} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 text-sm font-medium text-gray-900">{category.nombre}</td>
               <td className="px-4 py-3 text-sm text-gray-700">{category.descripcion}</td>
               <td className="px-4 py-3">
@@ -32,7 +32,7 @@ const ProductsCategoryTable = ({ categories, onViewDetails, onEditCategory, onDe
                   <button className="text-yellow-600 hover:text-yellow-800" title="Editar" onClick={() => onEditCategory(category)}>
                     <FaEdit size={16} />
                   </button>
-                  <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDeleteCategory(category.id)}>
+                  <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDeleteCategory(category.id_categoria)}>
                     <FaTrashAlt size={16} />
                   </button>
                 </div>

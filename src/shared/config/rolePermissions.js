@@ -8,6 +8,7 @@ export const rolePermissions = {
       'categoria_productos',
       'productos',
       'compras',
+      'servicios',
       'categoria_servicios',
       'ordenes_servicios',
       'programacion_laboral',
@@ -21,6 +22,7 @@ export const rolePermissions = {
       'profile'
     ],
     canManage: [
+      'dashboard',
       'usuarios',
       'roles',
       'proveedores',
@@ -39,6 +41,7 @@ export const rolePermissions = {
       'categoria_productos',
       'productos',
       'compras',
+      'servicios',
       'categoria_servicios',
       'ordenes_servicios',
       'programacion_laboral',
