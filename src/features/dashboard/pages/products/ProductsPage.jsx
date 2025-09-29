@@ -86,9 +86,10 @@ const ProductsPage = () => {
 
   // Crear producto
   const handleAddProduct = async (newProduct) => {
-    console.log('Datos a enviar:', newProduct);
+    console.log('Datos a enviar:', JSON.stringify(newProduct, null, 2));
     try {
       const created = await productsService.createProduct(newProduct);
+      console.log('Producto creado:', created);
       setProducts((prev) => [created, ...prev]);
       setShowNewModal(false);
       showSuccess('Producto agregado exitosamente');
@@ -102,7 +103,14 @@ const ProductsPage = () => {
       }
     } catch (err) {
       console.error('Error al crear producto:', err);
-      showError('No se pudo crear el producto. Verifique que todos los campos y datos sean correctos.');
+      console.error('Error response:', err.response?.data);
+      console.error('Error status:', err.response?.status);
+      
+      // Mostrar mensaje de error más específico
+      const errorMessage = err.response?.data?.message || 
+                          err.response?.data?.errors?.[0]?.msg || 
+                          'No se pudo crear el producto. Verifique que todos los campos y datos sean correctos.';
+      showError(errorMessage);
     }
   };
 
@@ -138,6 +146,7 @@ const ProductsPage = () => {
       showError('No se pudo eliminar el producto');
     }
   };
+
 
   // Exportar a Excel
   const handleExport = () => {

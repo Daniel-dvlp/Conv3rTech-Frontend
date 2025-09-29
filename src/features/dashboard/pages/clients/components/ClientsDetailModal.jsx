@@ -35,8 +35,8 @@ const ClientsDetailModal = ({ cliente, onClose }) => {
 
         {/* Encabezado */}
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-[#00012A]">{cliente.nombre}</h2>
-          <p className="text-sm text-gray-500">Detalles del cliente</p>
+          <h2 className="text-3xl font-bold text-[#00012A]">{cliente.nombre} {cliente.apellido}</h2>
+          <p className="text-sm text-gray-500">ID: {cliente.id_cliente} - Detalles del cliente</p>
         </div>
 
         {/* Secciones */}
@@ -47,10 +47,10 @@ const ClientsDetailModal = ({ cliente, onClose }) => {
             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
               <FaUser className="text-blue-500" /> Información del Cliente
             </h3>
-            <InfoRow icon={<FaIdCard />} label="Tipo de Documento" value={cliente.tipoDocumento} />
+            <InfoRow icon={<FaIdCard />} label="Tipo de Documento" value={cliente.tipo_documento} />
             <InfoRow icon={<FaIdCard />} label="Documento" value={cliente.documento} />
-            <InfoRow icon={<FaPhone />} label="Celular" value={cliente.celular} />
-            <InfoRow icon={<FaEnvelope />} label="Correo" value={cliente.email} />
+            <InfoRow icon={<FaPhone />} label="Teléfono" value={cliente.telefono} />
+            <InfoRow icon={<FaEnvelope />} label="Correo" value={cliente.correo} />
           </div>
 
           {/* Estado y crédito */}
@@ -63,8 +63,8 @@ const ClientsDetailModal = ({ cliente, onClose }) => {
               <div className="flex items-center gap-2 ml-1">
                 <FaToggleOn className="text-green-500" />
                 <span className="font-medium text-gray-600">Estado:</span>
-                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(cliente.estado)}`}>
-                  {cliente.estado ? 'Activo' : 'Inactivo'}
+                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusClass(cliente.estado_cliente)}`}>
+                  {cliente.estado_cliente ? 'Activo' : 'Inactivo'}
                 </span>
               </div>
             </div>
@@ -74,14 +74,18 @@ const ClientsDetailModal = ({ cliente, onClose }) => {
               <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                 <FaMapMarkedAlt className="text-emerald-500" /> Direcciones
               </h3>
-              {cliente.direcciones.map((dir, i) => (
-                <InfoRow
-                  key={i}
-                  icon={<FaMapMarkedAlt />}
-                  label={dir.nombre}
-                  value={`${dir.direccion}, ${dir.ciudad}`}
-                />
-              ))}
+              {cliente.AddressClients && cliente.AddressClients.length > 0 ? (
+                cliente.AddressClients.map((dir, i) => (
+                  <InfoRow
+                    key={dir.id_direccion}
+                    icon={<FaMapMarkedAlt />}
+                    label={dir.nombre_direccion}
+                    value={`${dir.direccion}, ${dir.ciudad}`}
+                  />
+                ))
+              ) : (
+                <p className="text-gray-500 text-sm">No hay direcciones registradas</p>
+              )}
             </div>
           </div>
         </div>

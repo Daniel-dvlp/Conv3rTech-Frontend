@@ -100,7 +100,8 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
     const nuevoAbonoData = {
       clienteId: contractData.cliente.id,
       numeroContrato: contractData.contrato.numero,
-      fecha: new Date().toLocaleDateString('es-CO'), // Fecha actual
+      id_proyecto: contractData.contrato.id_proyecto,
+      fecha: new Date().toISOString().split('T')[0], // Fecha en formato YYYY-MM-DD
       concepto: concepto.trim(),
       montoAbonado: montoIngresado,
       metodoPago: metodoPago,

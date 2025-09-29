@@ -178,7 +178,20 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
     }
 
     setErrors({});
-    onSubmit(formData);
+    
+    // Transformar los datos al formato que espera la API
+    const userDataForApi = {
+      nombre: formData.nombre,
+      apellido: formData.apellido,
+      correo: formData.email,
+      contrasena: formData.contrasena,
+      id_rol: parseInt(formData.rol), // Convertir a número
+      documento: formData.documento,
+      tipo_documento: formData.tipoDocumento,
+      celular: formData.celular
+    };
+    
+    onSubmit(userDataForApi);
     setFormData(initialState);
     onClose();
   };
@@ -245,7 +258,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
                 <select id="rol" name="rol" value={formData.rol} onChange={handleChange} className={inputBaseStyle}>
                   <option value="">Seleccionar...</option>
                   {roles.map((rol) => (
-                    <option key={rol.id} value={rol.name}>{rol.name}</option>
+                    <option key={rol.id_rol} value={rol.id_rol}>{rol.nombre_rol}</option>
                   ))}
                 </select>
                 {errors.rol && <p className="text-red-500 text-sm mt-1">{errors.rol}</p>}

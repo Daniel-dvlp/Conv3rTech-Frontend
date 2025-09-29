@@ -177,6 +177,8 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             codigo_barra: productData.codigo_barra?.trim() || null,
             fichas_tecnicas: fichasProcesadas, // Array de IDs numéricos
             estado: !!productData.estado,
+            // Asegurar que fotos sea un array válido
+            fotos: Array.isArray(productData.fotos) ? productData.fotos : []
         };
 
         await onSave(newProduct);
