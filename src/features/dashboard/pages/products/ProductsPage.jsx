@@ -8,9 +8,9 @@ import ProductDetailModal from './components/ProductDetailModal';
 import ProductEditModal from './components/ProductEditModal';
 import { showSuccess, showError, confirmDelete } from '../../../../shared/utils/alerts';
 import * as XLSX from 'xlsx';
+import { productsService, categoriesService, featuresService } from './services/productsService';
 
 const ITEMS_PER_PAGE = 5;
-const API_URL = 'https://backend-conv3rtech.onrender.com/api/products/products';
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -20,7 +20,7 @@ const ProductsPage = () => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [features, setFeatures] = useState([]); 
+  const [features, setFeatures] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
 
   // Cargar productos, categorías y características
@@ -28,22 +28,19 @@ const ProductsPage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Productos
-        const resProducts = await fetch(API_URL);
-        const dataProducts = await resProducts.json();
-        setProducts(Array.isArray(dataProducts) ? dataProducts : []);
+        // Cargar datos en paralelo
+        const [productsData, categoriesData, featuresData] = await Promise.all([
+          productsService.getAllProducts(),
+          categoriesService.getAllCategories(),
+          featuresService.getAllFeatures()
+        ]);
 
-        // Categorías
-        const resCategories = await fetch('https://backend-conv3rtech.onrender.com/api/productsCategory');
-        const dataCategories = await resCategories.json();
-        setCategories(Array.isArray(dataCategories) ? dataCategories : []);
-
-        // Características Técnicas
-        const resFeatures = await fetch('https://backend-conv3rtech.onrender.com/api/products/features');
-        const dataFeatures = await resFeatures.json();
-        setFeatures(Array.isArray(dataFeatures) ? dataFeatures : []); 
+        setProducts(Array.isArray(productsData) ? productsData : []);
+        setCategories(Array.isArray(categoriesData) ? categoriesData : []);
+        setFeatures(Array.isArray(featuresData) ? featuresData : []);
 
       } catch (err) {
+        console.error('Error al cargar datos:', err);
         showError('Error al cargar productos, categorías o características técnicas.');
       } finally {
         setLoading(false);
@@ -66,14 +63,14 @@ const ProductsPage = () => {
 
     return products.filter((product) => {
       const estadoLegible = product.estado ? 'activo' : 'inactivo';
-      
+
       // Aplicamos normalize() a todos los campos que pueden ser null
       const nameIncludes = normalize(product.nombre).includes(normalizedSearch);
       const modelIncludes = normalize(product.modelo).includes(normalizedSearch);
       const unityIncludes = normalize(product.unidad_medida).includes(normalizedSearch);
-      
+
       // stateIncludes ya estaba bien porque estadoLegible siempre es un string
-      const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch); 
+      const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch);
 
       return nameIncludes || unityIncludes || modelIncludes || stateIncludes;
     });
@@ -89,37 +86,30 @@ const ProductsPage = () => {
 
   // Crear producto
   const handleAddProduct = async (newProduct) => {
+    console.log('Datos a enviar:', newProduct);
     try {
-      const res = await fetch(API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newProduct),
-      });
-      if (!res.ok) throw new Error('Error al crear producto');
-      const created = await res.json();
+      const created = await productsService.createProduct(newProduct);
       setProducts((prev) => [created, ...prev]);
       setShowNewModal(false);
       showSuccess('Producto agregado exitosamente');
-       if (newProduct.fichas_tecnicas.some(f => f.id_caracteristica === 'otro')) {
-        const resFeatures = await fetch('https://backend-conv3rtech.onrender.com/api/products/features');
-        const dataFeatures = await resFeatures.json();
-        setFeatures(Array.isArray(dataFeatures) ? dataFeatures : []);
+
+      // Actualizar características para que el select tenga la nueva característica disponible
+      try {
+        const updatedFeatures = await featuresService.getAllFeatures();
+        setFeatures(Array.isArray(updatedFeatures) ? updatedFeatures : []);
+      } catch (featureError) {
+        console.warn('Error al actualizar características:', featureError);
       }
     } catch (err) {
-      showError('No se pudo crear el producto');
+      console.error('Error al crear producto:', err);
+      showError('No se pudo crear el producto. Verifique que todos los campos y datos sean correctos.');
     }
   };
 
   // Editar producto
   const handleUpdateProduct = async (updatedProduct) => {
     try {
-      const res = await fetch(`${API_URL}/${updatedProduct.id_producto}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updatedProduct),
-      });
-      if (!res.ok) throw new Error('Error al actualizar producto');
-      const saved = await res.json();
+      const saved = await productsService.updateProduct(updatedProduct.id_producto, updatedProduct);
       setProducts((prev) =>
         prev.map((p) => (p.id_producto === saved.id_producto ? saved : p))
       );
@@ -127,6 +117,7 @@ const ProductsPage = () => {
       setSelectedProduct(null);
       showSuccess('Producto actualizado exitosamente');
     } catch (err) {
+      console.error('Error al actualizar producto:', err);
       showError('No se pudo actualizar el producto');
     }
   };
@@ -139,11 +130,11 @@ const ProductsPage = () => {
     );
     if (!confirmed) return;
     try {
-      const res = await fetch(`${API_URL}/${productId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar producto');
+      await productsService.deleteProduct(productId);
       setProducts((prev) => prev.filter((prod) => prod.id_producto !== productId));
       showSuccess('Producto eliminado exitosamente');
     } catch (err) {
+      console.error('Error al eliminar producto:', err);
       showError('No se pudo eliminar el producto');
     }
   };

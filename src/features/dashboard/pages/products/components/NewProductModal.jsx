@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FaTimes, FaTrash, FaPlus } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaPlus, FaReply } from 'react-icons/fa';
+import { featuresService } from '../services/productsService';
 
 // Componentes funcionales auxiliares
 const FormSection = ({ title, children }) => (
@@ -73,15 +74,10 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         }));
     };
 
-    /**
-     * Maneja el cambio en las fichas técnicas, incluyendo la lógica para "otro".
-     * Inicializa o elimina 'nuevaCaracteristica' según la selección.
-     */
     const handleFichaChange = (index, field, value) => {
         const updated = [...(productData.fichas_tecnicas || [])];
         updated[index][field] = value;
 
-        // Lógica para manejar el campo adicional de la nueva característica
         if (field === 'id_caracteristica') {
             if (value === "otro") {
                 // Si selecciona 'otro', inicializa el campo de texto para la nueva característica
@@ -91,7 +87,19 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                 delete updated[index].nuevaCaracteristica;
             }
         }
-
+        
+        setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
+    };
+    
+    // Función para volver al selector
+    const handleResetFicha = (index) => {
+        const updated = [...(productData.fichas_tecnicas || [])];
+        updated[index] = { 
+            id_caracteristica: '', 
+            valor: updated[index].valor || '' // Mantener el valor si ya se ingresó
+        };
+        // Asegurar que se elimine la nuevaCaracteristica si existe
+        delete updated[index].nuevaCaracteristica;
         setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
     };
 
@@ -101,7 +109,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
     };
 
-    // Fotos
+    // Fotos (sin cambios)
     const handleRemoveFoto = (index) => {
         const updatedFotos = [...(productData.fotos || [])];
         updatedFotos.splice(index, 1);
@@ -137,27 +145,23 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             let idCaracteristica = ficha.id_caracteristica;
 
             if (idCaracteristica === "otro" && ficha.nuevaCaracteristica) {
-                // Crear la nueva característica
+                // 1. Crear la nueva característica en el backend
                 try {
-                    const res = await fetch("https://backend-conv3rtech.onrender.com/api/products/features", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ nombre: ficha.nuevaCaracteristica })
-                    });
-                    if (!res.ok) throw new Error("Error al crear la nueva característica");
-                    const newFeature = await res.json();
+                    const newFeature = await featuresService.createFeature({ nombre: ficha.nuevaCaracteristica });
                     idCaracteristica = newFeature.id_caracteristica;
                 } catch (error) {
                     console.error("Error al crear característica:", error);
-                    // Manejo de error: podrías detener el proceso o saltar esta ficha
                     continue;
                 }
             }
-
-            // Solo agrega la ficha si tiene un id de característica válido (o si la nueva fue creada)
-            if (idCaracteristica && idCaracteristica !== "otro") {
+            
+            // 2. Procesar y convertir a número el ID si es válido
+            const numericId = Number(idCaracteristica);
+            
+            // Reforzamos la validación para asegurar que se envía un número entero positivo (ID)
+            if (idCaracteristica && idCaracteristica !== "otro" && !isNaN(numericId) && numericId > 0) {
                 fichasProcesadas.push({
-                    id_caracteristica: Number(idCaracteristica),
+                    id_caracteristica: numericId, // Usamos el valor numérico validado
                     valor: ficha.valor
                 });
             }
@@ -165,12 +169,13 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
 
         const newProduct = {
             ...productData,
+            // Conversiones a número para el cuerpo principal
             id_categoria: Number(productData.id_categoria),
             precio: Number(productData.precio),
             stock: Number(productData.stock),
             garantia: Number(productData.garantia),
             codigo_barra: productData.codigo_barra?.trim() || null,
-            fichas_tecnicas: fichasProcesadas,
+            fichas_tecnicas: fichasProcesadas, // Array de IDs numéricos
             estado: !!productData.estado,
         };
 
@@ -192,7 +197,6 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                 </header>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                    {/* Sección de Fotos (sin cambios) */}
                     <FormSection title="Fotos del Producto">
                         <div className="flex gap-3 flex-wrap">
                             {(productData.fotos || []).map((foto, index) => (
@@ -238,7 +242,6 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                         </div>
                     </FormSection>
 
-                    {/* Sección de Información Principal (sin cambios) */}
                     <FormSection title="Información Principal">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
@@ -334,55 +337,68 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                         </div>
                     </FormSection>
 
-                    {/* SECCIÓN DE FICHAS TÉCNICAS (CON CAMBIOS) */}
+                    {/* SECCIÓN DE FICHAS TÉCNICAS (CORREGIDA) */}
                     <FormSection title="Fichas Técnicas">
                         {(productData.fichas_tecnicas || []).map((ficha, index) => (
                             <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-4 items-start mb-2">
-                                {/* Bloque de Característica y "Otro" */}
+                                {/* Bloque de Característica (Selector o Input) */}
                                 <div>
-                                    <FormLabel htmlFor={`id_caracteristica_${index}`}>* Característica:</FormLabel>
-                                    <div className="relative">
-                                        <select
-                                            id={`id_caracteristica_${index}`}
-                                            name={`id_caracteristica_${index}`}
-                                            value={ficha.id_caracteristica}
-                                            onChange={(e) => handleFichaChange(index, 'id_caracteristica', e.target.value)}
-                                            className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
-                                            required
-                                        >
-                                            <option value="">Seleccione una característica</option>
-                                            {/* Aseguramos que 'features' sea un array antes de mapear */}
-                                            {Array.isArray(features) && features.map((feat) => (
-                                                <option key={feat.id_caracteristica} value={feat.id_caracteristica}>
-                                                    {feat.nombre}
-                                                </option>
-                                            ))}
-                                            <option value="otro">Otro (Crear nueva)</option>
-                                        </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 top-0 mt-2">
-                                            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M5.23 7.21a.75.75 0 011.06.02L10 11.584l3.71-4.354a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
+                                    <FormLabel htmlFor={`caracteristica_input_${index}`}>* Característica:</FormLabel>
+                                    
+                                    {ficha.id_caracteristica === "otro" ? (
+                                        // 💥 Reemplaza el selector con el input de texto 💥
+                                        <div className="flex gap-2">
+                                            <input
+                                                type="text"
+                                                id={`caracteristica_input_${index}`}
+                                                placeholder="Ingrese la nueva característica"
+                                                value={ficha.nuevaCaracteristica || ""}
+                                                onChange={(e) => handleFichaChange(index, 'nuevaCaracteristica', e.target.value)}
+                                                className={inputBaseStyle}
+                                                required
+                                            />
+                                            {/* Botón para volver al selector */}
+                                            <button
+                                                type="button"
+                                                onClick={() => handleResetFicha(index)}
+                                                className="flex items-center justify-center p-2 text-gray-400 hover:text-gray-700 transition border rounded-lg bg-white shadow-sm"
+                                                title="Volver a seleccionar"
+                                            >
+                                                <FaReply size={14} />
+                                            </button>
                                         </div>
-                                    </div>
-
-                                    {/* Campo de texto para la nueva característica, solo si se selecciona "otro" */}
-                                    {ficha.id_caracteristica === "otro" && (
-                                        <input
-                                            type="text"
-                                            placeholder="Ingrese la nueva característica"
-                                            value={ficha.nuevaCaracteristica || ""}
-                                            onChange={(e) => handleFichaChange(index, 'nuevaCaracteristica', e.target.value)}
-                                            className={`${inputBaseStyle} mt-2`}
-                                            required
-                                        />
+                                    ) : (
+                                        // Muestra el selector normal
+                                        <div className="relative">
+                                            <select
+                                                id={`caracteristica_input_${index}`}
+                                                name={`id_caracteristica_${index}`}
+                                                value={ficha.id_caracteristica}
+                                                onChange={(e) => handleFichaChange(index, 'id_caracteristica', e.target.value)}
+                                                className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
+                                                required
+                                            >
+                                                <option value="">Seleccione una característica</option>
+                                                {Array.isArray(features) && features.map((feat) => (
+                                                    <option key={feat.id_caracteristica} value={feat.id_caracteristica}>
+                                                        {feat.nombre}
+                                                    </option>
+                                                ))}
+                                                <option value="otro">Otro (Crear nueva)</option>
+                                            </select>
+                                            <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 top-0 mt-2">
+                                                <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path
+                                                        fillRule="evenodd"
+                                                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.584l3.71-4.354a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z"
+                                                        clipRule="evenodd"
+                                                    />
+                                                </svg>
+                                            </div>
+                                        </div>
                                     )}
                                 </div>
-
+                                
                                 {/* Bloque de Valor */}
                                 <div>
                                     <FormLabel htmlFor={`valor_${index}`}>* Valor:</FormLabel>
@@ -396,12 +412,13 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                         required
                                     />
                                 </div>
-
+                                
                                 {/* Botón de eliminar */}
                                 <button
                                     type="button"
                                     onClick={() => handleRemoveFicha(index)}
                                     className="text-gray-400 hover:text-red-600 transition self-center pt-8"
+                                    title="Eliminar ficha técnica"
                                 >
                                     <FaTrash />
                                 </button>
@@ -418,7 +435,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                         </button>
                     </FormSection>
 
-                    {/* Botones de acción (sin cambios) */}
+                    {/* Botones de acción */}
                     <div className="flex justify-end gap-4 pt-6 border-t mt-6">
                         <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
                         <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105" disabled={productData.garantia && productData.garantia < 12}>Guardar</button>
