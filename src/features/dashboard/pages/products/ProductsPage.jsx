@@ -5,13 +5,12 @@ import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../shared/components/Pagination';
 import NewProductModal from './components/NewProductModal';
 import ProductDetailModal from './components/ProductDetailModal';
-import { mockProducts } from './data/Products_data';
-import { mockProductsCategory } from '../products_category/data/ProductsCategory_data';
 import ProductEditModal from './components/ProductEditModal';
-import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+import { showSuccess, showError, confirmDelete } from '../../../../shared/utils/alerts';
 import * as XLSX from 'xlsx';
 
 const ITEMS_PER_PAGE = 5;
+const API_URL = 'https://backend-conv3rtech.onrender.com/api/products/products';
 
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -21,34 +20,66 @@ const ProductsPage = () => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [features, setFeatures] = useState([]); 
   const [isEditing, setIsEditing] = useState(false);
 
+  // Cargar productos, categorías y características
   useEffect(() => {
-    setTimeout(() => {
-      setProducts(mockProducts);
-      setCategories(mockProductsCategory);
-      setLoading(false);
-    }, 1500);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Productos
+        const resProducts = await fetch(API_URL);
+        const dataProducts = await resProducts.json();
+        setProducts(Array.isArray(dataProducts) ? dataProducts : []);
+
+        // Categorías
+        const resCategories = await fetch('https://backend-conv3rtech.onrender.com/api/productsCategory');
+        const dataCategories = await resCategories.json();
+        setCategories(Array.isArray(dataCategories) ? dataCategories : []);
+
+        // Características Técnicas
+        const resFeatures = await fetch('https://backend-conv3rtech.onrender.com/api/products/features');
+        const dataFeatures = await resFeatures.json();
+        setFeatures(Array.isArray(dataFeatures) ? dataFeatures : []); 
+
+      } catch (err) {
+        showError('Error al cargar productos, categorías o características técnicas.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
+  // 💥 CORRECCIÓN IMPORTANTE AQUÍ 💥
+  // Aseguramos que la función siempre devuelva un string ("") si el input es null/undefined
   const normalize = (text) =>
-    text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+    (text || '') // Si 'text' es null/undefined, usa una cadena vacía
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
 
   const filteredProducts = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
 
     return products.filter((product) => {
       const estadoLegible = product.estado ? 'activo' : 'inactivo';
+      
+      // Aplicamos normalize() a todos los campos que pueden ser null
       const nameIncludes = normalize(product.nombre).includes(normalizedSearch);
       const modelIncludes = normalize(product.modelo).includes(normalizedSearch);
-      const unityIncludes = normalize(product.unidad).includes(normalizedSearch);
-      const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch);
+      const unityIncludes = normalize(product.unidad_medida).includes(normalizedSearch);
+      
+      // stateIncludes ya estaba bien porque estadoLegible siempre es un string
+      const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch); 
 
       return nameIncludes || unityIncludes || modelIncludes || stateIncludes;
     });
   }, [products, searchTerm]);
 
-
+  // ... (El resto del código de ProductsPage.jsx sigue igual)
   const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
 
   const currentItems = useMemo(() => {
@@ -56,16 +87,72 @@ const ProductsPage = () => {
     return filteredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredProducts, currentPage]);
 
-  const handleAddProduct = (newProduct) => {
-    setProducts((prev) => [newProduct, ...prev]);
-    setShowNewModal(false);
-    showSuccess('Producto agregado exitosamente');
+  // Crear producto
+  const handleAddProduct = async (newProduct) => {
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newProduct),
+      });
+      if (!res.ok) throw new Error('Error al crear producto');
+      const created = await res.json();
+      setProducts((prev) => [created, ...prev]);
+      setShowNewModal(false);
+      showSuccess('Producto agregado exitosamente');
+       if (newProduct.fichas_tecnicas.some(f => f.id_caracteristica === 'otro')) {
+        const resFeatures = await fetch('https://backend-conv3rtech.onrender.com/api/products/features');
+        const dataFeatures = await resFeatures.json();
+        setFeatures(Array.isArray(dataFeatures) ? dataFeatures : []);
+      }
+    } catch (err) {
+      showError('No se pudo crear el producto');
+    }
   };
 
+  // Editar producto
+  const handleUpdateProduct = async (updatedProduct) => {
+    try {
+      const res = await fetch(`${API_URL}/${updatedProduct.id_producto}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedProduct),
+      });
+      if (!res.ok) throw new Error('Error al actualizar producto');
+      const saved = await res.json();
+      setProducts((prev) =>
+        prev.map((p) => (p.id_producto === saved.id_producto ? saved : p))
+      );
+      setIsEditing(false);
+      setSelectedProduct(null);
+      showSuccess('Producto actualizado exitosamente');
+    } catch (err) {
+      showError('No se pudo actualizar el producto');
+    }
+  };
+
+  // Eliminar producto
+  const handleDeleteProduct = async (productId) => {
+    const confirmed = await confirmDelete(
+      '¿Estás segura de eliminar este producto?',
+      'Esta acción no se puede deshacer'
+    );
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`${API_URL}/${productId}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar producto');
+      setProducts((prev) => prev.filter((prod) => prod.id_producto !== productId));
+      showSuccess('Producto eliminado exitosamente');
+    } catch (err) {
+      showError('No se pudo eliminar el producto');
+    }
+  };
+
+  // Exportar a Excel
   const handleExport = () => {
-    const getCategoryName = (id) => {
+    const getCategoryName = (id_categoria) => {
       if (!Array.isArray(categories)) return 'Desconocida';
-      const cat = categories.find((c) => c.id === id);
+      const cat = categories.find((c) => c.id_categoria === id_categoria);
       return cat ? cat.nombre : 'Desconocida';
     };
     const dataToExport = filteredProducts.map((product) => {
@@ -76,13 +163,13 @@ const ProductsPage = () => {
         : 'Sin especificaciones';
 
       return {
-        ID: product.id,
+        ID: product.id_producto,
         Nombre: product.nombre,
         Modelo: product.modelo,
-        Categoría: getCategoryName(product.categoria),
-        Unidad: product.unidad,
+        Categoría: getCategoryName(product.id_categoria),
+        Unidad: product.unidad_medida,
         Garantía: `${product.garantia} meses`,
-        Código: product.codigo,
+        Código: product.codigo_barra,
         Precio: product.precio,
         Stock: product.stock,
         Estado: product.estado ? 'Activo' : 'Inactivo',
@@ -96,28 +183,6 @@ const ProductsPage = () => {
     XLSX.writeFile(workbook, 'ReporteProductos.xlsx');
     showSuccess('Los productos han sido exportados exitosamente');
   };
-
-  const handleUpdateProduct = (updatedProduct) => {
-    setProducts((prev) =>
-      prev.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
-    );
-    setIsEditing(false);
-    setSelectedProduct(null);
-    showSuccess('Producto actualizado exitosamente');
-  };
-
-const handleDeleteProduct = async (productId) => {
-  const confirmed = await confirmDelete(
-    '¿Estás segura de eliminar este producto?',
-    'Esta acción no se puede deshacer'
-  );
-
-  if (!confirmed) return;
-
-  setProducts(prev => prev.filter(prod => prod.id !== productId));
-  showSuccess('Producto eliminado exitosamente');
-};
-
 
   return (
     <div className="p-4 md:p-8 relative">
@@ -204,10 +269,8 @@ const handleDeleteProduct = async (productId) => {
         onClose={() => setShowNewModal(false)}
         onSave={handleAddProduct}
         categories={categories}
-        onEditProduct={(product) => {
-          setSelectedProduct(product);
-          setIsEditing(true);
-        }}
+        existingProducts={products}
+        features={features}
       />
 
       {selectedProduct && (

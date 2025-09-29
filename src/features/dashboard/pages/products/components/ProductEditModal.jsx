@@ -44,7 +44,7 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
         const modeloNorm = normalizeText(productData.modelo);
         const isDuplicate = existingProducts?.some(
             (prod) =>
-                prod.id !== productData.id &&
+                prod.id_producto !== productData.id_producto &&
                 normalizeText(prod.nombre) === nombreNorm &&
                 normalizeText(prod.modelo) === modeloNorm
         );
@@ -70,16 +70,49 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
         }
     };
 
-    const handleEspecificationChange = (index, field, value) => {
-        const updated = [...productData.especificaciones_tecnicas];
+    // Fichas técnicas
+    const handleFichaChange = (index, field, value) => {
+        const updated = [...(productData.fichas_tecnicas || [])];
         updated[index][field] = value;
-        setProductData((prev) => ({ ...prev, especificaciones_tecnicas: updated }));
+        setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
     };
 
-    const handleRemoveEspecification = (index) => {
-        const updated = [...productData.especificaciones_tecnicas];
+    const handleRemoveFicha = (index) => {
+        const updated = [...(productData.fichas_tecnicas || [])];
         updated.splice(index, 1);
-        setProductData((prev) => ({ ...prev, especificaciones_tecnicas: updated }));
+        setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
+    };
+
+    const handleAddFicha = () => {
+        setProductData((prev) => ({
+            ...prev,
+            fichas_tecnicas: [...(prev.fichas_tecnicas || []), { id_caracteristica: '', valor: '' }]
+        }));
+    };
+
+    // Fotos
+    const handleRemoveFoto = (index) => {
+        const updatedFotos = [...(productData.fotos || [])];
+        updatedFotos.splice(index, 1);
+        setProductData((prev) => ({ ...prev, fotos: updatedFotos }));
+    };
+
+    const handleAddFotos = (e) => {
+        const files = Array.from(e.target.files).slice(0, 4 - (productData.fotos?.length || 0));
+        const readers = files.map((file) => {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result);
+                reader.readAsDataURL(file);
+            });
+        });
+
+        Promise.all(readers).then((images) => {
+            setProductData((prev) => ({
+                ...prev,
+                fotos: [...(prev.fotos || []), ...images],
+            }));
+        });
     };
 
     const handleSubmit = (e) => {
@@ -87,16 +120,23 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
         validateDuplicate();
         if (errors.duplicate || (productData.garantia && productData.garantia < 12)) return;
 
-        const FinalCode = productData.codigoBarra?.trim() || "N/A";
-        onSave({
+        const updatedProduct = {
             ...productData,
+            id_categoria: Number(productData.id_categoria),
+            unidad_medida: productData.unidad_medida,
             precio: Number(productData.precio),
             stock: Number(productData.stock),
             garantia: Number(productData.garantia),
-            codigoBarra: FinalCode,
-            categoria: Number(productData.categoria),
-        });
+            codigo_barra: productData.codigo_barra?.trim() || null,
+            fotos: productData.fotos,
+            fichas_tecnicas: (productData.fichas_tecnicas || []).map(f => ({
+                id_caracteristica: Number(f.id_caracteristica),
+                valor: f.valor
+            })),
+            estado: !!productData.estado,
+        };
 
+        onSave(updatedProduct);
         onClose();
     };
 
@@ -121,22 +161,24 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
                                 <input type="text" id="modelo" name="modelo" value={productData.modelo} onChange={handleChange} onBlur={handleBlur} className={inputBaseStyle} required />
                             </div>
                             <div>
-                                <FormLabel htmlFor="categoria">* Categoría:</FormLabel>
-                                <select id="categoria" name="categoria" value={productData.categoria} onChange={handleChange} className={inputBaseStyle} required>
+                                <FormLabel htmlFor="id_categoria">* Categoría:</FormLabel>
+                                <select id="id_categoria" name="id_categoria" value={productData.id_categoria} onChange={handleChange} className={inputBaseStyle} required>
+                                    <option value="" disabled>Seleccione una categoría</option>
                                     {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                                        <option key={cat.id_categoria} value={cat.id_categoria}>{cat.nombre}</option>
                                     ))}
                                 </select>
                             </div>
                             <div>
-                                <FormLabel htmlFor="unidad">* Unidad:</FormLabel>
-                                <select id="unidad" name="unidad" value={productData.unidad} onChange={handleChange} className={inputBaseStyle} required>
-                                    <option value="Unidad">Unidad</option>
-                                    <option value="Metros">Metros</option>
-                                    <option value="Tramo 2 metros">Tramo 2 metros</option>
-                                    <option value="Tramo 3 metros">Tramo 3 metros</option>
-                                    <option value="Paquetes">Paquetes</option>
-                                    <option value="Kit">Kit</option>
+                                <FormLabel htmlFor="unidad_medida">* Unidad:</FormLabel>
+                                <select id="unidad_medida" name="unidad_medida" value={productData.unidad_medida} onChange={handleChange} className={inputBaseStyle} required>
+                                    <option value="">Seleccione la unidad:</option>
+                                    <option value="unidad">Unidad</option>
+                                    <option value="metros">Metros</option>
+                                    <option value="tramo 2 metros">Tramo 2 metros</option>
+                                    <option value="tramo 3 metros">Tramo 3 metros</option>
+                                    <option value="paquetes">Paquetes</option>
+                                    <option value="kit">Kit</option>
                                 </select>
                             </div>
                             <div><FormLabel htmlFor="precio">* Precio:</FormLabel><input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} className={inputBaseStyle} required /></div>
@@ -146,26 +188,37 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
                                 <input type="number" id="garantia" name="garantia" value={productData.garantia} onChange={handleChange} className={inputBaseStyle} required />
                                 {productData.garantia && productData.garantia < 12 && <p className="text-red-500 text-sm mt-2">La garantía debe ser de al menos 12 meses.</p>}
                             </div>
-                            <div><FormLabel htmlFor="codigoBarra">Código de barra:</FormLabel><input type="text" id="codigoBarra" name="codigoBarra" value={productData.codigoBarra} onChange={handleChange} placeholder="N/A" className={inputBaseStyle} /></div>
+                            <div><FormLabel htmlFor="codigo_barra">Código de barra:</FormLabel><input type="text" id="codigo_barra" name="codigo_barra" value={productData.codigo_barra} onChange={handleChange} placeholder="N/A" className={inputBaseStyle} /></div>
                         </div>
                     </FormSection>
 
-
-                    <FormSection title="Especificaciones Técnicas">
-                        {productData.especificaciones_tecnicas.map((esp, index) => (
+                    <FormSection title="Fichas Técnicas">
+                        {(productData.fichas_tecnicas || []).map((ficha, index) => (
                             <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-2 items-center mb-2">
-                                <input type="text" placeholder="Concepto" value={esp.concepto} onChange={(e) => handleEspecificationChange(index, 'concepto', e.target.value)} className={inputBaseStyle} required />
-                                <input type="text" placeholder="Valor" value={esp.valor} onChange={(e) => handleEspecificationChange(index, 'valor', e.target.value)} className={inputBaseStyle} required />
-                                <button type="button" onClick={() => handleRemoveEspecification(index)} className="text-gray-400 hover:text-red-600 transition"><FaTrash /></button>
+                                <input
+                                    type="number"
+                                    placeholder="ID característica"
+                                    value={ficha.id_caracteristica}
+                                    onChange={(e) => handleFichaChange(index, 'id_caracteristica', e.target.value)}
+                                    className={inputBaseStyle}
+                                    required
+                                />
+                                <input
+                                    type="text"
+                                    placeholder="Valor"
+                                    value={ficha.valor}
+                                    onChange={(e) => handleFichaChange(index, 'valor', e.target.value)}
+                                    className={inputBaseStyle}
+                                    required
+                                />
+                                <button type="button" onClick={() => handleRemoveFicha(index)} className="text-gray-400 hover:text-red-600 transition"><FaTrash /></button>
                             </div>
                         ))}
-                        <button type="button" onClick={() => setProductData((prev) => ({
-                            ...prev,
-                            especificaciones_tecnicas: [...prev.especificaciones_tecnicas, { concepto: '', valor: '' }]
-                        }))} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg">
-                            <FaPlus className="text-white" size={12} /> Agregar especificación
+                        <button type="button" onClick={handleAddFicha} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg">
+                            <FaPlus className="text-white" size={12} /> Agregar ficha técnica
                         </button>
                     </FormSection>
+
                     <FormSection title="Fotos del Producto">
                         <div className="flex gap-3 flex-wrap">
                             {productData.fotos?.map((foto, index) => (
@@ -175,17 +228,12 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
                                 >
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            const updatedFotos = [...productData.fotos];
-                                            updatedFotos.splice(index, 1);
-                                            setProductData((prev) => ({ ...prev, fotos: updatedFotos }));
-                                        }}
+                                        onClick={() => handleRemoveFoto(index)}
                                         className="absolute -top-1.5 -right-1.5 bg-gray-700/70 hover:bg-gray-300 text-gray-600 hover:text-gray-800 rounded-full w-5 h-5 flex items-center justify-center shadow-sm transition z-10"
                                         title="Eliminar imagen"
                                     >
                                         <span className="text-xs text-white leading-none"><FaTimes /></span>
                                     </button>
-
                                     <img
                                         src={foto}
                                         alt={`Foto ${index + 1}`}
@@ -194,7 +242,7 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
                                 </div>
                             ))}
 
-                            {productData.fotos?.length < 4 && (
+                            {(productData.fotos?.length || 0) < 4 && (
                                 <>
                                     <label
                                         htmlFor="editar-fotos"
@@ -208,23 +256,7 @@ const ProductEditModal = ({ isOpen, onClose, onSave, productToEdit, categories, 
                                         id="editar-fotos"
                                         accept="image/*"
                                         multiple
-                                        onChange={(e) => {
-                                            const files = Array.from(e.target.files).slice(0, 4 - productData.fotos.length);
-                                            const readers = files.map((file) => {
-                                                return new Promise((resolve) => {
-                                                    const reader = new FileReader();
-                                                    reader.onloadend = () => resolve(reader.result);
-                                                    reader.readAsDataURL(file);
-                                                });
-                                            });
-
-                                            Promise.all(readers).then((images) => {
-                                                setProductData((prev) => ({
-                                                    ...prev,
-                                                    fotos: [...prev.fotos, ...images],
-                                                }));
-                                            });
-                                        }}
+                                        onChange={handleAddFotos}
                                         className="hidden"
                                     />
                                 </>
