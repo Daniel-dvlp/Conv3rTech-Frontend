@@ -1,6 +1,14 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { FaUserCircle, FaBell, FaCog, FaSignOutAlt, FaUser, FaChevronDown } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from "react";
+import {
+  FaUserCircle,
+  FaBell,
+  FaCog,
+  FaSignOutAlt,
+  FaUser,
+  FaChevronDown,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import authService from "../services/authService";
 
 const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -10,59 +18,64 @@ const Header = () => {
 
   // Obtener datos del usuario desde localStorage
   useEffect(() => {
-    const userFromStorage = localStorage.getItem('user');
+    const userFromStorage = localStorage.getItem("user");
     if (userFromStorage) {
       try {
         const userData = JSON.parse(userFromStorage);
         setCurrentUser(userData);
       } catch (error) {
-        console.error('Error parsing user data:', error);
+        console.error("Error parsing user data:", error);
         // Si hay error, usar datos por defecto
         setCurrentUser({
-          name: 'Usuario',
-          lastName: 'Sistema',
-          email: 'usuario@sistema.com',
-          avatarSeed: 'Usuario',
-          role: 'Usuario'
+          name: "Usuario",
+          lastName: "Sistema",
+          email: "usuario@sistema.com",
+          avatarSeed: "Usuario",
+          role: "Usuario",
         });
       }
     } else {
       // Si no hay usuario en localStorage, redirigir al login
-      navigate('/');
+      navigate("/");
     }
   }, [navigate]);
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
         setIsProfileMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  const handleLogout = () => {
-    if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-      // Limpiar datos de sesión
-      localStorage.removeItem('user');
-      localStorage.removeItem('isAuthenticated');
-      sessionStorage.clear();
-      navigate('/');
+  const handleLogout = async () => {
+    if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
+      try {
+        await authService.logout();
+      } catch (error) {
+        console.error("Error en logout:", error);
+      } finally {
+        navigate("/login");
+      }
     }
   };
 
   const handleProfileClick = () => {
-    navigate('/dashboard/profile');
+    navigate("/dashboard/profile");
     setIsProfileMenuOpen(false);
   };
 
   const handleSettingsClick = () => {
-    navigate('/dashboard/settings');
+    navigate("/dashboard/settings");
     setIsProfileMenuOpen(false);
   };
 
@@ -85,12 +98,12 @@ const Header = () => {
       <div className="flex items-center">
         <h1 className="text-xl font-bold text-gray-800">Conv3rTech</h1>
       </div>
-      
+
       {/* Iconos alineados a la derecha */}
       <div className="flex items-center gap-4">
         {/* Perfil con dropdown */}
         <div className="relative" ref={profileMenuRef}>
-          <button 
+          <button
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
@@ -103,11 +116,16 @@ const Header = () => {
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="hidden md:block text-left p-2">
-
-              <p className="text-sm font-semibold text-gray-800">{currentUser.name} {currentUser.lastName}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {currentUser.name} {currentUser.lastName}
+              </p>
               <p className="text-xs text-gray-500">{currentUser.role}</p>
             </div>
-            <FaChevronDown className={`text-gray-400 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
+            <FaChevronDown
+              className={`text-gray-400 transition-transform ${
+                isProfileMenuOpen ? "rotate-180" : ""
+              }`}
+            />
           </button>
 
           {/* Dropdown Menu */}
@@ -122,9 +140,13 @@ const Header = () => {
                     alt="Avatar del usuario"
                   />
                   <div>
-                    <p className="font-semibold text-gray-800">{currentUser.name} {currentUser.lastName}</p>
+                    <p className="font-semibold text-gray-800">
+                      {currentUser.name} {currentUser.lastName}
+                    </p>
                     <p className="text-sm text-gray-500">{currentUser.email}</p>
-                    <p className="text-xs text-conv3r-gold font-medium">{currentUser.role}</p>
+                    <p className="text-xs text-conv3r-gold font-medium">
+                      {currentUser.role}
+                    </p>
                   </div>
                 </div>
               </div>

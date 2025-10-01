@@ -7,16 +7,16 @@ const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
 const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] }) => {
 
     const initialState = {
-        tipoDocumento: '',
+        tipo_documento: '',
         documento: '',
         nombre: '',
         apellido: '',
-        email: '',
-        celular: '',
+        correo: '',
+        telefono: '',
         credito: false,
-        estado: true,
-        direcciones: [
-            { nombre: '', direccion: '', ciudad: '' }
+        estado_cliente: true,
+        addresses: [
+            { nombre_direccion: '', direccion: '', ciudad: '' }
         ]
     };
 
@@ -48,7 +48,7 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
                 updatedErrors.documento = existeDocumento ? 'Este documento ya está registrado' : '';
             }
 
-            if (name === 'email') {
+            if (name === 'correo') {
                 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
                 const existeCorreo = clientesExistentes.some(
@@ -58,25 +58,25 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
                 );
 
                 if (!emailRegex.test(value)) {
-                    updatedErrors.email = 'El formato del correo no es válido';
+                    updatedErrors.correo = 'El formato del correo no es válido';
                 } else if (existeCorreo) {
-                    updatedErrors.email = 'Este correo ya está registrado';
+                    updatedErrors.correo = 'Este correo ya está registrado';
                 } else {
-                    updatedErrors.email = '';
+                    updatedErrors.correo = '';
                 }
 
             }
-            if (name === 'celular') {
+            if (name === 'telefono') {
                 const celularRegex = /^\+?[0-9]{10,13}$/;
 
                 if (!value) {
-                    updatedErrors.celular = 'El celular es obligatorio';
+                    updatedErrors.telefono = 'El teléfono es obligatorio';
                 } else if (!celularRegex.test(value)) {
-                    updatedErrors.celular = 'Solo se permiten números';
+                    updatedErrors.telefono = 'Solo se permiten números';
                 } else if (value.length < 10 || value.length > 13) {
-                    updatedErrors.celular = 'Debe tener entre 10 y 13 dígitos';
+                    updatedErrors.telefono = 'Debe tener entre 10 y 13 dígitos';
                 } else {
-                    updatedErrors.celular = '';
+                    updatedErrors.telefono = '';
                 }
             }
 
@@ -88,60 +88,60 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
 
     const handleDireccionChange = (index, e) => {
         const { name, value } = e.target;
-        const updated = [...formData.direcciones];
+        const updated = [...formData.addresses];
         updated[index][name] = value;
-        setFormData(prev => ({ ...prev, direcciones: updated }));
+        setFormData(prev => ({ ...prev, addresses: updated }));
     };
 
     const addDireccion = () => {
         setFormData(prev => ({
             ...prev,
-            direcciones: [...prev.direcciones, { nombre: '', direccion: '', ciudad: '' }]
+            addresses: [...prev.addresses, { nombre_direccion: '', direccion: '', ciudad: '' }]
         }));
     };
 
     const removeDireccion = (index) => {
-        const updated = [...formData.direcciones];
+        const updated = [...formData.addresses];
         updated.splice(index, 1);
-        setFormData(prev => ({ ...prev, direcciones: updated }));
+        setFormData(prev => ({ ...prev, addresses: updated }));
     };
 
     const handleSubmit = (e) => {
         e.preventDefault();
         const newErrors = {};
 
-        const celularRegex = /^\+?[0-9]{10,13}$/;
-        if (!formData.celular) {
-            newErrors.celular = 'El celular es obligatorio';
-        } else if (!celularRegex.test(formData.celular)) {
-            newErrors.celular = 'Solo se permiten números';
-        } else if (formData.celular.length < 10 || formData.celular.length > 13) {
-            newErrors.celular = 'Debe tener entre 10 y 13 dígitos';
+        const telefonoRegex = /^\+?[0-9]{10,13}$/;
+        if (!formData.telefono) {
+            newErrors.telefono = 'El teléfono es obligatorio';
+        } else if (!telefonoRegex.test(formData.telefono)) {
+            newErrors.telefono = 'Solo se permiten números';
+        } else if (formData.telefono.length < 10 || formData.telefono.length > 13) {
+            newErrors.telefono = 'Debe tener entre 10 y 13 dígitos';
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(formData.email)) {
-            newErrors.email = 'El formato del correo no es válido';
+        if (!emailRegex.test(formData.correo)) {
+            newErrors.correo = 'El formato del correo no es válido';
         } else {
             const existeCorreo = clientesExistentes.some(
                 (c) =>
                     typeof c.email === 'string' &&
-                    c.email.toLowerCase() === formData.email.toLowerCase()
+                    c.email.toLowerCase() === formData.correo.toLowerCase()
             );
             if (existeCorreo) {
-                newErrors.email = 'Ya existe un cliente con este correo';
+                newErrors.correo = 'Ya existe un cliente con este correo';
             }
         }
 
-        if (!formData.tipoDocumento) newErrors.tipoDocumento = "Selecciona un tipo de documento";
+        if (!formData.tipo_documento) newErrors.tipo_documento = "Selecciona un tipo de documento";
         if (!formData.documento) newErrors.documento = "El documento es obligatorio";
         if (!formData.nombre) newErrors.nombre = "El nombre es obligatorio";
-        if (!formData.email) newErrors.email = "El correo es obligatorio";
-        if (!formData.celular) newErrors.celular = "El celular es obligatorio";
+        if (!formData.correo) newErrors.correo = "El correo es obligatorio";
+        if (!formData.telefono) newErrors.telefono = "El teléfono es obligatorio";
 
-        formData.direcciones.forEach((dir, i) => {
-            if (!dir.nombre || !dir.direccion || !dir.ciudad) {
-                newErrors[`direccion-${i}`] = "Todos los campos de dirección son obligatorios";
+        formData.addresses.forEach((dir, i) => {
+            if (!dir.nombre_direccion || !dir.direccion || !dir.ciudad) {
+                newErrors[`address-${i}`] = "Todos los campos de dirección son obligatorios";
             }
         });
 
@@ -151,7 +151,23 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
         }
 
         setErrors({});
-        onSubmit(formData);
+        
+        // Transformar los datos al formato que espera la API
+        const clientDataForApi = {
+            documento: formData.documento,
+            tipo_documento: formData.tipo_documento,
+            nombre: formData.nombre,
+            apellido: formData.apellido,
+            telefono: formData.telefono,
+            correo: formData.correo,
+            credito: formData.credito,
+            estado_cliente: formData.estado_cliente,
+            addresses: formData.addresses.filter(addr => 
+                addr.nombre_direccion && addr.direccion && addr.ciudad
+            )
+        };
+        
+        onSubmit(clientDataForApi);
         setFormData(initialState);
         onClose();
     };
@@ -172,14 +188,14 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className={labelStyle}>Tipo de Documento</label>
-                                <select name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
+                                <select name="tipo_documento" value={formData.tipo_documento} onChange={handleChange} className={inputBaseStyle}>
                                     <option value="">Seleccionar...</option>
                                     <option value="CC">Cédula de Ciudadanía</option>
                                     <option value="TI">Tarjeta de Identidad</option>
                                     <option value="CE">Cédula de Extranjería</option>
                                     <option value="NIT">NIT</option>
                                 </select>
-                                {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
+                                {errors.tipo_documento && <p className="text-red-500 text-sm mt-1">{errors.tipo_documento}</p>}
                             </div>
 
                             <div>
@@ -201,14 +217,14 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
 
                             <div>
                                 <label className={labelStyle}>Correo</label>
-                                <input type="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
-                                {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
+                                <input type="email" name="correo" value={formData.correo} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.correo && <p className="text-red-500 text-sm mt-1">{errors.correo}</p>}
                             </div>
 
                             <div>
                                 <label className={labelStyle}>Celular</label>
-                                <input type="text" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
-                                {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
+                                <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className={inputBaseStyle} />
+                                {errors.telefono && <p className="text-red-500 text-sm mt-1">{errors.telefono}</p>}
                             </div>
                         </div>
                     </div>
@@ -216,11 +232,11 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
                         <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Direcciones del Cliente</h3>
                         <div className="space-y-4">
-                            {formData.direcciones.map((dir, index) => (
+                            {formData.addresses.map((dir, index) => (
                                 <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr,1fr,1fr,auto] gap-4 items-end">
                                     <div>
                                         <label className={labelStyle}>Nombre</label>
-                                        <input type="text" name="nombre" value={dir.nombre} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} />
+                                        <input type="text" name="nombre_direccion" value={dir.nombre_direccion} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} />
                                     </div>
                                     <div>
                                         <label className={labelStyle}>Dirección</label>

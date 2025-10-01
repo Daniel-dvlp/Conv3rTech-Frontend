@@ -1,49 +1,118 @@
 import React from 'react';
-import { FaEye, FaTimes } from 'react-icons/fa'; // 👈 solo los íconos necesarios
+import { FaEye, FaMinusCircle } from 'react-icons/fa';
+import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 
-const formatCurrency = (amount) => {
-  if (amount === undefined || amount === null) return '-';
-  return amount.toLocaleString("es-CO", { style: "currency", currency: "COP" });
-};
+const PurchasesTable = ({ compras, onView, onAnnul }) => {
+  const manejarAnularClick = async (compra) => {
+    // Primer modal: Confirmación de anulación
+    const confirmResult = await Swal.fire({
+      title: '¿Estás seguro de anular esta compra?',
+      text: `La compra con número ${compra.numeroRecibo} será marcada como anulada y no podrá ser reactivada.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#6c757d',
+      confirmButtonText: 'Sí, anular',
+      cancelButtonText: 'Cancelar'
+    });
 
-const PurchasesTable = ({ purchases, onViewDetails }) => {
+    if (confirmResult.isConfirmed) {
+      // Si confirma la anulación, pedir la razón en un segundo modal
+      const { value: motivoAnulacion } = await Swal.fire({
+        title: 'Motivo de la Anulación',
+        input: 'textarea', // Tipo de entrada como área de texto
+        inputPlaceholder: 'Ingresa el motivo de la anulación (ej. error de registro, devolución completa, etc.)', // Placeholder para el textarea
+        inputAttributes: {
+          'aria-label': 'Ingresa el motivo de la anulación'
+        },
+        inputValidator: (value) => { // Validador para asegurar que no esté vacío
+          if (!value || value.trim() === '') {
+            return '¡Necesitas escribir un motivo para la anulación!';
+          }
+          return null; // No hay error si hay valor
+        },
+        showCancelButton: true,
+        confirmButtonText: 'Confirmar Anulación',
+        cancelButtonText: 'Cancelar',
+      });
+
+      if (motivoAnulacion) { // Si el usuario proporcionó un motivo y no canceló este segundo modal
+        toast.success(`La compra ${compra.numeroRecibo} ha sido anulada. Motivo: "${motivoAnulacion}"`);
+        if (onAnnul) {
+          onAnnul(compra.id, motivoAnulacion); // Pasa el ID de la compra y el motivo de anulación
+        }
+      } else {
+        // Si el usuario canceló el segundo modal o no proporcionó un motivo
+        toast('Anulación cancelada o motivo no proporcionado.', { icon: 'ℹ️' });
+      }
+    } else {
+      // Si el usuario canceló el primer modal
+      toast('Anulación cancelada.', { icon: 'ℹ️' });
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Número de Recibo</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Proveedor</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Monto</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha de Registro</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Número de Recibo</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proveedor</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto Total</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de Registro</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {purchases.map((purchase) => (
-            <tr key={purchase.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{String(purchase.id).padStart(3, '0')}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{purchase.receiptNumber}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{purchase.supplier}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{formatCurrency(purchase.amount ?? purchase.total)}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{purchase.registrationDate}</td>
-              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          {compras.map((compra) => (
+            <tr key={compra.id} className="hover:bg-gray-50 transition-colors">
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{compra.numeroRecibo}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{compra.proveedor}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${compra.total.toLocaleString('es-CO')}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{compra.fechaRegistro}</td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                <span
+                  className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                    compra.estado === 'Activa'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {compra.estado}
+                </span>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
                   <button
-                    title="Ver"
-                    className="text-blue-600 hover:text-blue-800"
-                    onClick={() => onViewDetails?.(purchase)}
+                    title="Ver Detalles"
+                    className="text-blue-600 hover:text-gray-900"
+                    onClick={() => onView(compra)}
                   >
                     <FaEye size={16} />
                   </button>
-                  <button title="Anular" className="text-red-600 hover:text-red-800">
-                    <FaTimes size={16} />
-                  </button>
+                  {/* Solo muestra el botón de anular si la compra está Activa */}
+                  {compra.estado === 'Activa' && (
+                    <button
+                      title="Anular Compra"
+                      className="text-red-600 hover:text-red-800"
+                      onClick={() => manejarAnularClick(compra)}
+                    >
+                      <FaMinusCircle size={16} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
           ))}
+          {compras.length === 0 && (
+            <tr>
+              <td colSpan="6" className="px-4 py-3 text-center text-gray-500">
+                No hay compras para mostrar.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>

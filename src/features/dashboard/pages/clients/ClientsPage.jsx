@@ -2,66 +2,69 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import ClientesTable from './components/ClientesTable';
 import SkeletonRow from './components/SkeletonRow';
-import { mockClientes } from './data/Clientes_data';
 import Pagination from '../../../../shared/components/Pagination';
 import CreateClientModal from './components/CreateClientModal';
 import EditClientModal from './components/EditClientModal';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { toast } from 'react-hot-toast';
+import { useClients } from './hooks/useClients';
 
 const ITEMS_PER_PAGE = 5;
 
-
-
 const ClientsPage = () => {
-  const [clientes, setClientes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    clientes,
+    loading,
+    createClient,
+    updateClient,
+    deleteClient,
+    changeClientStatus,
+    changeCreditStatus
+  } = useClients();
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [openModal, setOpenModal] = useState(false);
 
   // Función para eliminar un cliente
- const handleEliminarCliente = async (clienteId) => {
-  const confirmed = await confirmDelete('¿Deseas eliminar este cliente?');
-  console.log('Intentando eliminar', clienteId, 'Confirmado:', confirmed);
+  const handleEliminarCliente = async (clienteId) => {
+    const confirmed = await confirmDelete('¿Deseas eliminar este cliente?');
 
-  if (confirmed) {
-    setClientes(prev => {
-      const updated = prev.filter(c => c.id !== clienteId);
-      console.log('Clientes actualizados:', updated);
-      return updated;
-    });
-
-    toast.success('Cliente eliminado exitosamente');
-  }
-};
+    if (confirmed) {
+      try {
+        await deleteClient(clienteId);
+      } catch (error) {
+        console.error('Error al eliminar cliente:', error);
+      }
+    }
+  };
 
   // Función para agregar un nuevo cliente
-  const handleAddCliente = (nuevoCliente) => {
-    setClientes((prev) => [...prev, { id: Date.now(), ...nuevoCliente }]);
-    showSuccess('Cliente creado correctamente');
+  const handleAddCliente = async (nuevoCliente) => {
+    try {
+      await createClient(nuevoCliente);
+    } catch (error) {
+      console.error('Error al crear cliente:', error);
+    }
   };
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [editarModalAbierto, setEditarModalAbierto] = useState(false);
 
 
-  useEffect(() => {
-    setTimeout(() => {
-      setClientes(mockClientes);
-      setLoading(false);
-    }, 1200);
-  }, []);
+  // Los clientes se cargan automáticamente con el hook useClients
 
   const handleEditClick = (cliente) => {
     setClienteSeleccionado(cliente);
     setEditarModalAbierto(true); // ✅ ¡Así debe ser!
   };
 
-  const handleEditSubmit = (clienteActualizado) => {
-    setClientes(prev =>
-      prev.map(c => c.id === clienteActualizado.id ? clienteActualizado : c)
-    );
-    setEditarModalAbierto(false)
+  const handleEditSubmit = async (clienteActualizado) => {
+    try {
+      await updateClient(clienteSeleccionado.id_cliente, clienteActualizado);
+      setEditarModalAbierto(false);
+    } catch (error) {
+      console.error('Error al actualizar cliente:', error);
+    }
   };
   // Filtro por búsqueda
   const term = searchTerm.trim().toLowerCase();
@@ -70,9 +73,11 @@ const ClientsPage = () => {
       (c.nombre || '').toLowerCase().includes(term) ||
       (c.apellido || '').toLowerCase().includes(term) ||
       (c.documento || '').toLowerCase().includes(term) ||
-      (c.tipoDocumento || '').toLowerCase().includes(term) ||
-      (c.email || '').toLowerCase().includes(term) ||
-      (c.estado ? 'activo' : 'inactivo').includes(term)
+      (c.tipo_documento || '').toLowerCase().includes(term) ||
+      (c.correo || '').toLowerCase().includes(term) ||
+      (c.telefono || '').toLowerCase().includes(term) ||
+      (c.estado_cliente ? 'activo' : 'inactivo').includes(term) ||
+      (c.credito ? 'con credito' : 'sin credito').includes(term)
     ), [clientes, searchTerm]
   );
 
@@ -133,7 +138,9 @@ const ClientsPage = () => {
           <ClientesTable
             clientes={paginatedClients}
             onEdit={handleEditClick}
-            onDelete={handleEliminarCliente} // ✅ debe estar así
+            onDelete={handleEliminarCliente}
+            onChangeStatus={changeClientStatus}
+            onChangeCredit={changeCreditStatus}
           />
 
           {totalPages > 1 && (
@@ -149,9 +156,9 @@ const ClientsPage = () => {
             onSubmit={handleAddCliente}
             clientesExistentes={clientes.map(c => ({
               documento: c.documento,
-              tipoDocumento: c.tipoDocumento,
-              email: c.email,
-              celular: c.celular
+              tipoDocumento: c.tipo_documento,
+              email: c.correo,
+              telefono: c.telefono
             }))} // Pasar los clientes existentes para validación
           />
           <EditClientModal

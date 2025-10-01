@@ -1,13 +1,14 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
-import { hasAccess } from '../config/rolePermissions';
+import React from "react";
+import { Navigate } from "react-router-dom";
+import { hasAccess } from "../config/rolePermissions";
 
 const ProtectedRoute = ({ children, requiredModule = null }) => {
-  const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  const user = localStorage.getItem('user');
+  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
+  const token = localStorage.getItem("token");
+  const user = localStorage.getItem("user");
 
-  if (!isAuthenticated || !user) {
-    // Redirigir al login si no está autenticado
+  if (!isAuthenticated || !token || !user) {
+    // Redirigir al login si no está autenticado o no tiene token
     return <Navigate to="/login" replace />;
   }
 
@@ -15,14 +16,14 @@ const ProtectedRoute = ({ children, requiredModule = null }) => {
   if (requiredModule) {
     try {
       const userData = JSON.parse(user);
-      const hasModuleAccess = hasAccess(userData.role, requiredModule);
-      
+      const hasModuleAccess = hasAccess(userData.rol, requiredModule);
+
       if (!hasModuleAccess) {
         // Redirigir al dashboard si no tiene permisos para el módulo
         return <Navigate to="/dashboard" replace />;
       }
     } catch (error) {
-      console.error('Error parsing user data:', error);
+      console.error("Error parsing user data:", error);
       return <Navigate to="/login" replace />;
     }
   }
@@ -30,4 +31,4 @@ const ProtectedRoute = ({ children, requiredModule = null }) => {
   return children;
 };
 
-export default ProtectedRoute; 
+export default ProtectedRoute;
