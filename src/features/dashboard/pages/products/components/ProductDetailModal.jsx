@@ -77,7 +77,7 @@ const ProductDetailModal = ({ product, categories, onClose }) => {
               <ul className="list-disc pl-5 space-y-1 text-gray-700">
                 {product.fichas_tecnicas.map((spec, index) => (
                   <li key={index}>
-                    <strong>ID característica {spec.id_caracteristica}:</strong> {spec.valor}
+                    <strong>{spec.caracteristica.nombre}:</strong> {spec.valor}
                   </li>
                 ))}
               </ul>
