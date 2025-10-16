@@ -70,6 +70,13 @@ class AuthService {
   async updateProfile(profileData) {
     try {
       const response = await api.put("/auth/profile", profileData);
+
+      if (response.data.success) {
+        // Actualizar los datos del usuario en localStorage
+        const updatedUser = response.data.data;
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+      }
+
       return response.data;
     } catch (error) {
       throw error;

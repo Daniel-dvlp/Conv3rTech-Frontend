@@ -8,37 +8,14 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
-import authService from "../services/authService";
+import { useAuth } from "../contexts/AuthContext";
+import { showToast } from "../utils/alertas";
 
 const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
-
-  // Obtener datos del usuario desde localStorage
-  useEffect(() => {
-    const userFromStorage = localStorage.getItem("user");
-    if (userFromStorage) {
-      try {
-        const userData = JSON.parse(userFromStorage);
-        setCurrentUser(userData);
-      } catch (error) {
-        console.error("Error parsing user data:", error);
-        // Si hay error, usar datos por defecto
-        setCurrentUser({
-          name: "Usuario",
-          lastName: "Sistema",
-          email: "usuario@sistema.com",
-          avatarSeed: "Usuario",
-          role: "Usuario",
-        });
-      }
-    } else {
-      // Si no hay usuario en localStorage, redirigir al login
-      navigate("/");
-    }
-  }, [navigate]);
+  const { user, logout } = useAuth();
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -60,11 +37,12 @@ const Header = () => {
   const handleLogout = async () => {
     if (window.confirm("¿Estás seguro de que deseas cerrar sesión?")) {
       try {
-        await authService.logout();
+        await logout();
+        showToast("Sesión cerrada correctamente", "success");
+        navigate("/login");
       } catch (error) {
         console.error("Error en logout:", error);
-      } finally {
-        navigate("/login");
+        showToast("Error al cerrar sesión", "error");
       }
     }
   };
@@ -80,7 +58,7 @@ const Header = () => {
   };
 
   // Si no hay usuario, mostrar loading
-  if (!currentUser) {
+  if (!user) {
     return (
       <header className="w-full h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
@@ -110,16 +88,18 @@ const Header = () => {
             <div className="relative">
               <img
                 className="h-10 w-10 rounded-full ring-2 ring-conv3r-gold"
-                src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.avatarSeed}&backgroundColor=ffd700&textColor=1a1a1a`}
+                src={`https://api.dicebear.com/7.x/initials/svg?seed=${
+                  user.nombre || user.name
+                }&backgroundColor=ffd700&textColor=1a1a1a`}
                 alt="Avatar del usuario"
               />
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="hidden md:block text-left p-2">
               <p className="text-sm font-semibold text-gray-800">
-                {currentUser.name} {currentUser.lastName}
+                {user.nombre} {user.apellido}
               </p>
-              <p className="text-xs text-gray-500">{currentUser.role}</p>
+              <p className="text-xs text-gray-500">{user.rol}</p>
             </div>
             <FaChevronDown
               className={`text-gray-400 transition-transform ${
@@ -136,16 +116,16 @@ const Header = () => {
                 <div className="flex items-center gap-3">
                   <img
                     className="h-12 w-12 rounded-full ring-2 ring-conv3r-gold"
-                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.avatarSeed}&backgroundColor=ffd700&textColor=1a1a1a`}
+                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.nombre}&backgroundColor=ffd700&textColor=1a1a1a`}
                     alt="Avatar del usuario"
                   />
                   <div>
                     <p className="font-semibold text-gray-800">
-                      {currentUser.name} {currentUser.lastName}
+                      {user.nombre} {user.apellido}
                     </p>
-                    <p className="text-sm text-gray-500">{currentUser.email}</p>
+                    <p className="text-sm text-gray-500">{user.correo}</p>
                     <p className="text-xs text-conv3r-gold font-medium">
-                      {currentUser.role}
+                      {user.rol}
                     </p>
                   </div>
                 </div>

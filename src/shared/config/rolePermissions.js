@@ -1,100 +1,126 @@
 // Configuración de permisos basada en roles
 export const rolePermissions = {
-  'Admin': {
+  Administrador: {
     canAccess: [
-      'dashboard',
-      'usuarios',
-      'proveedores',
-      'categoria_productos',
-      'productos',
-      'compras',
-      'servicios',
-      'categoria_servicios',
-      'ordenes_servicios',
-      'programacion_laboral',
-      'clientes',
-      'venta_productos',
-      'citas',
-      'cotizaciones',
-      'proyectos_servicios',
-      'pagosyabonos',
-      'roles',
-      'profile'
+      "dashboard",
+      "usuarios",
+      "proveedores",
+      "categoria_productos",
+      "productos",
+      "compras",
+      "servicios",
+      "categoria_servicios",
+      "ordenes_servicios",
+      "programacion_laboral",
+      "clientes",
+      "venta_productos",
+      "citas",
+      "cotizaciones",
+      "proyectos_servicios",
+      "pagosyabonos",
+      "roles",
+      "profile",
     ],
     canManage: [
-      'dashboard',
-      'usuarios',
-      'roles',
-      'proveedores',
-      'productos',
-      'servicios',
-      'clientes',
-      'proyectos',
-      'salida_material'
-    ]
+      "dashboard",
+      "usuarios",
+      "roles",
+      "proveedores",
+      "productos",
+      "servicios",
+      "clientes",
+      "proyectos",
+      "salida_material",
+    ],
+  },
+  Admin: {
+    canAccess: [
+      "dashboard",
+      "usuarios",
+      "proveedores",
+      "categoria_productos",
+      "productos",
+      "compras",
+      "servicios",
+      "categoria_servicios",
+      "ordenes_servicios",
+      "programacion_laboral",
+      "clientes",
+      "venta_productos",
+      "citas",
+      "cotizaciones",
+      "proyectos_servicios",
+      "pagosyabonos",
+      "roles",
+      "profile",
+    ],
+    canManage: [
+      "dashboard",
+      "usuarios",
+      "roles",
+      "proveedores",
+      "productos",
+      "servicios",
+      "clientes",
+      "proyectos",
+      "salida_material",
+    ],
   },
 
-  'Supervisor': {
+  Supervisor: {
     canAccess: [
-      'dashboard',
-      'usuarios',
-      'proveedores',
-      'categoria_productos',
-      'productos',
-      'compras',
-      'servicios',
-      'categoria_servicios',
-      'ordenes_servicios',
-      'programacion_laboral',
-      'clientes',
-      'venta_productos',
-      'citas',
-      'cotizaciones',
-      'proyectos_servicios',
-      'pagosyabonos',
-      'profile'
+      "dashboard",
+      "usuarios",
+      "proveedores",
+      "categoria_productos",
+      "productos",
+      "compras",
+      "servicios",
+      "categoria_servicios",
+      "ordenes_servicios",
+      "programacion_laboral",
+      "clientes",
+      "venta_productos",
+      "citas",
+      "cotizaciones",
+      "proyectos_servicios",
+      "pagosyabonos",
+      "profile",
     ],
     canManage: [
-      'proveedores',
-      'productos',
-      'servicios',
-      'clientes',
-      'proyectos',
-      'salida_material'
-    ]
+      "proveedores",
+      "productos",
+      "servicios",
+      "clientes",
+      "proyectos",
+      "salida_material",
+    ],
   },
 
-  'Tecnico': {
+  Tecnico: {
     canAccess: [
-      'dashboard',
-      'ordenes_servicios',
-      'programacion_laboral',
-      'proyectos_servicios',
-      'citas',
-      'profile'
+      "dashboard",
+      "ordenes_servicios",
+      "programacion_laboral",
+      "proyectos_servicios",
+      "citas",
+      "profile",
     ],
-    canManage: [
-      'ordenes_servicios',
-      'proyectos_servicios'
-    ]
+    canManage: ["ordenes_servicios", "proyectos_servicios"],
   },
 
-  'Recepcionista': {
+  Recepcionista: {
     canAccess: [
-      'dashboard',
-      'clientes',
-      'citas',
-      'cotizaciones',
-      'venta_productos',
-      'pagosyabonos',
-      'profile'
+      "dashboard",
+      "clientes",
+      "citas",
+      "cotizaciones",
+      "venta_productos",
+      "pagosyabonos",
+      "profile",
     ],
-    canManage: [
-      'clientes',
-      'citas',
-      'cotizaciones'
-    ]
-  }
+    canManage: ["clientes", "citas", "cotizaciones"],
+  },
 };
 
 // Función para verificar acceso a módulo

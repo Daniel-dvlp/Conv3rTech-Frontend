@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../../../shared/utils/alertas";
-import authService from "../../../services/authService";
+import { useAuth } from "../../../shared/contexts/AuthContext";
 
 // --- Componentes Internos ---
 
@@ -91,10 +91,15 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navigate = useNavigate();
+  const { login, isAuthenticated } = useAuth();
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Si ya está autenticado, redirigir al dashboard
+    if (isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -114,7 +119,7 @@ const LoginPage = () => {
     }
 
     try {
-      const result = await authService.login(formData.email, formData.password);
+      const result = await login(formData.email, formData.password);
 
       if (result.success) {
         showToast(`Bienvenido, ${result.data.user.nombre}!`, "success");
@@ -281,36 +286,6 @@ const LoginPage = () => {
                 )}
               </button>
             </form>
-
-            {/* Información de usuarios de prueba */}
-            <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-              <h3 className="text-sm font-semibold text-yellow-800 mb-3 flex items-center gap-2">
-                <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-                Usuarios de prueba disponibles:
-              </h3>
-              <div className="text-xs text-yellow-700 space-y-2">
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <p className="font-medium">👑 Administrador</p>
-                  <p>mariaalvarez@gmail.com / 123456</p>
-                </div>
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <p className="font-medium">🔧 Técnico</p>
-                  <p>RamirezC@gmail.com / 123456</p>
-                </div>
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <p className="font-medium">📞 Recepcionista</p>
-                  <p>laura.gomez@gmail.com / 123456</p>
-                </div>
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <p className="font-medium">👨‍💼 Supervisor</p>
-                  <p>andres.torres@hotmail.com / 123456</p>
-                </div>
-                <div className="p-2 bg-white/50 rounded-lg">
-                  <p className="font-medium">🔧 Técnico</p>
-                  <p>camila.rdz@gmail.com / 123456</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       </div>

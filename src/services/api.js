@@ -1,11 +1,22 @@
 // src/services/api.js
 import axios from "axios";
+import { getApiConfig } from "../shared/config/api";
+
+const config = getApiConfig();
+
+// Log para verificar la configuración
+if (config.ENABLE_LOGS) {
+  console.log("🔧 API Configuration:", {
+    baseURL: config.BASE_URL,
+    timeout: config.TIMEOUT,
+    enableLogs: config.ENABLE_LOGS,
+  });
+}
 
 const api = axios.create({
-  baseURL: "https://backend-conv3rtech.onrender.com/api/", // cambia al puerto donde corre tu backend
-  headers: {
-    "Content-Type": "application/json",
-  },
+  baseURL: config.BASE_URL,
+  timeout: config.TIMEOUT,
+  headers: config.DEFAULT_HEADERS,
 });
 
 // Interceptor para agregar el token a todas las peticiones

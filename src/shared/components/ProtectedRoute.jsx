@@ -1,30 +1,32 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { hasAccess } from "../config/rolePermissions";
 
 const ProtectedRoute = ({ children, requiredModule = null }) => {
-  const isAuthenticated = localStorage.getItem("isAuthenticated") === "true";
-  const token = localStorage.getItem("token");
-  const user = localStorage.getItem("user");
+  const { isAuthenticated, user, loading } = useAuth();
 
-  if (!isAuthenticated || !token || !user) {
-    // Redirigir al login si no está autenticado o no tiene token
+  // Mostrar loading mientras se verifica la autenticación
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    // Redirigir al login si no está autenticado
     return <Navigate to="/login" replace />;
   }
 
   // Si se especifica un módulo requerido, verificar permisos
   if (requiredModule) {
-    try {
-      const userData = JSON.parse(user);
-      const hasModuleAccess = hasAccess(userData.rol, requiredModule);
+    const hasModuleAccess = hasAccess(user.rol, requiredModule);
 
-      if (!hasModuleAccess) {
-        // Redirigir al dashboard si no tiene permisos para el módulo
-        return <Navigate to="/dashboard" replace />;
-      }
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      return <Navigate to="/login" replace />;
+    if (!hasModuleAccess) {
+      // Redirigir al dashboard si no tiene permisos para el módulo
+      return <Navigate to="/dashboard" replace />;
     }
   }
 

@@ -1,27 +1,29 @@
-import { useState, useEffect } from 'react';
-import { hasAccess, canManage, getAccessibleModules } from '../config/rolePermissions';
+import { useMemo } from "react";
+import {
+  hasAccess,
+  canManage,
+  getAccessibleModules,
+} from "../config/rolePermissions";
+import { useAuth } from "../contexts/AuthContext";
 
 export const usePermissions = () => {
-  const [userRole, setUserRole] = useState(null);
-  const [accessibleModules, setAccessibleModules] = useState([]);
+  const { user } = useAuth();
 
-  useEffect(() => {
-    // Obtener información del usuario desde localStorage
-    const userFromStorage = localStorage.getItem('user');
-    if (userFromStorage) {
-      try {
-        const userData = JSON.parse(userFromStorage);
-        setUserRole(userData.role);
-        setAccessibleModules(getAccessibleModules(userData.role));
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        setUserRole('Usuario');
-        setAccessibleModules([]);
-      }
-    }
-  }, []);
+  const userRole = user?.rol || null;
+  console.log("🔐 usePermissions - User role:", userRole);
+
+  const accessibleModules = useMemo(() => {
+    if (!userRole) return [];
+    const modules = getAccessibleModules(userRole);
+    console.log("📋 Accessible modules for", userRole, ":", modules);
+    return modules;
+  }, [userRole]);
 
   const checkAccess = (module) => {
+    // TEMPORAL: Permitir acceso a todos los módulos para Administrador
+    if (userRole === "Administrador") {
+      return true;
+    }
     return hasAccess(userRole, module);
   };
 
@@ -30,28 +32,34 @@ export const usePermissions = () => {
   };
 
   const filterMenuItems = (menuItems) => {
-    return menuItems.filter(item => {
-      // Si el item tiene children, verificar si al menos uno es accesible
-      if (item.children) {
-        const accessibleChildren = item.children.filter(child => 
-          checkAccess(child.path.replace('/dashboard/', ''))
-        );
-        return accessibleChildren.length > 0;
-      }
-      // Si es un item directo, verificar acceso
-      return checkAccess(item.path.replace('/dashboard/', ''));
-    }).map(item => {
-      // Si tiene children, filtrar solo los accesibles
-      if (item.children) {
-        return {
-          ...item,
-          children: item.children.filter(child => 
-            checkAccess(child.path.replace('/dashboard/', ''))
-          )
-        };
-      }
-      return item;
-    });
+    const filtered = menuItems
+      .filter((item) => {
+        // Si el item tiene children, verificar si al menos uno es accesible
+        if (item.children) {
+          const accessibleChildren = item.children.filter((child) => {
+            const module = child.path.replace("/dashboard/", "");
+            return checkAccess(module);
+          });
+          return accessibleChildren.length > 0;
+        }
+        // Si es un item directo, verificar acceso
+        const module = item.path.replace("/dashboard/", "");
+        return checkAccess(module);
+      })
+      .map((item) => {
+        // Si tiene children, filtrar solo los accesibles
+        if (item.children) {
+          return {
+            ...item,
+            children: item.children.filter((child) =>
+              checkAccess(child.path.replace("/dashboard/", ""))
+            ),
+          };
+        }
+        return item;
+      });
+
+    return filtered;
   };
 
   return {
@@ -59,6 +67,6 @@ export const usePermissions = () => {
     accessibleModules,
     checkAccess,
     checkManage,
-    filterMenuItems
+    filterMenuItems,
   };
 };

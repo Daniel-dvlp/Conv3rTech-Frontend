@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useMemo } from "react";
 import { FaPlus, FaSearch, FaFileExcel } from "react-icons/fa";
-import { mockProjects } from "./data/projects.data";
 import ProjectsTable from "./components/ProjectsTable";
 import TableSkeleton from "../../../../shared/components/TableSkeleton";
 import Pagination from "../../../../shared/components/Pagination";
@@ -13,6 +12,7 @@ import SalidaMaterialModal from "./components/SalidaMaterialModal";
 import * as XLSX from "xlsx";
 import { showToast, showAlert } from "../../../../shared/utils/alertas";
 import { usePermissions } from "../../../../shared/hooks/usePermissions";
+import projectsService from "../../../../services/projectsService";
 
 // --- CONSTANTE PARA EL NÚMERO DE ELEMENTOS POR PÁGINA ---
 const ITEMS_PER_PAGE = 5;
@@ -32,32 +32,51 @@ const ProjectPage = () => {
     useState(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      setAllProjects(mockProjects);
-      setLoading(false);
-    }, 1500);
+    loadProjects();
   }, []);
+
+  const loadProjects = async () => {
+    setLoading(true);
+    try {
+      const response = await projectsService.getAllProjects();
+      if (response.success) {
+        setAllProjects(response.data || []);
+      } else {
+        showToast("Error al cargar los proyectos", "error");
+        setAllProjects([]);
+      }
+    } catch (error) {
+      console.error("Error loading projects:", error);
+      showToast("Error de conexión al cargar proyectos", "error");
+      setAllProjects([]);
+    }
+    setLoading(false);
+  };
 
   // --- AQUÍ ES DONDE SE AÑADE LA LÓGICA DE FILTRADO Y PÁGINACIÓN ---
 
-  const filteredProjects = useMemo(
-    () =>
-      allProjects.filter(
-        (p) =>
-          p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.responsable?.nombre
-            ?.toLowerCase()
-            ?.includes(searchTerm.toLowerCase()) ||
-          p.responsable?.apellido
-            ?.toLowerCase()
-            ?.includes(searchTerm.toLowerCase()) ||
-          p.numeroContrato.toString().includes(searchTerm) ||
-          p.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.prioridad.toLowerCase().includes(searchTerm.toLowerCase())
-      ),
-    [allProjects, searchTerm]
-  );
+  const filteredProjects = useMemo(() => {
+    // Verificar que allProjects sea un array antes de usar filter
+    if (!Array.isArray(allProjects)) {
+      console.warn("⚠️ allProjects is not an array:", allProjects);
+      return [];
+    }
+
+    return allProjects.filter(
+      (p) =>
+        p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.responsable?.nombre
+          ?.toLowerCase()
+          ?.includes(searchTerm.toLowerCase()) ||
+        p.responsable?.apellido
+          ?.toLowerCase()
+          ?.includes(searchTerm.toLowerCase()) ||
+        p.numeroContrato.toString().includes(searchTerm) ||
+        p.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.prioridad.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [allProjects, searchTerm]);
 
   // --- AQUÍ SE CALCULA EL NÚMERO TOTAL DE PÁGINAS Y SE REALIZA LA PÁGINACIÓN ---
   // --- NO CAMBIA NADA MÁS EN ESTA SECCIÓN ---
@@ -78,26 +97,42 @@ const ProjectPage = () => {
   };
 
   // --- AQUÍ SE MANTIENE LA FUNCIÓN PARA AÑADIR NUEVOS PROYECTOS ---
-  const handleAddProject = (newProject) => {
+  const handleAddProject = async (newProject) => {
     try {
-      setAllProjects((prev) => [newProject, ...prev]);
-      setShowNewModal(false);
-      showToast("Proyecto creado exitosamente", "success");
-    } catch {
-      showToast("Error al crear el proyecto", "error");
+      const response = await projectsService.createProject(newProject);
+      if (response.success) {
+        loadProjects(); // Recargar la lista completa
+        setShowNewModal(false);
+        showToast("Proyecto creado exitosamente", "success");
+      } else {
+        showToast(response.message || "Error al crear el proyecto", "error");
+      }
+    } catch (error) {
+      console.error("Error creating project:", error);
+      showToast("Error de conexión al crear proyecto", "error");
     }
   };
 
   // Editar proyecto
-  const handleUpdateProject = (updatedProject) => {
+  const handleUpdateProject = async (updatedProject) => {
     try {
-      setAllProjects((prev) =>
-        prev.map((p) => (p.id === updatedProject.id ? updatedProject : p))
+      const response = await projectsService.updateProject(
+        updatedProject.id,
+        updatedProject
       );
-      setEditingProject(null);
-      showToast("Proyecto actualizado exitosamente", "success");
-    } catch {
-      showToast("Error al actualizar el proyecto", "error");
+      if (response.success) {
+        loadProjects(); // Recargar la lista completa
+        setEditingProject(null);
+        showToast("Proyecto actualizado exitosamente", "success");
+      } else {
+        showToast(
+          response.message || "Error al actualizar el proyecto",
+          "error"
+        );
+      }
+    } catch (error) {
+      console.error("Error updating project:", error);
+      showToast("Error de conexión al actualizar proyecto", "error");
     }
   };
 
@@ -113,10 +148,19 @@ const ProjectPage = () => {
     });
     if (result.isConfirmed) {
       try {
-        setAllProjects((prev) => prev.filter((p) => p.id !== project.id));
-        showToast("Proyecto eliminado exitosamente", "success");
-      } catch {
-        showToast("Error al eliminar el proyecto", "error");
+        const response = await projectsService.deleteProject(project.id);
+        if (response.success) {
+          loadProjects(); // Recargar la lista completa
+          showToast("Proyecto eliminado exitosamente", "success");
+        } else {
+          showToast(
+            response.message || "Error al eliminar el proyecto",
+            "error"
+          );
+        }
+      } catch (error) {
+        console.error("Error deleting project:", error);
+        showToast("Error de conexión al eliminar proyecto", "error");
       }
     }
   };
