@@ -10,9 +10,22 @@ const LogoutButton = ({ className = "", showText = true }) => {
 
   const handleLogout = async () => {
     try {
-      await logout();
-      showToast("Sesión cerrada correctamente", "success");
-      navigate("/login");
+      const { showAlert } = await import("../utils/alertas");
+      const result = await showAlert({
+        title: "Cerrar sesión",
+        text: "¿Estás seguro de que deseas cerrar sesión?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cerrar sesión",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#e74c3c",
+      });
+      
+      if (result.isConfirmed) {
+        await logout();
+        showToast("Sesión cerrada correctamente", "success");
+        navigate("/login");
+      }
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
       showToast("Error al cerrar sesión", "error");

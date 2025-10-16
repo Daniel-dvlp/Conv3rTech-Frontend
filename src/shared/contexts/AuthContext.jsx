@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 import authService from "../../services/authService";
+import { showToast } from "../utils/alertas";
 
 const AuthContext = createContext();
 
@@ -110,15 +111,21 @@ export const AuthProvider = ({ children }) => {
   const logout = async () => {
     try {
       await authService.logout();
-    } catch (error) {
-      console.error("Error en logout:", error);
-    } finally {
+      // Limpiar datos de sesión
       setUser(null);
       setIsAuthenticated(false);
       setPermissions(null);
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("isAuthenticated");
+      
+      // Mostrar mensaje de éxito
+      showToast("Sesión cerrada correctamente", "success");
+      return { success: true };
+    } catch (error) {
+      console.error("Error en logout:", error);
+      showToast("Error al cerrar sesión. Inténtalo de nuevo.", "error");
+      return { success: false, error };
     }
   };
 
