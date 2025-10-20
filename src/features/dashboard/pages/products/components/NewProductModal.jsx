@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FaTimes, FaTrash, FaPlus, FaReply } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaPlus, FaReply, FaSpinner } from 'react-icons/fa';
 import { featuresService } from '../services/productsService';
+import cloudinaryService from '../../../../../services/cloudinaryService';
 
 // Componentes funcionales auxiliares
 const FormSection = ({ title, children }) => (
@@ -34,6 +35,8 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
 
     const [productData, setProductData] = useState(initialState);
     const [errors, setErrors] = useState({});
+    const [uploadingImages, setUploadingImages] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState(0);
 
     const validateDuplicate = () => {
         const nombreNorm = normalizeText(productData.nombre);
@@ -109,29 +112,43 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
     };
 
-    // Fotos (sin cambios)
+    // Fotos con Cloudinary
     const handleRemoveFoto = (index) => {
         const updatedFotos = [...(productData.fotos || [])];
         updatedFotos.splice(index, 1);
         setProductData((prev) => ({ ...prev, fotos: updatedFotos }));
     };
 
-    const handleAddFotos = (e) => {
+    const handleAddFotos = async (e) => {
         const files = Array.from(e.target.files).slice(0, 4 - (productData.fotos?.length || 0));
-        const readers = files.map((file) => {
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result);
-                reader.readAsDataURL(file);
-            });
-        });
+        
+        if (files.length === 0) return;
 
-        Promise.all(readers).then((images) => {
+        setUploadingImages(true);
+        setUploadProgress(0);
+
+        try {
+            // Subir imágenes a Cloudinary
+            const uploadedUrls = await cloudinaryService.uploadMultipleImages(files, 'products');
+            
             setProductData((prev) => ({
                 ...prev,
-                fotos: [...(prev.fotos || []), ...images],
+                fotos: [...(prev.fotos || []), ...uploadedUrls],
             }));
-        });
+
+            setUploadProgress(100);
+        } catch (error) {
+            console.error('Error al subir imágenes:', error);
+            setErrors(prev => ({
+                ...prev,
+                imageUpload: 'Error al subir las imágenes. Inténtalo de nuevo.'
+            }));
+        } finally {
+            setUploadingImages(false);
+            setUploadProgress(0);
+            // Limpiar el input
+            e.target.value = '';
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -218,15 +235,26 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                         src={foto}
                                         alt={`Foto ${index + 1}`}
                                         className="object-cover w-full h-full rounded-lg"
+                                        loading="lazy"
                                     />
                                 </div>
                             ))}
 
-                            {(productData.fotos?.length || 0) < 4 && (
+                            {/* Estado de carga */}
+                            {uploadingImages && (
+                                <div className="w-24 h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-conv3r-gold rounded-lg bg-conv3r-gold/10">
+                                    <FaSpinner className="animate-spin text-conv3r-gold" />
+                                    <span className="text-xs text-conv3r-gold font-medium">
+                                        {uploadProgress}%
+                                    </span>
+                                </div>
+                            )}
+
+                            {(productData.fotos?.length || 0) < 4 && !uploadingImages && (
                                 <>
                                     <label
                                         htmlFor="fotos"
-                                        className="w-24 h-24 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer text-gray-500 hover:bg-gray-100"
+                                        className="w-24 h-24 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer text-gray-500 hover:bg-gray-100 transition-colors"
                                     >
                                         <FaPlus />
                                         <span className="text-xs">Agregar</span>
@@ -238,10 +266,21 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                         multiple
                                         onChange={handleAddFotos}
                                         className="hidden"
+                                        disabled={uploadingImages}
                                     />
                                 </>
                             )}
                         </div>
+                        
+                        {/* Mensaje de error de subida */}
+                        {errors.imageUpload && (
+                            <p className="text-red-500 text-sm mt-2">{errors.imageUpload}</p>
+                        )}
+                        
+                        {/* Información sobre optimización */}
+                        <p className="text-xs text-gray-500 mt-2">
+                            Las imágenes se optimizan automáticamente para mejor rendimiento
+                        </p>
                     </FormSection>
 
                     <FormSection title="Información Principal">
@@ -348,7 +387,6 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     <FormLabel htmlFor={`caracteristica_input_${index}`}>* Característica:</FormLabel>
                                     
                                     {ficha.id_caracteristica === "otro" ? (
-                                        // 💥 Reemplaza el selector con el input de texto 💥
                                         <div className="flex gap-2">
                                             <input
                                                 type="text"
@@ -439,8 +477,22 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
 
                     {/* Botones de acción */}
                     <div className="flex justify-end gap-4 pt-6 border-t mt-6">
-                        <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
-                        <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105" disabled={productData.garantia && productData.garantia < 12}>Guardar</button>
+                        <button 
+                            type="button" 
+                            onClick={onClose} 
+                            className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+                            disabled={uploadingImages}
+                        >
+                            Cancelar
+                        </button>
+                        <button 
+                            type="submit" 
+                            className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2" 
+                            disabled={productData.garantia && productData.garantia < 12 || uploadingImages}
+                        >
+                            {uploadingImages && <FaSpinner className="animate-spin" />}
+                            {uploadingImages ? 'Subiendo imágenes...' : 'Guardar'}
+                        </button>
                     </div>
                 </form>
             </div>

@@ -124,6 +124,14 @@ const ProductsPage = () => {
       setIsEditing(false);
       setSelectedProduct(null);
       showSuccess('Producto actualizado exitosamente');
+
+      // Actualizar características para que el select tenga las nuevas características disponibles
+      try {
+        const updatedFeatures = await featuresService.getAllFeatures();
+        setFeatures(Array.isArray(updatedFeatures) ? updatedFeatures : []);
+      } catch (featureError) {
+        console.warn('Error al actualizar características:', featureError);
+      }
     } catch (err) {
       console.error('Error al actualizar producto:', err);
       showError('No se pudo actualizar el producto');
@@ -292,6 +300,7 @@ const ProductsPage = () => {
           productToEdit={selectedProduct}
           existingProducts={products}
           categories={categories}
+          features={features}
         />
       )}
     </div>

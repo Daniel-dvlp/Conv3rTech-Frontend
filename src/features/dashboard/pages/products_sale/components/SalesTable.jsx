@@ -44,21 +44,21 @@ const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
         </thead>
         <tbody className="divide-y divide-gray-200">
           {sales.map((sale) => (
-            <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={sale.id_venta} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                {sale.numero}
+                {sale.numero_venta}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
-                {sale.cliente}
+                {sale.cliente?.nombre} {sale.cliente?.apellido}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                {sale.fechaHora}
+                {new Date(sale.fecha_venta).toLocaleString()}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                ${sale.monto.toLocaleString()}
+                ${sale.monto_venta.toLocaleString()}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                {sale.metodoPago}
+                {sale.metodo_pago}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getEstadoStyle(sale.estado)}`}>
