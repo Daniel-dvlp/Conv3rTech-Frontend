@@ -83,9 +83,9 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
                   <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
                     <FaEdit size={20} />
                   </button>
-                  <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() =>onDelete(usuario.id_usuario)} >
+                  {/* <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() =>onDelete(usuario.id_usuario)} >
                     <FaTrashAlt size={20} />
-                  </button>
+                  </button> */}
                 </div>
                 {selectedUser && (
                   <UserDetailModal
