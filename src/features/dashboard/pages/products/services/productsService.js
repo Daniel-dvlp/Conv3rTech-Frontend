@@ -28,7 +28,8 @@ export const productsService = {
   createProduct: async (productData) => {
     try {
       const response = await api.post('/products/products', productData);
-      return response.data;
+      // El backend devuelve { message, data }
+      return response.data?.data ?? response.data;
     } catch (error) {
       console.error('Error al crear producto:', error);
       throw error;
@@ -39,7 +40,8 @@ export const productsService = {
   updateProduct: async (id, productData) => {
     try {
       const response = await api.put(`/products/products/${id}`, productData);
-      return response.data;
+      // El backend devuelve { message, data }
+      return response.data?.data ?? response.data;
     } catch (error) {
       console.error('Error al actualizar producto:', error);
       throw error;
@@ -89,7 +91,8 @@ export const featuresService = {
   createFeature: async (featureData) => {
     try {
       const response = await api.post('/products/features', featureData);
-      return response.data;
+      // El backend devuelve { message, data }
+      return response.data?.data ?? response.data;
     } catch (error) {
       console.error('Error al crear característica:', error);
       throw error;

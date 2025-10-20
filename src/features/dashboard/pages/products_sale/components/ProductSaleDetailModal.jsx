@@ -21,9 +21,10 @@ const InfoRow = ({ label, children }) => (
 const ProductSaleDetailModal = ({ productSale, onClose }) => {
   if (!productSale) return null;
 
-  const subtotal = productSale.productos.reduce((acc, p) => acc + p.subtotal, 0);
-  const iva = subtotal * 0.19;
-  const monto = subtotal + iva;
+  // Calcular totales desde los detalles de la venta
+  const subtotal = productSale.subtotal_venta ?? 0;
+  const iva = productSale.monto_iva ?? 0;
+  const monto = productSale.monto_venta ?? 0;  
 
   return (
     <div
@@ -36,8 +37,8 @@ const ProductSaleDetailModal = ({ productSale, onClose }) => {
       >
         <header className="flex justify-between items-center p-4 sm:p-6 border-b bg-white rounded-t-xl">
           <div>
-            <h2 className="text-3xl font-bold text-gray-800">Venta #{productSale.numero}</h2>
-            <p className="text-md text-gray-600">ID: {productSale.id}</p>
+            <h2 className="text-3xl font-bold text-gray-800">Venta #{productSale.numero_venta}</h2>
+            <p className="text-md text-gray-600">ID: {productSale.id_venta}</p>
           </div>
           <button
             onClick={onClose}
@@ -50,16 +51,16 @@ const ProductSaleDetailModal = ({ productSale, onClose }) => {
         <div className="p-4 sm:p-6 overflow-y-auto custom-scroll space-y-6">
           <DetailCard title="Información general" icon={<FaInfoCircle className="text-gray-500" />}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <InfoRow label="Cliente">{productSale.cliente}</InfoRow>
-              <InfoRow label="Documento">{productSale.clienteData.documento}</InfoRow>
-              <InfoRow label="Fecha y Hora">{productSale.fechaHora}</InfoRow>
-              <InfoRow label="Método de Pago">{productSale.metodoPago}</InfoRow>
+              <InfoRow label="Cliente">{productSale.cliente?.nombre} {productSale.cliente?.apellido}</InfoRow>
+              <InfoRow label="Documento">{productSale.cliente?.documento}</InfoRow>
+              <InfoRow label="Fecha y Hora">{new Date(productSale.fecha_venta).toLocaleString()}</InfoRow>
+              <InfoRow label="Método de Pago">{productSale.metodo_pago}</InfoRow>
               <InfoRow label="Estado">{productSale.estado}</InfoRow>
             </div>
           </DetailCard>
 
           <DetailCard title="Productos vendidos" icon={<FaInfoCircle className="text-gray-500" />}>
-            {Array.isArray(productSale.productos) && productSale.productos.length > 0 ? (
+            {Array.isArray(productSale.detalles) && productSale.detalles.length > 0 ? (
               <div className="overflow-x-auto">
                 <table className="w-full text-sm text-center border border-gray-200">
                   <thead className="bg-conv3r-dark text-white">
@@ -73,14 +74,14 @@ const ProductSaleDetailModal = ({ productSale, onClose }) => {
                     </tr>
                   </thead>
                   <tbody className="bg-white text-gray-700">
-                    {productSale.productos.map((prod, idx) => (
+                    {productSale.detalles.map((detalle, idx) => (
                       <tr key={idx} className="border-t border-gray-200">
-                        <td className="p-3">{prod.nombre}</td>
-                        <td>{prod.modelo}</td>
-                        <td>{prod.unidad}</td>
-                        <td>{prod.cantidad}</td>
-                        <td>${prod.precio.toLocaleString('es-CO')}</td>
-                        <td>${prod.subtotal.toLocaleString('es-CO')}</td>
+                        <td className="p-3">{detalle.producto?.nombre}</td>
+                        <td className="p-3">{detalle.producto?.modelo}</td>
+                        <td className="p-3">{detalle.producto?.unidad_medida}</td>
+                        <td className="p-3">{detalle.cantidad}</td>
+                        <td className="p-3">${detalle.precio_unitario.toLocaleString('es-CO')}</td>
+                        <td className="p-3">${detalle.subtotal_producto.toLocaleString('es-CO')}</td>
                       </tr>
                     ))}
                   </tbody>

@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@cloudinary/react": "^1.14.3",
+    "@cloudinary/url-gen": "^1.22.0",
     "@fortawesome/fontawesome-svg-core": "^6.7.2",
     "@fortawesome/free-regular-svg-icons": "^6.7.2",
     "@fortawesome/react-fontawesome": "^0.2.2",
@@ -22,6 +24,7 @@
     "@tailwindcss/forms": "^0.5.10",
     "axios": "^1.12.2",
     "bootstrap": "^5.3.7",
+    "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
     "i": "^0.3.7",
     "jspdf": "^3.0.1",
