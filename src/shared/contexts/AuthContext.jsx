@@ -41,18 +41,21 @@ export const AuthProvider = ({ children }) => {
         setUser(parsedUser);
         setIsAuthenticated(true);
 
-        // TEMPORAL: Deshabilitar carga de permisos del backend
-        // try {
-        //   const permissionsResponse = await authService.getMyPermissions();
-        //   setPermissions(permissionsResponse.data);
-        // } catch (error) {
-        //   console.error("Error cargando permisos:", error);
-        // }
-        console.log("ℹ️ Permisos deshabilitados temporalmente");
+        // Cargar permisos reales del backend
+        try {
+          const permissionsResponse = await authService.getMyPermissions();
+          // El backend devuelve { success, data: {<mapping>} }
+          const mapping = permissionsResponse?.data ?? null;
+          setPermissions(mapping);
+        } catch (error) {
+          console.error("Error cargando permisos:", error);
+          setPermissions(null);
+        }
       } else {
         console.log("❌ No valid auth data found");
         setUser(null);
         setIsAuthenticated(false);
+        setPermissions(null);
       }
     } catch (error) {
       console.error("Error verificando autenticación:", error);
@@ -85,14 +88,15 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setIsAuthenticated(true);
 
-        // TEMPORAL: Deshabilitar carga de permisos del backend
-        // try {
-        //   const permissionsResponse = await authService.getMyPermissions();
-        //   setPermissions(permissionsResponse.data);
-        // } catch (error) {
-        //   console.error("Error cargando permisos:", error);
-        // }
-        console.log("ℹ️ Permisos deshabilitados temporalmente en login");
+        // Cargar permisos reales del backend
+        try {
+          const permissionsResponse = await authService.getMyPermissions();
+          const mapping = permissionsResponse?.data ?? null;
+          setPermissions(mapping);
+        } catch (error) {
+          console.error("Error cargando permisos:", error);
+          setPermissions(null);
+        }
 
         return { success: true, data: response.data };
       }
@@ -147,9 +151,18 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Nuevo: verificación de permiso y privilegio según mapping del backend
   const hasPermission = (permission) => {
     if (!permissions) return false;
-    return permissions.some((p) => p.nombre === permission);
+    // permissions es un objeto: { [permisoNombre]: ["Crear", "Ver", ...] }
+    return !!permissions[permission];
+  };
+
+  const hasPrivilege = (permission, privilege) => {
+    if (!permissions) return false;
+    const privs = permissions[permission];
+    if (!Array.isArray(privs)) return false;
+    return privs.includes(privilege);
   };
 
   const hasRole = (role) => {
@@ -167,6 +180,7 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     refreshToken,
     hasPermission,
+    hasPrivilege,
     hasRole,
     checkAuthStatus,
   };

@@ -1,5 +1,9 @@
 # Sistema de Permisos por Roles - Conv3rTech
 
+> Actualización: permisos dinámicos desde backend (fallback estático)
+
+Desde esta versión, el frontend utiliza un mapeo dinámico de permisos obtenido del backend mediante `AuthContext`. El archivo `rolePermissions.js` se mantiene como respaldo (fallback) únicamente cuando el mapeo dinámico no está disponible. Las verificaciones de acceso en rutas y menús priorizan las funciones `hasPermission` y `hasPrivilege` del contexto.
+
 ## 📋 Descripción General
 
 Este sistema implementa un control de acceso basado en roles (RBAC - Role-Based Access Control) que permite mostrar diferentes módulos según el rol del usuario logueado.
@@ -28,10 +32,14 @@ Este sistema implementa un control de acceso basado en roles (RBAC - Role-Based 
 
 ## 🔧 Componentes Implementados
 
-### 1. **rolePermissions.js**
-- Configuración central de permisos por rol
-- Funciones de verificación de acceso
-- Mapeo de módulos accesibles por rol
+### 1. **AuthContext.jsx** (Fuente de permisos dinámicos)
+- Obtiene los permisos reales desde el backend
+- Expone `hasPermission` y `hasPrivilege`
+- Gestiona sesión y estado de autenticación
+
+### 2. **rolePermissions.js** (Fallback)
+- Configuración estática de permisos por rol
+- Se usa solo si no hay permisos dinámicos disponibles
 
 ### 2. **usePermissions.js** (Hook)
 - Hook personalizado para manejar permisos
@@ -39,12 +47,12 @@ Este sistema implementa un control de acceso basado en roles (RBAC - Role-Based 
 - Verificación de acceso y gestión
 
 ### 3. **ProtectedRoute.jsx**
-- Componente de protección de rutas
-- Verificación de autenticación y permisos
+- Protege rutas y verifica autenticación
+- Usa permisos dinámicos (`hasPermission`) con bypass para Administrador
 - Redirección automática si no tiene acceso
 
 ### 4. **Sidebar.jsx** (Actualizado)
-- Filtrado dinámico de menús según rol
+- Filtrado dinámico de menús según permisos
 - Indicador visual del rol del usuario
 - Solo muestra módulos accesibles
 

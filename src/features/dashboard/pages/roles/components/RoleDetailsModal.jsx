@@ -8,6 +8,7 @@ import {
   FaCheckCircle,
   FaTimesCircle,
 } from "react-icons/fa";
+import { usePermissions } from "../../../../../shared/hooks/usePermissions";
 
 const RoleDetailsModal = ({ role, isOpen, onClose, onEdit, onDelete }) => {
   if (!isOpen || !role) return null;
@@ -48,6 +49,8 @@ const RoleDetailsModal = ({ role, isOpen, onClose, onEdit, onDelete }) => {
   };
 
   const permissions = formatPermissions(role.permisos);
+
+  const { checkManage } = usePermissions();
 
   return (
     <div
@@ -200,26 +203,30 @@ const RoleDetailsModal = ({ role, isOpen, onClose, onEdit, onDelete }) => {
           >
             Cerrar
           </button>
-          <button
-            onClick={() => {
-              onEdit(role);
-              onClose();
-            }}
-            className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2"
-          >
-            <FaPencilAlt />
-            Editar Rol
-          </button>
-          <button
-            onClick={() => {
-              onDelete(role);
-              onClose();
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
-          >
-            <FaTrashAlt />
-            Eliminar Rol
-          </button>
+          {checkManage("roles") && (
+            <button
+              onClick={() => {
+                onEdit(role);
+                onClose();
+              }}
+              className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors flex items-center gap-2"
+            >
+              <FaPencilAlt />
+              Editar Rol
+            </button>
+          )}
+          {checkManage("roles") && (
+            <button
+              onClick={() => {
+                onDelete(role);
+                onClose();
+              }}
+              className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors flex items-center gap-2"
+            >
+              <FaTrashAlt />
+              Eliminar Rol
+            </button>
+          )}
         </footer>
       </div>
     </div>

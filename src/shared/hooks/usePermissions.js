@@ -7,27 +7,55 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 
 export const usePermissions = () => {
-  const { user } = useAuth();
+  const { user, permissions, hasPermission, hasPrivilege } = useAuth();
 
   const userRole = user?.rol || null;
   console.log("🔐 usePermissions - User role:", userRole);
 
   const accessibleModules = useMemo(() => {
+    // Preferir mapping dinámico del backend
+    if (permissions && typeof permissions === "object") {
+      const modules = Object.keys(permissions);
+      console.log("📋 Accessible modules (backend mapping):", modules);
+      return modules;
+    }
+    // Fallback al mapping estático por roles
     if (!userRole) return [];
     const modules = getAccessibleModules(userRole);
     console.log("📋 Accessible modules for", userRole, ":", modules);
     return modules;
-  }, [userRole]);
+  }, [permissions, userRole]);
 
   const checkAccess = (module) => {
-    // TEMPORAL: Permitir acceso a todos los módulos para Administrador
-    if (userRole === "Administrador") {
+    // Administrador siempre tiene acceso total
+    if (userRole === "Administrador" || userRole === "Admin") {
       return true;
     }
+    // Preferir verificación dinámica
+    if (hasPermission) {
+      return hasPermission(module);
+    }
+    // Fallback
     return hasAccess(userRole, module);
   };
 
   const checkManage = (module) => {
+    // Administrador puede gestionar todo
+    if (userRole === "Administrador" || userRole === "Admin") {
+      return true;
+    }
+    // Si hay privilegios del backend, comprobar alguno típico de gestión
+    if (hasPrivilege) {
+      const managePrivileges = [
+        "Gestionar",
+        "Administrar",
+        "Crear",
+        "Editar",
+        "Eliminar",
+      ];
+      return managePrivileges.some((p) => hasPrivilege(module, p));
+    }
+    // Fallback a configuración estática
     return canManage(userRole, module);
   };
 

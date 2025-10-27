@@ -10,6 +10,7 @@ import EditRoleModal from "./components/EditRoleModal";
 import RoleDetailsModal from "./components/RoleDetailsModal";
 import rolesService from "../../../../services/rolesService";
 import { showToast, showAlert } from "../../../../shared/utils/alertas";
+import { usePermissions } from "../../../../shared/hooks/usePermissions";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -20,6 +21,7 @@ const RolesPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewingRole, setViewingRole] = useState(null);
   const [editingRole, setEditingRole] = useState(null);
+  const { checkManage } = usePermissions();
 
   // Debug: Log cuando cambie el estado del modal
   useEffect(() => {
@@ -84,10 +86,28 @@ const RolesPage = () => {
     }
   }, [roles, currentPage, totalPages]);
 
-  const handleSaveRole = async (newRoleData) => {
+  const handleSaveRole = async (newRoleData, permissionsMapping) => {
     try {
       const response = await rolesService.createRole(newRoleData);
       if (response.success) {
+        // Extraer el rol creado y su ID
+        const apiData = response.data;
+        const createdRole = apiData?.data || apiData;
+        const roleId = createdRole?.id_rol || createdRole?.id;
+
+        if (roleId && permissionsMapping && Object.keys(permissionsMapping).length > 0) {
+          const assignResp = await rolesService.assignPermissionsToRole(
+            roleId,
+            permissionsMapping
+          );
+          if (!assignResp.success) {
+            showToast(
+              assignResp.message || "Rol creado, pero falló la asignación de permisos",
+              "warning"
+            );
+          }
+        }
+
         loadRoles();
         showToast("Rol creado exitosamente", "success");
       } else {
@@ -108,10 +128,23 @@ const RolesPage = () => {
   };
 
   // Corregimos esta función para que llame a 'updateRole'
-  const handleUpdateRole = async (id, updatedData) => {
+  const handleUpdateRole = async (id, updatedData, permissionsMapping) => {
     try {
       const response = await rolesService.updateRole(id, updatedData);
       if (response.success) {
+        if (permissionsMapping && Object.keys(permissionsMapping).length > 0) {
+          const assignResp = await rolesService.assignPermissionsToRole(
+            id,
+            permissionsMapping
+          );
+          if (!assignResp.success) {
+            showToast(
+              assignResp.message || "Rol actualizado, pero falló la asignación de permisos",
+              "warning"
+            );
+          }
+        }
+
         loadRoles();
         showToast("Rol actualizado exitosamente", "success");
       } else {
@@ -179,12 +212,14 @@ const RolesPage = () => {
             Administra los roles y permisos del sistema
           </p>
         </div>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="flex items-center gap-2 bg-conv3r-gold hover:bg-yellow-500 text-conv3r-dark font-bold py-2 px-4 rounded-lg transition-colors"
-        >
-          <FaPlus /> Nuevo Rol
-        </button>
+        {checkManage("roles") && (
+          <button
+            onClick={() => setIsCreateModalOpen(true)}
+            className="flex items-center gap-2 bg-conv3r-gold hover:bg-yellow-500 text-conv3r-dark font-bold py-2 px-4 rounded-lg transition-colors"
+          >
+            <FaPlus /> Nuevo Rol
+          </button>
+        )}
       </div>
 
       {/* ... tus tarjetas de estadísticas no cambian ... */}
@@ -215,8 +250,8 @@ const RolesPage = () => {
         <NewRoleModal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
-          onSave={(data) => {
-            handleSaveRole(data);
+          onSave={(data, permissions) => {
+            handleSaveRole(data, permissions);
             setIsCreateModalOpen(false);
           }}
         />
@@ -233,8 +268,8 @@ const RolesPage = () => {
           role={editingRole}
           isOpen={!!editingRole}
           onClose={() => setEditingRole(null)}
-          onSave={(id, data) => {
-            handleUpdateRole(id, data);
+          onSave={(id, data, permissions) => {
+            handleUpdateRole(id, data, permissions);
             setEditingRole(null);
           }}
         />

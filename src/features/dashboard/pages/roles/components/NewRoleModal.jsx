@@ -244,13 +244,12 @@ const NewRoleModal = ({ isOpen, onClose, onSave }) => {
         nombre_rol: roleName.trim(),
         descripcion: description.trim(),
         estado: 1, // 1 = Activo, 0 = Inactivo
-        permisos: Object.keys(formattedPermissions),
       };
 
-      console.log("Datos del rol a guardar:", roleData);
+      console.log("Datos del rol a guardar:", roleData, formattedPermissions);
 
       // Llamar a la función onSave que viene del componente padre
-      await onSave(roleData);
+      await onSave(roleData, formattedPermissions);
 
       // Limpiar formulario y cerrar modal
       resetForm();

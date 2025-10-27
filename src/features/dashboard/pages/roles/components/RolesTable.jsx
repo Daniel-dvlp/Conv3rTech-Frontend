@@ -2,6 +2,7 @@
 
 import React from "react";
 import { FaEdit, FaTrashAlt, FaEye } from "react-icons/fa";
+import { usePermissions } from "../../../../../shared/hooks/usePermissions";
 
 const RolesTable = ({ roles, onViewDetails, onEditRole, onDeleteRole }) => {
   // Log para ver la estructura de los datos
@@ -9,7 +10,7 @@ const RolesTable = ({ roles, onViewDetails, onEditRole, onDeleteRole }) => {
   if (roles.length > 0) {
     console.log("🔍 First role structure:", roles[0]);
   }
-
+  const { checkAccess, checkManage } = usePermissions();
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
@@ -103,27 +104,33 @@ const RolesTable = ({ roles, onViewDetails, onEditRole, onDeleteRole }) => {
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 {/* CAMBIO: Colores de los botones de acción actualizados */}
                 <div className="flex justify-end items-center gap-4">
-                  <button
-                    onClick={() => onViewDetails(rol)}
-                    className="text-blue-500 hover:text-blue-700"
-                    title="Ver Detalles"
-                  >
-                    <FaEye size={18} />
-                  </button>
-                  <button
-                    onClick={() => onEditRole(rol)}
-                    className="text-yellow-500 hover:text-yellow-700"
-                    title="Editar"
-                  >
-                    <FaEdit size={18} />
-                  </button>
-                  <button
-                    onClick={() => onDeleteRole(rol)}
-                    className="text-red-500 hover:text-red-700"
-                    title="Eliminar"
-                  >
-                    <FaTrashAlt size={18} />
-                  </button>
+                  {checkAccess("roles") && (
+                    <button
+                      onClick={() => onViewDetails(rol)}
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Ver Detalles"
+                    >
+                      <FaEye size={18} />
+                    </button>
+                  )}
+                  {checkManage("roles") && (
+                    <button
+                      onClick={() => onEditRole(rol)}
+                      className="text-yellow-500 hover:text-yellow-700"
+                      title="Editar"
+                    >
+                      <FaEdit size={18} />
+                    </button>
+                  )}
+                  {checkManage("roles") && (
+                    <button
+                      onClick={() => onDeleteRole(rol)}
+                      className="text-red-500 hover:text-red-700"
+                      title="Eliminar"
+                    >
+                      <FaTrashAlt size={18} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
