@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaFileExcel, FaSearch } from 'react-icons/fa';
 import QuotesTable from './components/QuotesTable';
 import SkeletonRow from './components/SkeletonRow';
-import { mockQuotes } from './data/Quotes_data';
 import Pagination from '../../../../shared/components/Pagination';
 import QuoteDetailModal from './components/QuoteDetailModal';
 import QuoteEditModal from './components/QuoteEditModal';
-import { mockProducts } from '../products/data/Products_data.js';
+import NewQuoteModal from './components/NewQuoteModal';
+import { clientsApi } from '../clients/services/clientsApi';
+import { productsService } from '../products/services/productsService';
+import { quotesService, servicesCatalogApi } from './services/quotesService';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -22,13 +24,31 @@ const QuotesPage = () => {
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [quoteToEdit, setQuoteToEdit] = useState(null);
   const [products, setProducts] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => {
-      setQuotes(mockQuotes);
-      setProducts(mockProducts)
-      setLoading(false);
-    }, 1500);
+    (async () => {
+      try {
+        const [quotesRes, clientsRes, productsRes, servicesRes] = await Promise.all([
+          quotesService.getAllQuotes(),
+          clientsApi.getAllClients(),
+          productsService.getAllProducts(),
+          servicesCatalogApi.getAllServices(),
+        ]);
+        const quotesData = Array.isArray(quotesRes) ? quotesRes : quotesRes?.data ?? [];
+        setQuotes(quotesData);
+        setClients(Array.isArray(clientsRes) ? clientsRes : clientsRes?.data ?? []);
+        setProducts(Array.isArray(productsRes) ? productsRes : productsRes?.data ?? []);
+        setServices(Array.isArray(servicesRes) ? servicesRes : servicesRes?.data ?? []);
+      } catch (e) {
+        console.error('Error cargando datos de cotizaciones', e);
+        showError('No se pudieron cargar las cotizaciones');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const mockServices = [
@@ -36,16 +56,30 @@ const QuotesPage = () => {
     { nombre: 'Mantenimiento', descripcion: 'Servicio de mantenimiento general', precio: 70000 },
     { nombre: 'Revisión', descripcion: 'Revisión técnica del equipo', precio: 30000 },
   ];
-  const normalize = (text) =>
-    text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const normalize = (text) => {
+    const s = (text ?? '').toString();
+    // Algunos navegadores antiguos podrían no soportar String.prototype.normalize
+    if (typeof s.normalize === 'function') {
+      return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+    return s.toLowerCase();
+  };
 
   const filteredQuotes = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
-    return quotes.filter((quote) =>
-      normalize(quote.cliente).includes(normalizedSearch) ||
-      normalize(quote.estado).includes(normalizedSearch) ||
-      normalize(quote.ordenServicio).includes(normalizedSearch)
-    );
+    return quotes.filter((quote) => {
+      const clienteNombre = quote.cliente
+        || (quote.clienteData ? `${quote.clienteData.nombre} ${quote.clienteData.apellido}` : '')
+        || quote.cliente_nombre
+        || '';
+      const nombreCoti = quote.nombre_cotizacion || quote.ordenServicio || '';
+      const estado = quote.estado || '';
+      return (
+        normalize(clienteNombre).includes(normalizedSearch) ||
+        normalize(nombreCoti).includes(normalizedSearch) ||
+        normalize(estado).includes(normalizedSearch)
+      );
+    });
   }, [quotes, searchTerm]);
 
   const totalPages = Math.ceil(filteredQuotes.length / ITEMS_PER_PAGE);
@@ -214,15 +248,30 @@ const QuotesPage = () => {
 
       if (!confirmed) return;
 
-      const updatedQuote = { ...quote, estado: 'Anulada' };
-      setQuotes((prevQuotes) =>
-        prevQuotes.map((q) => (q.id === quote.id ? updatedQuote : q))
-      );
-
+      const quoteId = quote.id_cotizacion ?? quote.id;
+      const updated = await quotesService.changeQuoteState(quoteId, 'Anulada');
+      setQuotes((prevQuotes) => prevQuotes.map((q) => {
+        const qId = q.id_cotizacion ?? q.id;
+        return qId === quoteId ? { ...q, ...updated } : q;
+      }));
       showSuccess('Cotización anulada exitosamente');
     } catch (error) {
       console.error(error);
       showError('Ocurrió un error al anular la cotización');
+    }
+  };
+
+  const handleCreateQuote = async (payload) => {
+    try {
+      const created = await quotesService.createQuote(payload);
+      showSuccess('Cotización creada exitosamente');
+      setIsCreateOpen(false);
+      // Opcional: insertar arriba si el listado ya es real. Con mocks, lo dejamos fuera.
+      // setQuotes(prev => [created, ...prev]);
+    } catch (error) {
+      console.error(error);
+      const message = error?.response?.data?.message || 'Ocurrió un error al crear la cotización';
+      showError(message);
     }
   };
 
@@ -246,6 +295,12 @@ const QuotesPage = () => {
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors"
+          >
+            Crear cotización
+          </button>
           <button
             onClick={() => handleExport(filteredQuotes)}
             className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
@@ -310,7 +365,19 @@ const QuotesPage = () => {
           onSave={handleSaveQuoteChanges}
           quoteToEdit={quoteToEdit}
           products={products}
-          services={mockServices}
+          services={services}
+          clients={clients}
+        />
+      )}
+
+      {isCreateOpen && (
+        <NewQuoteModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onSave={handleCreateQuote}
+          clients={clients}
+          products={products}
+          services={services}
         />
       )}
     </div>

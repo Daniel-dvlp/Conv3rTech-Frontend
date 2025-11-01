@@ -13,22 +13,40 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
         <thead className="bg-gray-50">
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre cotización</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orden de Servicio</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vencimiento</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto cotización</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {quotes.map((quote) => (
-            <tr key={quote.id}>
-              <td className="px-4 py-3">{quote.id}</td>
-              <td className="px-4 py-3">{quote.cliente}</td>
-              <td className="px-4 py-3">{quote.ordenServicio}</td>
-              <td className="px-4 py-3">${quote.detalleOrden.total.toLocaleString()}</td>
-              <td className="px-4 py-3">{quote.fechaVencimiento}</td>
+          {quotes.map((quote, index) => {
+            const keyId = quote.id_cotizacion ?? quote.id ?? `q-${index}`;
+            const rawCliente = quote.cliente ?? quote.clienteData ?? quote.cliente_nombre;
+            let clienteDisplay = '';
+            if (typeof rawCliente === 'string') {
+              clienteDisplay = rawCliente;
+            } else if (rawCliente && typeof rawCliente === 'object') {
+              const nombre = rawCliente.nombre || '';
+              const apellido = rawCliente.apellido || '';
+              clienteDisplay = `${nombre} ${apellido}`.trim() || rawCliente.documento || rawCliente.correo || '';
+            }
+            const monto = (
+              quote.monto_cotizacion
+              ?? quote.detalleOrden?.total
+              ?? quote.total
+              ?? 0
+            );
+            const fechaVenc = quote.fecha_vencimiento ?? quote.fechaVencimiento ?? '';
+            return (
+              <tr key={keyId}>
+                <td className="px-4 py-3">{quote.id ?? quote.id_cotizacion}</td>
+                <td className="px-4 py-3">{quote.nombre_cotizacion ?? quote.ordenServicio}</td>
+                <td className="px-4 py-3">{clienteDisplay}</td>
+                <td className="px-4 py-3">${monto.toLocaleString()}</td>
+                <td className="px-4 py-3">{fechaVenc}</td>
               <td className="px-4 py-3">
                 <span className={`px-2 py-1 rounded-full text-sm font-semibold ${quote.estado === 'Anulada' ? 'bg-gray-200 text-gray-700' :
                     quote.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
@@ -71,7 +89,8 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                 </button>
               </td>
             </tr>
-          ))}
+            );
+          })}
         </tbody>
       </table>
     </div>

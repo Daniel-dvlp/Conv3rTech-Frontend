@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus } from 'react-icons/fa';
+import SearchSelector from '../../products_sale/components/SearchSelector';
+import { quotesService } from '../services/quotesService';
 
 const inputStyle =
   'block w-full text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold transition-all';
@@ -11,12 +13,16 @@ const FormSection = ({ title, children }) => (
   </div>
 );
 
-const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, services }) => {
+const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, services, clients }) => {
   const [quoteData, setQuoteData] = useState(null);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState('');
 
   useEffect(() => {
     if (quoteToEdit) {
       setQuoteData(JSON.parse(JSON.stringify(quoteToEdit))); // deep clone
+      // Si viene de backend, precargar selección de cliente (si posible)
+      const idCliente = quoteToEdit.id_cliente || quoteToEdit.cliente?.id_cliente || quoteToEdit.clienteData?.id_cliente;
+      if (idCliente) setClienteSeleccionado(String(idCliente));
     }
   }, [quoteToEdit]);
 
@@ -64,8 +70,27 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    // Si es una cotización del backend, actualizar vía API sólo campos base
+    if (quoteData?.id_cotizacion) {
+      try {
+        const payload = {
+          nombre_cotizacion: quoteData.nombre_cotizacion,
+          id_cliente: clienteSeleccionado ? Number(clienteSeleccionado) : (quoteData.id_cliente || undefined),
+          fecha_vencimiento: quoteData.fecha_vencimiento || undefined,
+          estado: quoteData.estado,
+        };
+        const cleaned = Object.fromEntries(Object.entries(payload).filter(([, v]) => typeof v !== 'undefined'));
+        await quotesService.updateQuote(quoteData.id_cotizacion, cleaned);
+        onSave({ ...quoteData, ...cleaned });
+      } catch (err) {
+        console.error('Error actualizando cotización', err);
+      }
+      onClose();
+      return;
+    }
+    // Compatibilidad con mocks
     onSave(quoteData);
     onClose();
   };
@@ -108,8 +133,58 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
           </header>
 
           <div className="p-6 space-y-6">
-            {renderClientInfo()}
+            {/* Si viene de backend, permitir cambiar datos base; con mocks mostrar info de cliente */}
+            {quoteData.id_cotizacion ? (
+              <FormSection title="Información general">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Nombre de la cotización</label>
+                    <input
+                      type="text"
+                      value={quoteData.nombre_cotizacion || ''}
+                      onChange={(e) => setQuoteData(prev => ({ ...prev, nombre_cotizacion: e.target.value }))}
+                      className={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <SearchSelector
+                      options={clients || []}
+                      value={clienteSeleccionado}
+                      onChange={(value) => setClienteSeleccionado(value)}
+                      placeholder="Buscar cliente por nombre o documento..."
+                      displayKey={(client) => `${client.nombre} ${client.apellido}`}
+                      searchKeys={['nombre', 'apellido', 'documento']}
+                      label="Cliente"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de vencimiento</label>
+                    <input
+                      type="date"
+                      value={(quoteData.fecha_vencimiento || '').slice(0, 10)}
+                      onChange={(e) => setQuoteData(prev => ({ ...prev, fecha_vencimiento: e.target.value }))}
+                      className={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                    <select
+                      value={quoteData.estado}
+                      onChange={(e) => setQuoteData(prev => ({ ...prev, estado: e.target.value }))}
+                      className={inputStyle}
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Aprobada">Aprobada</option>
+                      <option value="Rechazada">Rechazada</option>
+                    </select>
+                  </div>
+                </div>
+              </FormSection>
+            ) : (
+              renderClientInfo()
+            )}
 
+            {!quoteData.id_cotizacion && (
             <FormSection title="Servicios">
               {quoteData.detalleOrden.servicios.map((serv, index) => (
                 <div
@@ -164,7 +239,9 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                 <FaPlus size={12} /> Agregar servicio
               </button>
             </FormSection>
+            )}
 
+            {!quoteData.id_cotizacion && (
             <FormSection title="Productos">
               {quoteData.detalleOrden.productos.map((prod, index) => (
                 <div
@@ -218,7 +295,9 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                 <FaPlus size={12} /> Agregar producto
               </button>
             </FormSection>
+            )}
 
+            {!quoteData.id_cotizacion && (
             <FormSection title="Totales">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
                 <p>
@@ -237,20 +316,23 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                 </p>
               </div>
             </FormSection>
+            )}
 
-            <FormSection title="Estado de la Cotización">
-              <select
-                value={quoteData.estado}
-                onChange={(e) =>
-                  setQuoteData((prev) => ({ ...prev, estado: e.target.value }))
-                }
-                className={inputStyle}
-              >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobada">Aprobada</option>
-                <option value="Rechazada">Rechazada</option>
-              </select>
-            </FormSection>
+            {!quoteData.id_cotizacion && (
+              <FormSection title="Estado de la Cotización">
+                <select
+                  value={quoteData.estado}
+                  onChange={(e) =>
+                    setQuoteData((prev) => ({ ...prev, estado: e.target.value }))
+                  }
+                  className={inputStyle}
+                >
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="Aprobada">Aprobada</option>
+                  <option value="Rechazada">Rechazada</option>
+                </select>
+              </FormSection>
+            )}
           </div>
 
           <div className="flex justify-end gap-4 p-6 border-t">

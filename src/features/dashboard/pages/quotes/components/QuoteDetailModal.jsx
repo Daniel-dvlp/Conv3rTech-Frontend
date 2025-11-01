@@ -1,5 +1,6 @@
-  import React from 'react';
+  import React, { useEffect, useMemo, useState } from 'react';
   import { FaTimes, FaInfoCircle } from 'react-icons/fa';
+  import { quotesService } from '../services/quotesService';
 
   const DetailCard = ({ title, icon, children }) => (
     <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -21,7 +22,33 @@
   const QuoteDetailModal = ({ quote, onClose }) => {
     if (!quote) return null;
 
-    const { clienteData, detalleOrden } = quote;
+    const [details, setDetails] = useState([]);
+
+    // Compatibilidad con mocks y backend
+    const clienteObj = quote.clienteData ?? quote.cliente ?? quote.cliente_nombre;
+    const clienteNombre = useMemo(() => {
+      if (typeof clienteObj === 'string') return clienteObj;
+      if (clienteObj && typeof clienteObj === 'object') {
+        const nombre = clienteObj.nombre || '';
+        const apellido = clienteObj.apellido || '';
+        return `${nombre} ${apellido}`.trim();
+      }
+      return '';
+    }, [clienteObj]);
+
+    const detalleOrden = quote.detalleOrden;
+
+    useEffect(() => {
+      // Si no hay detalleOrden (mocks), intentar cargar detalles del backend
+      if (!detalleOrden && (quote.id_cotizacion || quote.id)) {
+        const id = quote.id_cotizacion ?? quote.id;
+        quotesService.getQuoteDetails(id)
+          .then((res) => {
+            setDetails(Array.isArray(res) ? res : res?.data ?? []);
+          })
+          .catch(() => setDetails([]));
+      }
+    }, [detalleOrden, quote]);
 
     return (
       <div
@@ -34,8 +61,8 @@
         >
           <header className="flex justify-between items-center p-4 sm:p-6 border-b bg-white rounded-t-xl">
             <div>
-              <h2 className="text-3xl font-bold text-gray-800">Cotización #{quote.ordenServicio}</h2>
-              <p className="text-md text-gray-600">ID: {quote.id}</p>
+              <h2 className="text-3xl font-bold text-gray-800">Cotización - {quote.nombre_cotizacion}</h2>
+              <p className="text-md text-gray-600">ID: {quote.id_cotizacion}</p>
             </div>
             <button
               onClick={onClose}
@@ -48,17 +75,25 @@
           <div className="p-4 sm:p-6 overflow-y-auto custom-scroll space-y-6">
             <DetailCard title="Información Principal" icon={<FaInfoCircle className="text-gray-500" />}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoRow label="Nombre del cliente">{clienteData.nombre} {clienteData.apellido}</InfoRow>
-                <InfoRow label="Documento">{clienteData.tipoDocumento}. {clienteData.documento}</InfoRow>
-                <InfoRow label="Email">{clienteData.email}</InfoRow>
-                <InfoRow label="Celular">{clienteData.celular}</InfoRow>
-                <InfoRow label="Crédito">{clienteData.credito ? 'Sí' : 'No'}</InfoRow>
+                <InfoRow label="Nombre del cliente">{clienteNombre}</InfoRow>
+                {clienteObj?.documento && (
+                  <InfoRow label="Documento">{clienteObj.tipoDocumento || clienteObj.tipo_documento}. {clienteObj.documento}</InfoRow>
+                )}
+                {clienteObj?.email || clienteObj?.correo ? (
+                  <InfoRow label="Email">{clienteObj.email || clienteObj.correo}</InfoRow>
+                ) : null}
+                {clienteObj?.celular || clienteObj?.telefono ? (
+                  <InfoRow label="Celular">{clienteObj.celular || clienteObj.telefono}</InfoRow>
+                ) : null}
+                {typeof clienteObj?.credito !== 'undefined' ? (
+                  <InfoRow label="Crédito">{clienteObj.credito ? 'Sí' : 'No'}</InfoRow>
+                ) : null}
                 <InfoRow label="Estado de la cotización">{quote.estado}</InfoRow>
               </div>
             </DetailCard>
 
             <DetailCard title="Servicios incluidos">
-              {detalleOrden.servicios?.length > 0 ? (
+              {detalleOrden?.servicios?.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-center border border-gray-200">
                     <thead className="bg-conv3r-dark text-white">
@@ -91,6 +126,29 @@
                     </tfoot>
                   </table>
                 </div>
+              ) : details?.some(d => d.id_servicio) ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-center border border-gray-200">
+                    <thead className="bg-conv3r-dark text-white">
+                      <tr>
+                        <th className="p-3 font-semibold">Servicio</th>
+                        <th className="font-semibold">Cantidad</th>
+                        <th className="font-semibold">Precio Unit.</th>
+                        <th className="font-semibold">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white text-gray-700">
+                      {details.filter(d => d.id_servicio).map((s, idx) => (
+                        <tr key={`s-${idx}`} className="border-t border-gray-200">
+                          <td className="p-2">{s.nombre || s.id_servicio}</td>
+                          <td>{s.cantidad}</td>
+                          <td>${Number(s.precio_unitario || 0).toLocaleString('es-CO')}</td>
+                          <td>${Number(s.subtotal || (s.precio_unitario * s.cantidad) || 0).toLocaleString('es-CO')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <p className="text-sm text-gray-500 italic">No hay servicios registrados.</p>
               )}
@@ -98,7 +156,7 @@
 
 
             <DetailCard title="Productos incluidos">
-              {detalleOrden.productos?.length > 0 ? (
+              {detalleOrden?.productos?.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm text-center border border-gray-200">
                     <thead className="bg-conv3r-dark text-white">
@@ -129,6 +187,29 @@
                     </tfoot>
                   </table>
                 </div>
+              ) : details?.some(d => d.id_producto) ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-center border border-gray-200">
+                    <thead className="bg-conv3r-dark text-white">
+                      <tr>
+                        <th className="p-3 font-semibold">Producto</th>
+                        <th className="font-semibold">Cantidad</th>
+                        <th className="font-semibold">Precio Unit.</th>
+                        <th className="font-semibold">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white text-gray-700">
+                      {details.filter(d => d.id_producto).map((p, idx) => (
+                        <tr key={`p-${idx}`} className="border-t border-gray-200">
+                          <td className="p-2">{p.nombre || p.id_producto}</td>
+                          <td>{p.cantidad}</td>
+                          <td>${Number(p.precio_unitario || 0).toLocaleString('es-CO')}</td>
+                          <td>${Number(p.subtotal || (p.precio_unitario * p.cantidad) || 0).toLocaleString('es-CO')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               ) : (
                 <p className="text-sm text-gray-500 italic">No hay productos en esta cotización.</p>
               )}
@@ -139,22 +220,22 @@
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <InfoRow label="Subtotal productos">
                   <span className="text-conv3r-dark font-semibold">
-                    ${detalleOrden.subtotalProductos.toLocaleString('es-CO')}
+                    ${Number(detalleOrden?.subtotalProductos ?? quote.subtotal_productos ?? 0).toLocaleString('es-CO')}
                   </span>
                 </InfoRow>
                 <InfoRow label="Subtotal servicios">
                   <span className="text-conv3r-dark font-semibold">
-                    ${detalleOrden.subtotalServicios.toLocaleString('es-CO')}
+                    ${Number(detalleOrden?.subtotalServicios ?? quote.subtotal_servicios ?? 0).toLocaleString('es-CO')}
                   </span>
                 </InfoRow>
                 <InfoRow label="IVA">
                   <span className="text-conv3r-dark font-semibold">
-                    ${detalleOrden.iva.toLocaleString('es-CO')}
+                    ${Number(detalleOrden?.iva ?? quote.monto_iva ?? 0).toLocaleString('es-CO')}
                   </span>
                 </InfoRow>
                 <InfoRow label="Total">
                   <span className="text-conv3r-gold font-bold text-lg">
-                    ${detalleOrden.total.toLocaleString('es-CO')}
+                    ${Number(detalleOrden?.total ?? quote.monto_cotizacion ?? 0).toLocaleString('es-CO')}
                   </span>
                 </InfoRow>
               </div>
