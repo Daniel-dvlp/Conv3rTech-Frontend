@@ -4,7 +4,7 @@ import {showError} from '../../../../../shared/utils/alerts';
 
 const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel }) => {
   const handleDisabledAction = () => {
-    showError('No se puede realizar esta acción porque la venta ya está anulada.');
+    showError('No se puede realizar esta acción porque la cotización ya está rechazada/anulada.');
   };
 
   return (
@@ -48,11 +48,14 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                 <td className="px-4 py-3">${monto.toLocaleString()}</td>
                 <td className="px-4 py-3">{fechaVenc}</td>
               <td className="px-4 py-3">
-                <span className={`px-2 py-1 rounded-full text-sm font-semibold ${quote.estado === 'Anulada' ? 'bg-gray-200 text-gray-700' :
-                    quote.estado === 'Pendiente' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-green-100 text-green-800'
-                  }`}>
-                  {quote.estado}
+                <span className={`px-2 py-1 rounded-full text-sm font-semibold ${
+                  quote.estado === 'Rechazada' || quote.estado === 'Anulada' 
+                    ? 'bg-red-100 text-red-800' 
+                    : quote.estado === 'Pendiente' 
+                    ? 'bg-yellow-100 text-yellow-800' 
+                    : 'bg-green-100 text-green-800'
+                }`}>
+                  {quote.estado === 'Anulada' ? 'Rechazada' : quote.estado}
                 </span>
               </td>
               <td className="px-4 py-3 text-right space-x-2">
@@ -65,9 +68,10 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                 </button>
 
                 <button
-                  onClick={() => quote.estado === 'Anulada' ? handleDisabledAction() : onEdit(quote)}
+                  onClick={() => (quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? handleDisabledAction() : onEdit(quote)}
                   title="Editar"
-                  className={quote.estado === 'Anulada' ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:text-yellow-600'}
+                  disabled={quote.estado === 'Rechazada' || quote.estado === 'Anulada'}
+                  className={(quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:text-yellow-600'}
                 >
                   <FaEdit />
                 </button>
@@ -81,9 +85,10 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                 </button>
 
                 <button
-                  onClick={() => quote.estado === 'Anulada' ? handleDisabledAction() : onCancel(quote)}
+                  onClick={() => (quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? handleDisabledAction() : onCancel(quote)}
                   title="Anular"
-                  className={quote.estado === 'Anulada' ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-gray-900'}
+                  disabled={quote.estado === 'Rechazada' || quote.estado === 'Anulada'}
+                  className={(quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-gray-900'}
                 >
                   <FaMinusCircle />
                 </button>

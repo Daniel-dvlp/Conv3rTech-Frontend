@@ -153,6 +153,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                 }))
             };
 
+            console.log('Datos a enviar al backend:', nuevaVenta);
             onSave(nuevaVenta);
         }
     };

@@ -28,10 +28,22 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
   const [servicioSel, setServicioSel] = useState(null);
   const [cantidadServicio, setCantidadServicio] = useState('');
   const [serviciosAgregados, setServiciosAgregados] = useState([]);
+  const [observaciones, setObservaciones] = useState('');
   const [errores, setErrores] = useState({});
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      // Limpiar estado al cerrar
+      setNombreCotizacion('');
+      setClienteSeleccionado('');
+      setCliente(null);
+      setFechaVencimiento('');
+      setProductosAgregados([]);
+      setServiciosAgregados([]);
+      setObservaciones('');
+      setErrores({});
+      return;
+    }
     // Fecha de vencimiento por defecto +7 días
     const today = new Date();
     const plus7 = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
@@ -163,6 +175,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
       id_cliente: Number(clienteSeleccionado),
       fecha_vencimiento: new Date(fechaVencimiento).toISOString(),
       estado: 'Pendiente',
+      observaciones: observaciones.trim() || undefined,
       detalles: [
         ...productosAgregados.map(p => ({ id_producto: p.id_producto, cantidad: p.cantidad })),
         ...serviciosAgregados.map(s => ({ id_servicio: s.id_servicio, cantidad: s.cantidad })),
@@ -186,7 +199,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
           <FormSection title="Información General">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-1">
-                <FormLabel htmlFor="nombreCotizacion">Nombre de la cotización:</FormLabel>
+                <FormLabel htmlFor="nombreCotizacion">Nombre de la cotización <span className="text-red-500">*</span></FormLabel>
                 <input
                   id="nombreCotizacion"
                   type="text"
@@ -198,7 +211,6 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                 {errores.nombre && <p className="text-red-500 text-sm mt-1">{errores.nombre}</p>}
               </div>
               <div className="md:col-span-1">
-                <FormLabel htmlFor="cliente">Cliente</FormLabel>
                 <SearchSelector
                   options={clients || []}
                   value={clienteSeleccionado}
@@ -212,7 +224,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                 />
               </div>
               <div className="md:col-span-1">
-                <FormLabel htmlFor="fechaVenc">Fecha de vencimiento</FormLabel>
+                <FormLabel htmlFor="fechaVenc">Fecha de vencimiento <span className="text-red-500">*</span></FormLabel>
                 <input
                   id="fechaVenc"
                   type="date"
@@ -371,6 +383,21 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                 </tbody>
               </table>
               {errores.servicio && <p className="text-red-500 text-sm mt-2">{errores.servicio}</p>}
+            </div>
+          </FormSection>
+
+          <FormSection title="Observaciones">
+            <div>
+              <FormLabel htmlFor="observaciones">Observaciones (opcional)</FormLabel>
+              <textarea
+                id="observaciones"
+                value={observaciones}
+                onChange={(e) => setObservaciones(e.target.value)}
+                placeholder="Ingresa observaciones adicionales sobre la cotización..."
+                rows="4"
+                style={{ resize: 'none' }}
+                className={`${inputBaseStyle} resize-none`}
+              />
             </div>
           </FormSection>
 

@@ -241,6 +241,22 @@
               </div>
             </DetailCard>
 
+            {quote.observaciones && (
+              <DetailCard title="Observaciones" icon={<FaInfoCircle className="text-gray-500" />}>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{quote.observaciones}</p>
+                </div>
+              </DetailCard>
+            )}
+
+            {quote.motivo_anulacion && (
+              <DetailCard title="Motivo de Anulación" icon={<FaInfoCircle className="text-red-500" />}>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-sm text-red-700 whitespace-pre-wrap">{quote.motivo_anulacion}</p>
+                </div>
+              </DetailCard>
+            )}
+
           </div>
         </div>
       </div>

@@ -22,8 +22,12 @@ export const quotesService = {
   },
 
   // Cambiar estado de una cotización
-  changeQuoteState: async (id, estado) => {
-    const response = await api.patch(`/quotes/${id}/estado`, { estado });
+  changeQuoteState: async (id, estado, motivoAnulacion = null) => {
+    const payload = { estado };
+    if (motivoAnulacion) {
+      payload.motivo_anulacion = motivoAnulacion;
+    }
+    const response = await api.patch(`/quotes/${id}/estado`, payload);
     return response.data?.data ?? response.data;
   },
 
@@ -36,6 +40,12 @@ export const quotesService = {
   // Detalles de una cotización
   getQuoteDetails: async (id) => {
     const response = await api.get(`/quotes/${id}/detalles`);
+    return response.data?.data ?? response.data;
+  },
+
+  // Validar stock de productos
+  validateStock: async (productId, quantity) => {
+    const response = await api.post('/quotes/validate-stock', { id_producto: productId, cantidad: quantity });
     return response.data?.data ?? response.data;
   },
 };
