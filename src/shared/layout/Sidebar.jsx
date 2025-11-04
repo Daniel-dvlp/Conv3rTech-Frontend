@@ -77,7 +77,7 @@ const Sidebar = () => {
         { name: 'Proveedores', path: '/dashboard/proveedores' },
         { name: 'Categorías de Productos', path: '/dashboard/categoria_productos' },
         { name: 'Productos', path: '/dashboard/productos' },
-        { name: 'Compras      ', path: '/dashboard/compras' },
+        { name: 'Compras', path: '/dashboard/compras' },
       ]
     },
     {
@@ -363,4 +363,5 @@ const Sidebar = () => {
 };
 
 export default Sidebar;
+
 
