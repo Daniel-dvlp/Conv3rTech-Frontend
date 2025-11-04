@@ -7,7 +7,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import rrulePlugin from '@fullcalendar/rrule';
 import { FaFileExcel, FaUser } from 'react-icons/fa';
 import * as XLSX from 'xlsx';
-import EmployeeListPopover from '../work_scheduling/components/EmployeeListPopover';
+import EmployeeListPopover from './components/EmployeeListPopover';
 import EmployeeDetailModal from './components/EmployeeDetailModal';
 
 const tabBtn = (active) => `px-3 py-1.5 rounded-lg font-bold transition-all duration-200 text-xs
