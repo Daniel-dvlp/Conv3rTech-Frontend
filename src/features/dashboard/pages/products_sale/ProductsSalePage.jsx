@@ -85,11 +85,18 @@ const ProductsSalePage = () => {
       console.error('Error al crear venta:', error);
       console.error('Error response:', error.response?.data);
       console.error('Error status:', error.response?.status);
-      
+
       // Mostrar mensaje de error más específico
-      const errorMessage = error.response?.data?.message || 
-                          error.response?.data?.errors?.[0]?.msg || 
-                          'No se pudo crear la venta. Verifique que todos los campos y datos sean correctos.';
+      let errorMessage = 'No se pudo crear la venta. Verifique que todos los campos y datos sean correctos.';
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        errorMessage = error.response.data.errors.map(err => err.msg || err.message).join(', ');
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+
       showError(errorMessage);
     }
   };
