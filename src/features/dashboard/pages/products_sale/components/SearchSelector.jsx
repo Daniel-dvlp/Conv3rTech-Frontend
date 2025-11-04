@@ -38,7 +38,12 @@ const SearchSelector = ({
     // Actualizar opción seleccionada cuando cambia el value
     useEffect(() => {
         if (value) {
-            const option = options.find(opt => opt.id === value || opt.id_cliente === value || opt.id_producto === value);
+            const option = options.find(opt => (
+                opt.id === value ||
+                opt.id_cliente === value ||
+                opt.id_producto === value ||
+                opt.id_servicio === value
+            ));
             setSelectedOption(option || null);
         } else {
             setSelectedOption(null);
@@ -48,7 +53,7 @@ const SearchSelector = ({
     // Manejar selección de opción
     const handleSelect = (option) => {
         setSelectedOption(option);
-        const optionValue = option.id || option.id_cliente || option.id_producto;
+        const optionValue = option.id || option.id_cliente || option.id_producto || option.id_servicio;
         onChange(optionValue);
         setSearchTerm('');
         setIsOpen(false);
@@ -137,7 +142,7 @@ const SearchSelector = ({
                         {filteredOptions.length > 0 ? (
                             filteredOptions.map((option, index) => (
                                 <div
-                                    key={option.id || option.id_cliente || option.id_producto || index}
+                                    key={option.id || option.id_cliente || option.id_producto || option.id_servicio || index}
                                     onClick={() => handleSelect(option)}
                                     className="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors"
                                 >

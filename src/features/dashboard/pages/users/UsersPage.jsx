@@ -9,7 +9,7 @@ import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { toast } from 'react-hot-toast';
 import { useUsers } from './hooks/useUsers';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { rolePermissions, getAccessibleModules } from '../../../../shared/config/rolePermissions';
 
 const ITEMS_PER_PAGE = 5;
@@ -85,11 +85,37 @@ const UsuariosPage = () => {
       doc.text(`Total de usuarios: ${usuarios.length}`, 20, 45);
       
       // Contar usuarios por estado
-      const usuariosActivos = usuarios.filter(u => u.estado_usuario === 'Activo').length;
-      const usuariosInactivos = usuarios.filter(u => u.estado_usuario === 'Inactivo').length;
+      const estados = ['Activo', 'Inactivo', 'Suspendido', 'En vacaciones', 'Retirado', 'Licencia médica'];
+      const conteoEstados = estados.reduce((acc, estado) => {
+        acc[estado] = usuarios.filter(u => u.estado_usuario === estado).length;
+        return acc;
+      }, {});
       
-      doc.text(`Usuarios activos: ${usuariosActivos}`, 20, 55);
-      doc.text(`Usuarios inactivos: ${usuariosInactivos}`, 20, 65);
+      let yPos = 55;
+      doc.text(`Usuarios activos: ${conteoEstados['Activo']}`, 20, yPos);
+      yPos += 10;
+      if (conteoEstados['Inactivo'] > 0) {
+        doc.text(`Usuarios inactivos: ${conteoEstados['Inactivo']}`, 20, yPos);
+        yPos += 10;
+      }
+      if (conteoEstados['Suspendido'] > 0) {
+        doc.text(`Usuarios suspendidos: ${conteoEstados['Suspendido']}`, 20, yPos);
+        yPos += 10;
+      }
+      if (conteoEstados['En vacaciones'] > 0) {
+        doc.text(`En vacaciones: ${conteoEstados['En vacaciones']}`, 20, yPos);
+        yPos += 10;
+      }
+      if (conteoEstados['Retirado'] > 0) {
+        doc.text(`Retirados: ${conteoEstados['Retirado']}`, 20, yPos);
+        yPos += 10;
+      }
+      if (conteoEstados['Licencia médica'] > 0) {
+        doc.text(`En licencia médica: ${conteoEstados['Licencia médica']}`, 20, yPos);
+        yPos += 10;
+      }
+      
+      const startYPosition = yPos + 10;
       
       // Tabla de usuarios
       const tableData = usuarios.map(usuario => {
@@ -108,8 +134,8 @@ const UsuariosPage = () => {
       });
       
       // Configuración de la tabla
-      doc.autoTable({
-        startY: 80,
+      autoTable(doc, {
+        startY: startYPosition,
         head: [['Tipo Doc', 'Documento', 'Nombre Completo', 'Correo', 'Rol', 'Estado', 'Permisos']],
         body: tableData,
         theme: 'grid',

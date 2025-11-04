@@ -11,7 +11,6 @@ function DashboardPage() {
   const kpiData = [
     { id: 1, title: 'Citas Hoy', value: 8, icon: '📅' },
     { id: 2, title: 'Cotizaciones', value: 12, icon: '📦' },
-    { id: 3, title: 'Órdenes Pendientes', value: 3, icon: '⚠️' },
     { id: 4, title: 'Ventas Hoy', value: 2450, unit: '$', icon: '💰' },
   ];
 
@@ -84,44 +83,52 @@ function DashboardPage() {
   }, [projectsData]);
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Dashboard</h1>
-        <p className="text-gray-600">Bienvenido al panel de control de Conv3rTech</p>
+    <div className="p-6 min-h-screen" style={{ backgroundColor: '#FAFAFA' }}>
+      {/* Header Section */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <p className="text-gray-600 text-base">Bienvenido al panel de control de Conv3rTech</p>
       </div>
 
-      {/* Información de permisos del usuario (si es necesario) */}
-      {/* <UserPermissionsInfo /> */}
-
-      {/* Contenido del dashboard */}
-      <div className="space-y-6"> {/* Un poco de espacio vertical entre secciones */}
+      {/* Main Content Grid - 12 column layout */}
+      <div className="grid grid-cols-12 gap-6">
         
-        {/* Resúmenes (KPIs) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* KPIs Section - 4 columns each */}
+        <div className="col-span-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {kpiData.map(kpi => (
             <KpiCard key={kpi.id} {...kpi} />
           ))}
         </div>
 
-        {/* Proyectos Próximos a Culminar */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-bold text-gray-800">Proyectos Próximos a Culminar</h3>
-            <div className="flex space-x-2">
-              <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaChevronLeft /></button>
-              <button className="p-2 rounded-full hover:bg-gray-100 text-gray-600"><FaChevronRight /></button>
-            </div>
-          </div>
-          <div className="divide-y divide-gray-100">
-            {sortedProjects.slice(0, 3).map(project => ( // Mostrar solo los primeros 3 o los que desees
-              <ProjectCard key={project.id} project={project} />
-            ))}
-          </div>
+        {/* Main Chart - Full Width */}
+        <div className="col-span-12">
+          <WeeklySalesChart data={weeklySalesData} />
         </div>
 
-        {/* Gráfico de Ventas Semanales */}
-        <WeeklySalesChart data={weeklySalesData} />
-        
+        {/* Projects Section - Full Width */}
+        <div className="col-span-12">
+          <div className="bg-white rounded-xl shadow-[0_4px_6px_rgba(0,0,0,0.1)] border border-gray-200 p-6">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 mb-1">Proyectos Próximos a Culminar</h3>
+                <p className="text-sm text-gray-600">Gestión de proyectos activos</p>
+              </div>
+              <div className="flex space-x-2">
+                <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+                  <FaChevronLeft />
+                </button>
+                <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-600 transition-colors">
+                  <FaChevronRight />
+                </button>
+              </div>
+            </div>
+            <div className="space-y-4">
+              {sortedProjects.slice(0, 3).map(project => (
+                <ProjectCard key={project.id} project={project} />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
