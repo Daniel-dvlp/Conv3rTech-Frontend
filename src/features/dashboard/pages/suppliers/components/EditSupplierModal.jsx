@@ -160,7 +160,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
     };
 
     onSave(updatedSupplier);
-    toast.success("¡Proveedor actualizado exitosamente!");
+    // El hook manejará el toast de éxito
     onClose();
   };
 
