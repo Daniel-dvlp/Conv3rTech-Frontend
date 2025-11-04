@@ -33,8 +33,7 @@ const SuppliersTable = ({ suppliers, onEdit, onDelete }) => {
 
     if (result.isConfirmed) {
       // Si el usuario confirma, procede con la eliminación
-      onDelete(supplier.id); // Llama a la función onDelete pasada por props
-      toast.success(`Proveedor "${supplier.empresa}" eliminado correctamente.`);
+      onDelete(supplier.id); // El hook manejará el toast de éxito
     } else {
       // Si el usuario cancela
       toast('Eliminación cancelada.', { icon: 'ℹ️' });

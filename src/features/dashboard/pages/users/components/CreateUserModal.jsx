@@ -223,8 +223,11 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
                 <select id="tipoDocumento" name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
                   <option value="">Seleccionar...</option>
                   <option value="CC">CC</option>
-                  <option value="TI">TI</option>
+                  <option value="PPT">PPT</option>
+                  <option value="NIT">NIT</option>
+                  <option value="PA">PA</option>
                   <option value="CE">CE</option>
+                  <option value="TI">TI</option>
                 </select>
                 {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
               </div>

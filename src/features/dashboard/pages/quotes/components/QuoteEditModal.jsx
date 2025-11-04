@@ -1,103 +1,305 @@
-import React, { useState, useEffect } from 'react';
-import { FaTimes, FaPlus } from 'react-icons/fa';
+import React, { useState, useEffect, useMemo } from 'react';
+import { FaTimes, FaTrash } from 'react-icons/fa';
+import SearchSelector from '../../products_sale/components/SearchSelector';
+import { quotesService } from '../services/quotesService';
+import { showError } from '../../../../../shared/utils/alerts';
 
-const inputStyle =
-  'block w-full text-sm text-gray-700 border border-gray-300 rounded-lg shadow-sm p-2.5 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold transition-all';
+const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
 const FormSection = ({ title, children }) => (
-  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6 mb-6">
-    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">{title}</h3>
+  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
     <div className="space-y-4">{children}</div>
   </div>
 );
 
-const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, services }) => {
+const FormLabel = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
+);
+
+const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, services, clients }) => {
   const [quoteData, setQuoteData] = useState(null);
+  const [clienteSeleccionado, setClienteSeleccionado] = useState('');
+  const [cliente, setCliente] = useState(null);
+  const [productoSeleccionado, setProductoSeleccionado] = useState('');
+  const [productoSel, setProductoSel] = useState(null);
+  const [cantidadProducto, setCantidadProducto] = useState('');
+  const [productosAgregados, setProductosAgregados] = useState([]);
+  const [servicioSeleccionado, setServicioSeleccionado] = useState('');
+  const [servicioSel, setServicioSel] = useState(null);
+  const [cantidadServicio, setCantidadServicio] = useState('');
+  const [serviciosAgregados, setServiciosAgregados] = useState([]);
+  const [observaciones, setObservaciones] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (quoteToEdit) {
-      setQuoteData(JSON.parse(JSON.stringify(quoteToEdit))); // deep clone
+    if (!quoteToEdit || !isOpen) return;
+
+    const idCliente = quoteToEdit.id_cliente || quoteToEdit.cliente?.id_cliente || quoteToEdit.clienteData?.id_cliente;
+    if (idCliente) setClienteSeleccionado(String(idCliente));
+
+    setQuoteData(JSON.parse(JSON.stringify(quoteToEdit)));
+    setObservaciones(quoteToEdit.observaciones || '');
+
+    // Cargar detalles de productos y servicios desde el backend si existe
+    if (quoteToEdit.id_cotizacion) {
+      setLoading(true);
+      quotesService.getQuoteDetails(quoteToEdit.id_cotizacion)
+        .then((details) => {
+          const detalles = Array.isArray(details) ? details : details?.data || [];
+          
+          const prods = detalles
+            .filter(d => d.id_producto)
+            .map(d => ({
+              id_producto: d.id_producto,
+              nombre: d.producto?.nombre || d.nombre || `Producto ${d.id_producto}`,
+              modelo: d.producto?.modelo || d.modelo || '',
+              precio: Number(d.precio_unitario || d.producto?.precio || 0),
+              cantidad: Number(d.cantidad || 1),
+              subtotal: Number(d.subtotal || (d.precio_unitario * d.cantidad) || 0),
+            }));
+          
+          const servs = detalles
+            .filter(d => d.id_servicio)
+            .map(d => ({
+              id_servicio: d.id_servicio,
+              nombre: d.servicio?.nombre || d.nombre || `Servicio ${d.id_servicio}`,
+              precio: Number(d.precio_unitario || d.servicio?.precio || 0),
+              cantidad: Number(d.cantidad || 1),
+              subtotal: Number(d.subtotal || (d.precio_unitario * d.cantidad) || 0),
+            }));
+          
+          setProductosAgregados(prods);
+          setServiciosAgregados(servs);
+          setLoading(false);
+        })
+        .catch(() => {
+          // Si hay detalleOrden en el objeto original (mocks), usarlo
+          if (quoteToEdit.detalleOrden) {
+            setProductosAgregados(quoteToEdit.detalleOrden.productos || []);
+            setServiciosAgregados(quoteToEdit.detalleOrden.servicios || []);
+          }
+          setLoading(false);
+        });
+    } else if (quoteToEdit.detalleOrden) {
+      // Compatibilidad con mocks
+      setProductosAgregados(quoteToEdit.detalleOrden.productos || []);
+      setServiciosAgregados(quoteToEdit.detalleOrden.servicios || []);
     }
-  }, [quoteToEdit]);
+  }, [quoteToEdit, isOpen]);
 
-  const handleChange = (section, index, field, value) => {
-    const updated = [...quoteData.detalleOrden[section]];
-
-    if (field === 'producto' || field === 'servicio') {
-      const dataSource = section === 'productos' ? products : services;
-      const selected = dataSource.find((item) => item.nombre === value);
-
-      updated[index] = {
-        ...updated[index],
-        ...(section === 'productos' ? { nombre: value } : { servicio: value }),
-        descripcion: selected?.descripcion || '',
-        precioUnitario: selected?.precio || 0,
-      };
-    } else {
-      updated[index][field] = field === 'cantidad' ? Number(value) : value;
+  // Cliente seleccionado
+  useEffect(() => {
+    if (clienteSeleccionado === '') {
+      setCliente(null);
+      return;
     }
+    const found = clients?.find(c => c.id_cliente === Number(clienteSeleccionado));
+    setCliente(found || null);
+  }, [clienteSeleccionado, clients]);
 
-    const updatedServicios = section === 'servicios' ? updated : quoteData.detalleOrden.servicios;
-    const updatedProductos = section === 'productos' ? updated : quoteData.detalleOrden.productos;
+  // Producto seleccionado
+  useEffect(() => {
+    if (productoSeleccionado === '') {
+      setProductoSel(null);
+      return;
+    }
+    const found = products?.find(p => p.id_producto === Number(productoSeleccionado));
+    setProductoSel(found || null);
+  }, [productoSeleccionado, products]);
 
-    const subtotalServicios = updatedServicios.reduce(
-      (acc, item) => acc + item.precioUnitario * item.cantidad,
-      0
-    );
-    const subtotalProductos = updatedProductos.reduce(
-      (acc, item) => acc + item.precioUnitario * item.cantidad,
-      0
-    );
-    const iva = Math.round((subtotalServicios + subtotalProductos) * 0.19);
-    const total = subtotalServicios + subtotalProductos + iva;
+  // Servicio seleccionado
+  useEffect(() => {
+    if (servicioSeleccionado === '') {
+      setServicioSel(null);
+      return;
+    }
+    const found = services?.find(s => s.id_servicio === Number(servicioSeleccionado) || s.id === Number(servicioSeleccionado));
+    setServicioSel(found || null);
+  }, [servicioSeleccionado, services]);
 
-    setQuoteData((prev) => ({
-      ...prev,
-      detalleOrden: {
-        ...prev.detalleOrden,
-        [section]: updated,
-        subtotalServicios,
-        subtotalProductos,
-        iva,
-        total,
-      },
-    }));
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSave(quoteData);
-    onClose();
-  };
+  const subtotalProductos = useMemo(() => productosAgregados.reduce((acc, p) => acc + p.subtotal, 0), [productosAgregados]);
+  const subtotalServicios = useMemo(() => serviciosAgregados.reduce((acc, s) => acc + s.subtotal, 0), [serviciosAgregados]);
+  const iva = useMemo(() => (subtotalProductos + subtotalServicios) * 0.19, [subtotalProductos, subtotalServicios]);
+  const total = useMemo(() => subtotalProductos + subtotalServicios + iva, [subtotalProductos, subtotalServicios, iva]);
 
   if (!isOpen || !quoteData) return null;
 
-  const renderClientInfo = () => {
-    const { clienteData } = quoteData;
+  const isRejected = quoteData.estado === 'Rechazada' || quoteData.estado === 'Anulada';
+
+  // Si está rechazada, mostrar mensaje
+  if (isRejected) {
     return (
-      <FormSection title="Información general">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <p>Cliente: {`${clienteData.nombre} ${clienteData.apellido}`}</p>
-          <p>Documento: {clienteData.documento}</p>
-          <p>Correo electrónico: {clienteData.email}</p>
+      <div
+        className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4"
+        onClick={onClose}
+      >
+        <div
+          className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <header className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-bold text-gray-800">Cotización Rechazada</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-700 text-2xl"
+            >
+              <FaTimes />
+            </button>
+          </header>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-800 font-semibold mb-2">No se puede editar esta cotización</p>
+            <p className="text-red-600 text-sm">
+              La cotización con estado "{quoteData.estado}" no puede ser modificada.
+            </p>
+            {quoteData.observaciones && (
+              <div className="mt-3 p-2 bg-white rounded border border-red-200">
+                <p className="text-xs text-gray-600 font-medium mb-1">Observaciones:</p>
+                <p className="text-sm text-gray-800">{quoteData.observaciones}</p>
+              </div>
+            )}
+            {quoteData.motivo_anulacion && (
+              <div className="mt-3 p-2 bg-white rounded border border-red-300">
+                <p className="text-xs text-red-600 font-medium mb-1">Motivo de anulación:</p>
+                <p className="text-sm text-red-800">{quoteData.motivo_anulacion}</p>
+              </div>
+            )}
+          </div>
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={onClose}
+              className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+            >
+              Cerrar
+            </button>
+          </div>
         </div>
-      </FormSection>
+      </div>
     );
+  }
+
+  const handleAgregarProducto = async () => {
+    if (!productoSel || !cantidadProducto || Number(cantidadProducto) <= 0) {
+      return;
+    }
+
+    try {
+      // Calcular cantidad total si ya existe el producto
+      const idx = productosAgregados.findIndex(p => p.id_producto === productoSel.id_producto);
+      const cantidadExistente = idx !== -1 ? productosAgregados[idx].cantidad : 0;
+      const nuevaCantidadTotal = cantidadExistente + Number(cantidadProducto);
+
+      // Validar stock en tiempo real con el backend
+      const validation = await quotesService.validateStock(productoSel.id_producto, nuevaCantidadTotal);
+
+      if (!validation.valido) {
+        showError(`No hay suficiente stock disponible. Stock actual: ${validation.stock_disponible}, Cantidad solicitada: ${nuevaCantidadTotal}`);
+        return;
+      }
+
+      if (idx !== -1) {
+        const copy = [...productosAgregados];
+        const exist = copy[idx];
+        copy[idx] = { ...exist, cantidad: nuevaCantidadTotal, subtotal: nuevaCantidadTotal * exist.precio };
+        setProductosAgregados(copy);
+      } else {
+        setProductosAgregados(prev => ([
+          ...prev,
+          {
+            id_producto: productoSel.id_producto,
+            nombre: productoSel.nombre,
+            modelo: productoSel.modelo,
+            precio: productoSel.precio,
+            cantidad: Number(cantidadProducto),
+            subtotal: Number(cantidadProducto) * productoSel.precio,
+          }
+        ]));
+      }
+      setProductoSeleccionado('');
+      setProductoSel(null);
+      setCantidadProducto('');
+    } catch (error) {
+      console.error('Error al validar stock:', error);
+      showError('Error al validar el stock del producto. Intente nuevamente.');
+    }
+  };
+
+  const handleAgregarServicio = () => {
+    if (!servicioSel || !cantidadServicio || Number(cantidadServicio) <= 0) {
+      return;
+    }
+    const idx = serviciosAgregados.findIndex(s => (s.id_servicio ?? s.id) === (servicioSel.id_servicio ?? servicioSel.id));
+    if (idx !== -1) {
+      const copy = [...serviciosAgregados];
+      const exist = copy[idx];
+      const nuevaCantidad = exist.cantidad + Number(cantidadServicio);
+      copy[idx] = { ...exist, cantidad: nuevaCantidad, subtotal: nuevaCantidad * exist.precio };
+      setServiciosAgregados(copy);
+    } else {
+      const idServicio = servicioSel.id_servicio ?? servicioSel.id;
+      setServiciosAgregados(prev => ([
+        ...prev,
+        {
+          id_servicio: idServicio,
+          nombre: servicioSel.nombre,
+          precio: servicioSel.precio,
+          cantidad: Number(cantidadServicio),
+          subtotal: Number(cantidadServicio) * servicioSel.precio,
+        }
+      ]));
+    }
+    setServicioSeleccionado('');
+    setServicioSel(null);
+    setCantidadServicio('');
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!quoteData?.id_cotizacion) {
+      // Compatibilidad con mocks
+      onSave(quoteData);
+      onClose();
+      return;
+    }
+
+    try {
+      // Preparar payload con campos base y detalles
+      const payload = {
+        nombre_cotizacion: quoteData.nombre_cotizacion,
+        id_cliente: clienteSeleccionado ? Number(clienteSeleccionado) : quoteData.id_cliente,
+        fecha_vencimiento: quoteData.fecha_vencimiento ? new Date(quoteData.fecha_vencimiento).toISOString() : undefined,
+        estado: quoteData.estado,
+        observaciones: observaciones.trim() || undefined,
+        detalles: [
+          ...productosAgregados.map(p => ({ id_producto: p.id_producto, cantidad: p.cantidad })),
+          ...serviciosAgregados.map(s => ({ id_servicio: s.id_servicio, cantidad: s.cantidad })),
+        ],
+      };
+
+      // Actualizar cotización con detalles
+      const updatedQuote = await quotesService.updateQuote(quoteData.id_cotizacion, payload);
+      onSave(updatedQuote);
+      onClose();
+    } catch (error) {
+      console.error('Error al actualizar cotización:', error);
+      const message = error?.response?.data?.message || error?.message || 'Ocurrió un error al actualizar la cotización';
+      showError(message);
+    }
   };
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-16"
+      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12"
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto custom-scroll"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto custom-scroll"
         onClick={(e) => e.stopPropagation()}
       >
         <form onSubmit={handleSubmit}>
           <header className="flex justify-between items-center p-4 border-b">
             <h2 className="text-3xl font-bold text-gray-800">
-              Editar Cotización #{quoteData.ordenServicio}
+              Editar Cotización - {quoteData.nombre_cotizacion || quoteData.ordenServicio}
             </h2>
             <button
               onClick={onClose}
@@ -107,151 +309,268 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
             </button>
           </header>
 
-          <div className="p-6 space-y-6">
-            {renderClientInfo()}
-
-            <FormSection title="Servicios">
-              {quoteData.detalleOrden.servicios.map((serv, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center"
-                >
-                  <select
-                    value={serv.servicio}
-                    onChange={(e) =>
-                      handleChange('servicios', index, 'servicio', e.target.value)
-                    }
-                    className={inputStyle}
-                  >
-                    <option value="">Selecciona un servicio</option>
-                    {services.map((s, i) => (
-                      <option key={i} value={s.nombre}>
-                        {s.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  <input type="text" value={serv.descripcion} className={inputStyle} disabled />
-                  <input
-                    type="number"
-                    value={serv.cantidad}
-                    onChange={(e) =>
-                      handleChange('servicios', index, 'cantidad', e.target.value)
-                    }
-                    className={inputStyle}
-                  />
-                  <input type="number" value={serv.precioUnitario} className={inputStyle} disabled />
-                  <p className="text-left font-semibold text-conv3r-dark">
-                    ${(serv.precioUnitario * serv.cantidad).toLocaleString('es-CO')}
-                  </p>
+          {loading ? (
+            <div className="p-6 text-center">
+              <p className="text-gray-600">Cargando detalles...</p>
+            </div>
+          ) : (
+            <div className="p-6 space-y-6">
+              <FormSection title="Información General">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-1">
+                    <FormLabel htmlFor="nombreCotizacion">Nombre de la cotización</FormLabel>
+                    <input
+                      id="nombreCotizacion"
+                      type="text"
+                      value={quoteData.nombre_cotizacion || ''}
+                      onChange={(e) => setQuoteData(prev => ({ ...prev, nombre_cotizacion: e.target.value }))}
+                      className={inputBaseStyle}
+                      placeholder="Ej. Sistema CCTV para Sede Norte"
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <SearchSelector
+                      options={clients || []}
+                      value={clienteSeleccionado}
+                      onChange={(value) => setClienteSeleccionado(value)}
+                      placeholder="Buscar cliente por nombre o documento..."
+                      displayKey={(client) => `${client.nombre} ${client.apellido}`}
+                      searchKeys={['nombre', 'apellido', 'documento']}
+                      label="Cliente"
+                      required={true}
+                    />
+                  </div>
+                  <div className="md:col-span-1">
+                    <FormLabel htmlFor="fechaVenc">Fecha de vencimiento</FormLabel>
+                    <input
+                      id="fechaVenc"
+                      type="date"
+                      value={(quoteData.fecha_vencimiento || '').slice(0, 10)}
+                      onChange={(e) => setQuoteData(prev => ({ ...prev, fecha_vencimiento: e.target.value }))}
+                      className={inputBaseStyle}
+                    />
+                  </div>
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() =>
-                  setQuoteData((prev) => ({
-                    ...prev,
-                    detalleOrden: {
-                      ...prev.detalleOrden,
-                      servicios: [
-                        ...prev.detalleOrden.servicios,
-                        { servicio: '', descripcion: '', cantidad: 1, precioUnitario: 0 },
-                      ],
-                    },
-                  }))
-                }
-                className="mt-3 flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark px-4 py-2 rounded-lg"
-              >
-                <FaPlus size={12} /> Agregar servicio
-              </button>
-            </FormSection>
-
-            <FormSection title="Productos">
-              {quoteData.detalleOrden.productos.map((prod, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center"
-                >
-                  <select
-                    value={prod.nombre}
-                    onChange={(e) =>
-                      handleChange('productos', index, 'producto', e.target.value)
-                    }
-                    className={inputStyle}
-                  >
-                    <option value="">Selecciona un producto</option>
-                    {products.map((p, i) => (
-                      <option key={i} value={p.nombre}>
-                        {p.nombre}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number"
-                    value={prod.cantidad}
-                    onChange={(e) =>
-                      handleChange('productos', index, 'cantidad', e.target.value)
-                    }
-                    className={inputStyle}
-                  />
-                  <input type="number" value={prod.precioUnitario} className={inputStyle} disabled />
-                  <p className="text-left font-semibold text-conv3r-dark">
-                    ${(prod.precioUnitario * prod.cantidad).toLocaleString('es-CO')}
-                  </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <FormLabel htmlFor="estado">Estado</FormLabel>
+                    <select
+                      id="estado"
+                      value={quoteData.estado || 'Pendiente'}
+                      onChange={(e) => setQuoteData(prev => ({ ...prev, estado: e.target.value }))}
+                      className={inputBaseStyle}
+                    >
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Aprobada">Aprobada</option>
+                      <option value="Rechazada">Rechazada</option>
+                    </select>
+                  </div>
+                  {quoteData.motivo_anulacion && (
+                    <div>
+                      <FormLabel>Motivo de anulación (solo lectura)</FormLabel>
+                      <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                        {quoteData.motivo_anulacion}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ))}
-              <button
-                type="button"
-                onClick={() =>
-                  setQuoteData((prev) => ({
-                    ...prev,
-                    detalleOrden: {
-                      ...prev.detalleOrden,
-                      productos: [
-                        ...prev.detalleOrden.productos,
-                        { nombre: '', cantidad: 1, precioUnitario: 0 },
-                      ],
-                    },
-                  }))
-                }
-                className="mt-3 flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark px-4 py-2 rounded-lg"
-              >
-                <FaPlus size={12} /> Agregar producto
-              </button>
-            </FormSection>
+                {cliente && (
+                  <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    <p><strong>Nombre:</strong> {cliente.nombre} {cliente.apellido}</p>
+                    <p><strong>Documento:</strong> {cliente.documento}</p>
+                    <p><strong>Email:</strong> {cliente.correo}</p>
+                    <p><strong>Celular:</strong> {cliente.telefono}</p>
+                  </div>
+                )}
+              </FormSection>
 
-            <FormSection title="Totales">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-800 text-sm">
-                <p>
-                  <strong>Subtotal productos:</strong>{' '}
-                  ${quoteData.detalleOrden.subtotalProductos.toLocaleString('es-CO')}
-                </p>
-                <p>
-                  <strong>Subtotal servicios:</strong>{' '}
-                  ${quoteData.detalleOrden.subtotalServicios.toLocaleString('es-CO')}
-                </p>
-                <p>
-                  <strong>IVA (19%):</strong> ${quoteData.detalleOrden.iva.toLocaleString('es-CO')}
-                </p>
-                <p className="text-conv3r-gold font-bold text-lg">
-                  <strong>Total:</strong> ${quoteData.detalleOrden.total.toLocaleString('es-CO')}
-                </p>
-              </div>
-            </FormSection>
+              <FormSection title="Productos">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <SearchSelector
+                      options={products || []}
+                      value={productoSeleccionado}
+                      onChange={(value) => setProductoSeleccionado(value)}
+                      placeholder="Buscar producto por nombre, modelo o código..."
+                      displayKey={(product) => `${product.nombre} - ${product.modelo}`}
+                      searchKeys={['nombre', 'modelo', 'codigo_barra']}
+                      label="Producto"
+                      required={false}
+                    />
+                  </div>
+                  <div>
+                    <FormLabel htmlFor="cantidadProducto">Cantidad</FormLabel>
+                    <input
+                      id="cantidadProducto"
+                      type="number"
+                      value={cantidadProducto}
+                      onChange={(e) => setCantidadProducto(e.target.value)}
+                      className={inputBaseStyle}
+                      placeholder="Cantidad"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <button
+                    type="button"
+                    onClick={handleAgregarProducto}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    Agregar producto
+                  </button>
+                </div>
+                {productoSel && (
+                  <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    <p><strong>Producto:</strong> {productoSel.nombre}</p>
+                    <p><strong>Modelo:</strong> {productoSel.modelo}</p>
+                    <p><strong>Precio:</strong> ${productoSel.precio?.toLocaleString?.() ?? productoSel.precio}</p>
+                    {productoSel.stock !== undefined && <p><strong>Stock disponible:</strong> {productoSel.stock}</p>}
+                    <p><strong>Código:</strong> {productoSel.codigo_barra || 'Sin código'}</p>
+                  </div>
+                )}
+                <div className="overflow-x-auto mt-4">
+                  <table className="w-full text-sm text-center border">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="p-2">Producto</th>
+                        <th>Modelo</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unit.</th>
+                        <th>Total</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {productosAgregados.map((p, idx) => (
+                        <tr key={idx} className="border-t">
+                          <td className="p-2">{p.nombre}</td>
+                          <td>{p.modelo}</td>
+                          <td>{p.cantidad}</td>
+                          <td>${p.precio.toLocaleString()}</td>
+                          <td>${p.subtotal.toLocaleString()}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const copy = [...productosAgregados];
+                                copy.splice(idx, 1);
+                                setProductosAgregados(copy);
+                              }}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </FormSection>
 
-            <FormSection title="Estado de la Cotización">
-              <select
-                value={quoteData.estado}
-                onChange={(e) =>
-                  setQuoteData((prev) => ({ ...prev, estado: e.target.value }))
-                }
-                className={inputStyle}
-              >
-                <option value="Pendiente">Pendiente</option>
-                <option value="Aprobada">Aprobada</option>
-                <option value="Rechazada">Rechazada</option>
-              </select>
-            </FormSection>
-          </div>
+              <FormSection title="Servicios">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="md:col-span-2">
+                    <SearchSelector
+                      options={services || []}
+                      value={servicioSeleccionado}
+                      onChange={(value) => setServicioSeleccionado(value)}
+                      placeholder="Buscar servicio por nombre..."
+                      displayKey={(s) => `${s.nombre}`}
+                      searchKeys={['nombre', 'descripcion']}
+                      label="Servicio"
+                      required={false}
+                    />
+                  </div>
+                  <div>
+                    <FormLabel htmlFor="cantidadServicio">Cantidad</FormLabel>
+                    <input
+                      id="cantidadServicio"
+                      type="number"
+                      value={cantidadServicio}
+                      onChange={(e) => setCantidadServicio(e.target.value)}
+                      className={inputBaseStyle}
+                      placeholder="Cantidad"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-end mt-2">
+                  <button
+                    type="button"
+                    onClick={handleAgregarServicio}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    Agregar servicio
+                  </button>
+                </div>
+                {servicioSel && (
+                  <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                    <p><strong>Servicio:</strong> {servicioSel.nombre}</p>
+                    <p><strong>Precio:</strong> ${servicioSel.precio?.toLocaleString?.() ?? servicioSel.precio}</p>
+                    <p><strong>Descripción:</strong> {servicioSel.descripcion}</p>
+                  </div>
+                )}
+                <div className="overflow-x-auto mt-4">
+                  <table className="w-full text-sm text-center border">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="p-2">Servicio</th>
+                        <th>Cantidad</th>
+                        <th>Precio Unit.</th>
+                        <th>Total</th>
+                        <th></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {serviciosAgregados.map((s, idx) => (
+                        <tr key={idx} className="border-t">
+                          <td className="p-2">{s.nombre}</td>
+                          <td>{s.cantidad}</td>
+                          <td>${s.precio.toLocaleString()}</td>
+                          <td>${s.subtotal.toLocaleString()}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const copy = [...serviciosAgregados];
+                                copy.splice(idx, 1);
+                                setServiciosAgregados(copy);
+                              }}
+                              className="text-red-600 hover:text-red-800"
+                            >
+                              <FaTrash />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </FormSection>
+
+              <FormSection title="Observaciones">
+                <div>
+                  <FormLabel htmlFor="observaciones">Observaciones (opcional)</FormLabel>
+                  <textarea
+                    id="observaciones"
+                    value={observaciones}
+                    onChange={(e) => setObservaciones(e.target.value)}
+                    placeholder="Ingresa observaciones adicionales sobre la cotización..."
+                    rows="4"
+                    style={{ resize: 'none' }}
+                    className={`${inputBaseStyle} resize-none`}
+                  />
+                </div>
+              </FormSection>
+
+              <FormSection title="Resumen">
+                <p>Subtotal productos: <span className="font-semibold">${subtotalProductos.toLocaleString()}</span></p>
+                <p>Subtotal servicios: <span className="font-semibold">${subtotalServicios.toLocaleString()}</span></p>
+                <p>IVA (19%): <span className="font-semibold">${iva.toLocaleString()}</span></p>
+                <p>Total: <span className="font-bold text-conv3r-dark text-lg">${total.toLocaleString()}</span></p>
+              </FormSection>
+            </div>
+          )}
 
           <div className="flex justify-end gap-4 p-6 border-t">
             <button
@@ -263,7 +582,8 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
             </button>
             <button
               type="submit"
-              className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 hover:scale-105 transition-transform"
+              disabled={loading}
+              className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 hover:scale-105 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Guardar cambios
             </button>

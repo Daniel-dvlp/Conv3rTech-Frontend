@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaPlus, FaTrash, FaEdit, FaBarcode } from "react-icons/fa";
-import { mockProductosParaCompra, mockProveedores } from '../data/Purchases_data';
 import { toast } from 'react-hot-toast';
 
 // Componentes reutilizables del diseño estándar (sin cambios aquí)
@@ -24,8 +23,8 @@ const NewPurchasesModal = ({
   isOpen,
   onClose,
   onSave,
-  proveedores = mockProveedores,
-  productos = mockProductosParaCompra,
+  proveedores = [],
+  productos = [],
 }) => {
   const modalContentRef = useRef();
   const navigate = useNavigate();
