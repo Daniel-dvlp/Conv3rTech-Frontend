@@ -144,7 +144,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     };
 
     onSave(newProvider);
-    toast.success("¡Proveedor creado exitosamente!");
+    // El hook manejará el toast de éxito
     setProviderData(initialState);
     setErrors({});
     setFormSubmitted(false);

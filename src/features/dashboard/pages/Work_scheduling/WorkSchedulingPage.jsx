@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import WorkSchedulingSidebar from './components/WorkSchedulingSidebar';
-import WorkSchedulingCalendar from '../work_scheduling/WorkSchedulingCalendar';
+import WorkSchedulingCalendar from './WorkSchedulingCalendar';
 import WorkShiftModal from './components/WorkShiftModal';
 import EmployeeListPopover from './components/EmployeeListPopover';
 import EmployeeDetailModal from './components/EmployeeDetailModal';
