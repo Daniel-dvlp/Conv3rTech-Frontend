@@ -11,9 +11,9 @@ import DashboardPage from './features/dashboard/DashboardPage';
 
 //Rutas Daniel
 import LoginPage from './features/auth/pages/LoginPage';
-import WorkSchedulingPage from './features/dashboard/pages/work_scheduling/WorkSchedulingPage';
-import RolesPage from './features/dashboard/pages/Roles/RolesPage';
-import ProjectPage from './features/dashboard/pages/project/ProjectPage';
+import WorkSchedulingPage from './features/dashboard/pages/Work_scheduling/WorkSchedulingPage.jsx';
+import RolesPage from './features/dashboard/pages/roles/RolesPage';
+import ProjectPage from './features/dashboard/pages/Project/ProjectPage';
 import EditProfilePage from './features/dashboard/pages/profile/EditProfilePage';
 
 // Rutas Luissy
@@ -26,7 +26,7 @@ import ServicesPage from './features/dashboard/pages/services/ServicesPage';
 import AppoinmentsPage from './features/dashboard/pages/appointment/AppointmentsPage';
 //Rutas Sarai
 import ProductsPage from './features/dashboard/pages/products/ProductsPage';
- import ProductsCategoryPage from './features/dashboard/pages/products_Category/ProductsCategoryPage';
+ import ProductsCategoryPage from './features/dashboard/pages/products_category/ProductsCategoryPage';
 import ProductsSalePage from './features/dashboard/pages/products_sale/ProductsSalePage';
 //Rutas Cruz
 import PurchasesPage from './features/dashboard/pages/purchases/PurchasesPage';

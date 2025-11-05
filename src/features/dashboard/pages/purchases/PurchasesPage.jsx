@@ -4,63 +4,25 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FaPlus, FaSearch, FaFileExcel } from 'react-icons/fa';
 import PurchasesTable from './components/PurchasesTable';
 import SkeletonRow from './components/SkeletonRow';
-import { initialMockCompras, mockProveedores, mockProductosParaCompra } from './data/Purchases_data';
 import Pagination from '../../../../shared/components/Pagination';
 import PurchaseDetailModal from './components/PurchasesDetailModal';
 import NewPurchasesModal from './components/NewPurchasesModal';
 import * as XLSX from 'xlsx';
+import { usePurchases } from './hooks/usePurchases';
 
 const ITEMS_POR_PAGINA = 5;
 
 const PaginaCompras = () => {
-  // Estado inicial de las compras, asegurando que 'proveedor' y todos los datos del producto existan
-  const [compras, setCompras] = useState(() => {
-    return initialMockCompras.map(compra => {
-      const proveedorObj = mockProveedores.find(p => p.id === compra.idProveedor);
-      const nombreProveedor = proveedorObj ? proveedorObj.nombre : 'Proveedor desconocido';
-
-      // Asegurar que los productos de las compras iniciales también tengan nombre, modelo y unidadDeMedida
-      const productosCompletos = compra.productos.map(item => {
-        const productoOriginal = mockProductosParaCompra.find(p => p.id === item.idProducto);
-        return {
-          ...item, // Conservar cantidad, precioUnitarioCompra, codigoDeBarra
-          nombre: productoOriginal ? productoOriginal.nombre : 'Producto desconocido',
-          modelo: productoOriginal ? productoOriginal.modelo : 'N/A',
-          unidadDeMedida: productoOriginal ? productoOriginal.unidadDeMedida : 'N/A',
-        };
-      });
-
-      const subtotalProductos = productosCompletos.reduce((sum, p) => sum + (p.precioUnitarioCompra * p.cantidad), 0);
-      const iva = subtotalProductos * 0.19;
-      const total = subtotalProductos + iva;
-
-      return {
-        ...compra,
-        proveedor: nombreProveedor,
-        productos: productosCompletos, // Usar los productos con info completa
-        subtotal: subtotalProductos,
-        iva: iva,
-        total: total,
-      };
-    });
-  });
-
-  const [cargando, setCargando] = useState(false);
+  // Usar el hook personalizado
+  const { purchases: compras, loading: cargando, suppliers: proveedores, products: productos, createPurchase, changePurchaseStatus } = usePurchases();
+  
   const [paginaActual, setPaginaActual] = useState(1);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [compraSeleccionada, setCompraSeleccionada] = useState(null);
   const [esNuevaCompraAbierto, setEsNuevaCompraAbierto] = useState(false);
 
-  useEffect(() => {
-    setCargando(true);
-    const timer = setTimeout(() => {
-      setCargando(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
-
   const normalizar = (texto) =>
-    (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
   const comprasFiltradas = useMemo(() => {
     const busquedaNormalizada = normalizar(terminoBusqueda);
@@ -105,7 +67,7 @@ const PaginaCompras = () => {
     if (paginaActual > totalPaginas) {
       setPaginaActual(totalPaginas || 1);
     }
-  }, [totalPaginas, paginaActual]);
+  }, [totalPaginas]);
 
   const manejarCambioPagina = (pagina) => {
     if (pagina >= 1 && pagina <= totalPaginas) {
@@ -113,54 +75,34 @@ const PaginaCompras = () => {
     }
   };
 
-  const manejarGuardarCompra = (nuevaCompraData) => {
-    const proveedorObj = mockProveedores.find(p => p.id === nuevaCompraData.idProveedor);
-    const nombreProveedor = proveedorObj ? proveedorObj.nombre : 'Proveedor desconocido';
-
-    const nuevoId = compras.length > 0
-      ? Math.max(...compras.map(c => typeof c.id === 'number' ? c.id : 0)) + 1
-      : 1;
-
-    // Los productos ya vienen con nombre, modelo, unidadDeMedida, etc. desde NewPurchasesModal
-    const compraAAgregar = {
-      id: nuevoId,
-      numeroRecibo: nuevaCompraData.numeroRecibo || `REC-${nuevoId.toString().padStart(3, '0')}`,
-      idProveedor: nuevaCompraData.idProveedor,
-      proveedor: nombreProveedor,
-      fechaRegistro: nuevaCompraData.fechaRegistro,
-      fechaCreacion: new Date().toISOString(),
-      creadoPor: 'usuario.actual',
-      productos: nuevaCompraData.productos.map(p => ({ // Aseguramos que se guardan todos los campos
-        idProducto: p.idProducto,
-        cantidad: p.cantidad,
-        precioUnitarioCompra: p.precioUnitarioCompra,
-        codigoDeBarra: p.codigoDeBarra,
-        nombre: p.nombre,
-        modelo: p.modelo,
-        unidadDeMedida: p.unidadDeMedida,
-      })),
-      observaciones: nuevaCompraData.observaciones,
-      subtotal: nuevaCompraData.subtotalProducts,
-      iva: nuevaCompraData.iva,
-      total: nuevaCompraData.total,
-      estado: 'Activa',
-      esActivo: true,
-      motivoAnulacion: '', // Asegurarse de que esté presente y vacío por defecto
-    };
-
-    setCompras(prev => [compraAAgregar, ...prev]);
-    setEsNuevaCompraAbierto(false);
+  const manejarGuardarCompra = async (nuevaCompraData) => {
+    try {
+      const compraData = {
+        numeroRecibo: nuevaCompraData.numeroRecibo,
+        idProveedor: nuevaCompraData.idProveedor,
+        fechaRegistro: nuevaCompraData.fechaRegistro,
+        productos: nuevaCompraData.productos,
+        total: nuevaCompraData.total,
+        iva: nuevaCompraData.iva,
+        estado: 'Registrada',
+        fechaRecibo: nuevaCompraData.fechaRegistro
+      };
+      
+      await createPurchase(compraData);
+      setEsNuevaCompraAbierto(false);
+    } catch (error) {
+      console.error('Error al guardar compra:', error);
+    }
   };
 
   // MODIFICACIÓN CLAVE: Ahora manejarAnularCompra acepta un 'motivo'
-  const manejarAnularCompra = (idCompra, motivo) => {
-    setCompras(prevCompras =>
-      prevCompras.map(compra =>
-        compra.id === idCompra
-          ? { ...compra, esActivo: false, estado: 'Anulada', motivoAnulacion: motivo } //
-          : compra
-      )
-    );
+  const manejarAnularCompra = async (idCompra, ) => {
+    try {
+      // El backend cambia el estado a 'Anulada'
+      await changePurchaseStatus(idCompra, 'Anulada');
+    } catch (error) {
+      console.error('Error al anular compra:', error);
+    }
   };
 
   const manejarExportar = () => {
@@ -427,6 +369,8 @@ const PaginaCompras = () => {
         isOpen={esNuevaCompraAbierto}
         onClose={() => setEsNuevaCompraAbierto(false)}
         onSave={manejarGuardarCompra}
+        proveedores={proveedores}
+        productos={productos}
       />
     </div>
   );

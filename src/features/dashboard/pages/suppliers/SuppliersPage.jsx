@@ -1,31 +1,25 @@
 // src/features/dashboard/pages/suppliers/SuppliersPage.jsx
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import SuppliersTable from './components/SuppliersTable';
 import SkeletonRow from './components/SkeletonRow';
-import { MockSuppliers } from './data/Suppliers_data'; // <--- RUTA CORREGIDA
 import Pagination from '../../../../../src/shared/components/Pagination';
-import NewProviderModal from './components/NewSuppliersModal'; // <--- NOMBRE DE IMPORTACIÓN CORREGIDO
-import EditSupplierModal from './components/EditSupplierModal'; // <--- IMPORTA EditSupplierModal
-import { Toaster } from 'react-hot-toast'; // <--- IMPORTA Toaster
+import NewProviderModal from './components/NewSuppliersModal';
+import EditSupplierModal from './components/EditSupplierModal';
+import { Toaster } from 'react-hot-toast';
+import { useSuppliers } from './hooks/useSuppliers';
 
 const ITEMS_PER_PAGE = 5;
 
 const SuppliersPage = () => {
-  const [suppliers, setSuppliers] = useState([]);
-  const [loading, setLoading] = useState(true);
+  // Usar el hook personalizado
+  const { suppliers, loading, createSupplier, updateSupplier, deleteSupplier } = useSuppliers();
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewSupplierModalOpen, setIsNewSupplierModalOpen] = useState(false);
-  const [supplierToEdit, setSupplierToEdit] = useState(null); // <--- NUEVO ESTADO para el proveedor a editar
-
-  useEffect(() => {
-    setTimeout(() => {
-      setSuppliers(MockSuppliers);
-      setLoading(false);
-    }, 1500); // Simula fetch con delay
-  }, []);
+  const [supplierToEdit, setSupplierToEdit] = useState(null);
 
   const normalize = (text) =>
     (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -52,27 +46,34 @@ const SuppliersPage = () => {
   }, [filteredSuppliers, currentPage]);
 
   // Handler para guardar un nuevo proveedor
-  const handleSaveNewSupplier = (newSupplier) => {
-    setSuppliers((prev) => [newSupplier, ...prev]);
-    setIsNewSupplierModalOpen(false); // Cierra el modal
+  const handleSaveNewSupplier = async (newSupplier) => {
+    try {
+      await createSupplier(newSupplier);
+      setIsNewSupplierModalOpen(false);
+    } catch (error) {
+      console.error('Error al crear proveedor:', error);
+    }
   };
 
   // Handler para guardar un proveedor editado
-  const handleSaveEditedSupplier = (updatedSupplier) => {
-    setSuppliers((prev) =>
-      prev.map((supplier) =>
-        supplier.id === updatedSupplier.id ? updatedSupplier : supplier
-      )
-    );
-    setSupplierToEdit(null); // Cierra el modal de edición
+  const handleSaveEditedSupplier = async (updatedSupplier) => {
+    try {
+      await updateSupplier(updatedSupplier.id, updatedSupplier);
+      setSupplierToEdit(null);
+    } catch (error) {
+      console.error('Error al actualizar proveedor:', error);
+    }
   };
 
   // Handler para eliminar un proveedor
-  const handleDeleteSupplier = (supplierId) => {
-    setSuppliers((prev) => prev.filter(supplier => supplier.id !== supplierId));
-    // Si el proveedor que se eliminó era el que se estaba editando, cierra el modal de edición
-    if (supplierToEdit && supplierToEdit.id === supplierId) {
-      setSupplierToEdit(null);
+  const handleDeleteSupplier = async (supplierId) => {
+    try {
+      await deleteSupplier(supplierId);
+      if (supplierToEdit && supplierToEdit.id === supplierId) {
+        setSupplierToEdit(null);
+      }
+    } catch (error) {
+      console.error('Error al eliminar proveedor:', error);
     }
   };
 

@@ -56,7 +56,7 @@ const UserDetailModal = ({ user, onClose }) => {
           <div className="space-y-6">
             <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
               <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                <FaUserShield className="text-purple-500" /> Rol y Permisos
+                <FaUserShield className="text-purple-500" /> Rol
               </h3>
               <InfoCard icon={<FaUserShield />} label="Rol" value={user.rol?.nombre_rol || 'Sin rol'} />
               <InfoCard icon={<FaHistory />} label="Fecha de Creación" value={new Date(user.fecha_creacion).toLocaleDateString('es-ES')} />
