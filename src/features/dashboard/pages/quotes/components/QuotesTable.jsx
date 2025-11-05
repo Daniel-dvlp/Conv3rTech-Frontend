@@ -12,13 +12,12 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre cotización</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto cotización</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nombre</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cliente</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Monto cotización</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
+            <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
@@ -42,12 +41,12 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
             const fechaVenc = quote.fecha_vencimiento ?? quote.fechaVencimiento ?? '';
             return (
               <tr key={keyId}>
-                <td className="px-4 py-3">{quote.id ?? quote.id_cotizacion}</td>
-                <td className="px-4 py-3">{quote.nombre_cotizacion ?? quote.ordenServicio}</td>
-                <td className="px-4 py-3">{clienteDisplay}</td>
-                <td className="px-4 py-3">${monto.toLocaleString()}</td>
-                <td className="px-4 py-3">{fechaVenc}</td>
-              <td className="px-4 py-3">
+                <td className="px-4 py-3 text-center">{quote.nombre_cotizacion}</td>
+                <td className="px-4 py-3 text-center">{clienteDisplay}</td>
+                <td className="px-4 py-3 text-center">${monto.toLocaleString()}
+                </td>
+                <td className="px-4 py-3 text-center">{fechaVenc}</td>
+              <td className="px-4 py-3 text-center">
                 <span className={`px-2 py-1 rounded-full text-sm font-semibold ${
                   quote.estado === 'Rechazada' || quote.estado === 'Anulada' 
                     ? 'bg-red-100 text-red-800' 
@@ -58,7 +57,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                   {quote.estado === 'Anulada' ? 'Rechazada' : quote.estado}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right space-x-2">
+              <td className="px-4 py-3 text-center space-x-2">
                 <button
                   onClick={() => onViewDetails(quote)}
                   title="Ver detalles"
