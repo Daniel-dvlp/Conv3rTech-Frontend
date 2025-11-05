@@ -120,7 +120,7 @@ const NewPurchasesModal = ({
         codigoDeBarras: "N/A",
       }));
     }
-  }, [nuevoProductoSeleccionado.idProducto, productos, editingProductIndex, purchaseData.productosComprados]);
+  }, [nuevoProductoSeleccionado.idProducto, editingProductIndex, purchaseData.productosComprados]);
 
 
   useEffect(() => {
