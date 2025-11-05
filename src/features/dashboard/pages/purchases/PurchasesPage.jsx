@@ -14,7 +14,7 @@ const ITEMS_POR_PAGINA = 5;
 
 const PaginaCompras = () => {
   // Usar el hook personalizado
-  const { purchases: compras, loading: cargando, createPurchase, changePurchaseStatus } = usePurchases();
+  const { purchases: compras, loading: cargando, suppliers: proveedores, products: productos, createPurchase, changePurchaseStatus } = usePurchases();
   
   const [paginaActual, setPaginaActual] = useState(1);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
@@ -22,7 +22,7 @@ const PaginaCompras = () => {
   const [esNuevaCompraAbierto, setEsNuevaCompraAbierto] = useState(false);
 
   const normalizar = (texto) =>
-    (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
   const comprasFiltradas = useMemo(() => {
     const busquedaNormalizada = normalizar(terminoBusqueda);
@@ -67,7 +67,7 @@ const PaginaCompras = () => {
     if (paginaActual > totalPaginas) {
       setPaginaActual(totalPaginas || 1);
     }
-  }, [totalPaginas, paginaActual]);
+  }, [totalPaginas]);
 
   const manejarCambioPagina = (pagina) => {
     if (pagina >= 1 && pagina <= totalPaginas) {
@@ -369,6 +369,8 @@ const PaginaCompras = () => {
         isOpen={esNuevaCompraAbierto}
         onClose={() => setEsNuevaCompraAbierto(false)}
         onSave={manejarGuardarCompra}
+        proveedores={proveedores}
+        productos={productos}
       />
     </div>
   );

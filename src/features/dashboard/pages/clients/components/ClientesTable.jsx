@@ -15,7 +15,7 @@ const ClientesTable = ({ clientes, onEdit, onDelete, onChangeStatus, onChangeCre
       <table className="w-full text-center">
         <thead className="bg-gray-50">
           <tr>
-            {['Documento', 'Tipo de Documento', 'Nombre y Apellido', 'Correo electrónico', 'Teléfono', 'Estado', 'Crédito', 'Acciones'].map((header, i) => (
+            {['Documento', 'Tipo de Documento', 'Nombre y Apellido', 'Correo electrónico', 'Teléfono', 'Estado', 'Acciones'].map((header, i) => (
               <th key={i} className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">{header}</th>
             ))}
           </tr>
@@ -37,7 +37,7 @@ const ClientesTable = ({ clientes, onEdit, onDelete, onChangeStatus, onChangeCre
                   {cliente.estado_cliente ? 'Activo' : 'Inactivo'}
                 </span>
               </td>
-              <td className="px-4 py-2">
+              {/* <td className="px-4 py-2">
                 <span
                   className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                     cliente.credito ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'
@@ -45,7 +45,7 @@ const ClientesTable = ({ clientes, onEdit, onDelete, onChangeStatus, onChangeCre
                 >
                   {cliente.credito ? 'Con Crédito' : 'Sin Crédito'}
                 </span>
-              </td>
+              </td> */}
               <td className="px-4 py-2">
                 <div className="flex justify-center gap-3">
                   <button className="text-blue-600 hover:text-blue-800" onClick={() => {
