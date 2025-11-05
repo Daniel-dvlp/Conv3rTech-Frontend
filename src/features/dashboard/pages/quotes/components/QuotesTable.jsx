@@ -3,6 +3,12 @@ import { FaEye, FaEdit, FaDownload, FaMinusCircle } from 'react-icons/fa';
 import {showError} from '../../../../../shared/utils/alerts';
 
 const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel }) => {
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return '$0';
+    const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-MX').format(parsedNum);
+  };
+
   const handleDisabledAction = () => {
     showError('No se puede realizar esta acción porque la cotización ya está rechazada/anulada.');
   };
@@ -43,8 +49,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
               <tr key={keyId}>
                 <td className="px-4 py-3 text-center">{quote.nombre_cotizacion}</td>
                 <td className="px-4 py-3 text-center">{clienteDisplay}</td>
-                <td className="px-4 py-3 text-center">${monto.toLocaleString()}
-                </td>
+                <td className="px-4 py-3 text-center">${formatNumber(monto)}</td>
                 <td className="px-4 py-3 text-center">{fechaVenc}</td>
               <td className="px-4 py-3 text-center">
                 <span className={`px-2 py-1 rounded-full text-sm font-semibold ${

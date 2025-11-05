@@ -401,9 +401,9 @@ const QuotesPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nombre de la Cotización</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nombre</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Monto de la Cotización (total)</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Monto Total</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
