@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }) => {
         console.log("👤 User data loaded:", parsedUser);
         setUser(parsedUser);
         setIsAuthenticated(true);
-
         // Cargar permisos reales del backend
         try {
           const permissionsResponse = await authService.getMyPermissions();

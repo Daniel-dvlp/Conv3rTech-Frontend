@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash, FaCheck, FaTimes } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import { showToast } from "../../../shared/utils/alertas";
 import { useAuth } from "../../../shared/contexts/AuthContext";
+import authService from "../../../services/authService";
 
 // --- Componentes Internos ---
 
@@ -90,8 +91,26 @@ const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [showRecovery, setShowRecovery] = useState(false);
+  const [recoveryStage, setRecoveryStage] = useState("request"); // 'request' | 'reset'
+  const [recoveryEmail, setRecoveryEmail] = useState("");
+  const [recoveryCode, setRecoveryCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
+
+  // Validaciones en tiempo real (alineadas con el backend)
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validEmail = isValidEmail(recoveryEmail);
+  const isValidCode = (code) => /^\d{6}$/.test(code);
+  const passwordRules = {
+    length: /^.{6,15}$/.test(newPassword),
+    upper: /[A-Z]/.test(newPassword),
+    lower: /[a-z]/.test(newPassword),
+    number: /\d/.test(newPassword),
+    special: /[^A-Za-z0-9]/.test(newPassword),
+  };
+  const isValidPassword = Object.values(passwordRules).every(Boolean);
 
   useEffect(() => {
     setMounted(true);
@@ -135,7 +154,82 @@ const LoginPage = () => {
     setIsLoading(false);
   };
 
+  const handleOpenRecovery = () => {
+    setRecoveryEmail(formData.email || "");
+    setRecoveryStage("request");
+    setRecoveryCode("");
+    setNewPassword("");
+    setShowRecovery(true);
+  };
+
+  const handleRequestRecovery = async (e) => {
+    e.preventDefault();
+    if (!recoveryEmail) {
+      showToast("Ingresa tu correo para continuar", "error");
+      return;
+    }
+    if (!isValidEmail(recoveryEmail)) {
+      showToast("Correo inválido. Verifica el formato", "error");
+      return;
+    }
+    try {
+      const res = await authService.requestPasswordRecovery(recoveryEmail);
+      if (res.success) {
+        showToast("Código enviado. Revisa tu correo.", "success");
+        // Mantener el modal abierto y pasar a la etapa de restablecer
+        setRecoveryStage("reset");
+        setShowRecovery(true);
+      } else {
+        showToast(res.message || "No se pudo enviar el código", "error");
+      }
+    } catch (err) {
+      showToast("Error de conexión", "error");
+    }
+  };
+
+  const handleResetPassword = async (e) => {
+    e.preventDefault();
+    if (!recoveryEmail || !recoveryCode || !newPassword) {
+      showToast("Completa todos los campos", "error");
+      return;
+    }
+    // Evitar intentos inválidos antes de llamar al backend
+    if (!isValidCode(recoveryCode)) {
+      showToast("El código debe ser numérico de 6 dígitos", "error");
+      return;
+    }
+    if (!isValidPassword) {
+      showToast(
+        "La contraseña debe tener 6-15 caracteres, mayúscula, minúscula, número y símbolo",
+        "error"
+      );
+      return;
+    }
+    try {
+      const res = await authService.resetPasswordWithCode(
+        recoveryEmail,
+        recoveryCode,
+        newPassword
+      );
+      if (res.success) {
+        showToast("Contraseña restablecida. Ahora inicia sesión.", "success");
+        setFormData((prev) => ({ ...prev, email: recoveryEmail }));
+        setShowRecovery(false);
+        setRecoveryStage("request");
+        setRecoveryCode("");
+        setNewPassword("");
+        // Redirigir explícitamente al login tras éxito
+        navigate("/login");
+      } else {
+        showToast(res.message || "No se pudo restablecer", "error");
+      }
+    } catch (err) {
+      showToast("Error de conexión", "error");
+    }
+  };
+
   return (
+    <>
     <div className="min-h-screen w-full flex bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 relative overflow-hidden">
       {/* Partículas flotantes de fondo */}
       {mounted && (
@@ -250,6 +344,7 @@ const LoginPage = () => {
                 </label>
                 <button
                   type="button"
+                  onClick={handleOpenRecovery}
                   className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 transition-colors duration-300 hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
@@ -290,6 +385,156 @@ const LoginPage = () => {
         </div>
       </div>
     </div>
+    {showRecovery && (
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50" role="dialog" aria-modal="true">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-800">
+              {recoveryStage === "request"
+                ? "Recuperar contraseña"
+                : "Restablecer contraseña"}
+            </h3>
+            <button
+              type="button"
+              onClick={() => setShowRecovery(false)}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          </div>
+
+          {recoveryStage === "request" ? (
+            <form onSubmit={handleRequestRecovery} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  value={recoveryEmail}
+                  onChange={(e) => setRecoveryEmail(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400"
+                  placeholder="tu@email.com"
+                  required
+                />
+                {recoveryEmail && !validEmail && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Ingresa un correo válido (ej. usuario@dominio.com)
+                  </p>
+                )}
+              </div>
+              <button
+                type="submit"
+                disabled={!validEmail}
+                className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold py-3 rounded-xl ${
+                  !validEmail ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+              >
+                Enviar código
+              </button>
+              <div className="mt-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Cambiar al paso de restablecer dentro del modal
+                    if (!recoveryEmail) {
+                      showToast("Ingresa tu correo primero", "error");
+                      return;
+                    }
+                    if (!validEmail) {
+                      showToast("Ingresa un correo válido", "error");
+                      return;
+                    }
+                    setRecoveryStage("reset");
+                    setShowRecovery(true);
+                  }}
+                  className="text-sm font-semibold text-yellow-600 hover:text-yellow-700 hover:underline"
+                >
+                  Ya tengo el código
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleResetPassword} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Código de verificación (6 dígitos)
+                </label>
+                <input
+                  type="text"
+                  value={recoveryCode}
+                  onChange={(e) => {
+                    const digitsOnly = e.target.value.replace(/\D/g, "");
+                    setRecoveryCode(digitsOnly);
+                  }}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400"
+                  placeholder="123456"
+                  inputMode="numeric"
+                  required
+                />
+                {recoveryCode && !isValidCode(recoveryCode) && (
+                  <p className="text-xs text-red-600 mt-1">
+                    Debe ser un código numérico de 6 dígitos.
+                  </p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nueva contraseña
+                </label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:border-yellow-400"
+                  placeholder="••••••••"
+                  required
+                />
+                <div className="text-xs mt-2 space-y-1">
+                  <div className={passwordRules.length ? "text-green-600" : "text-red-600"}>
+                    {passwordRules.length ? <FaCheck className="inline mr-1" /> : <FaTimes className="inline mr-1" />} 6–15 caracteres
+                  </div>
+                  <div className={passwordRules.upper ? "text-green-600" : "text-red-600"}>
+                    {passwordRules.upper ? <FaCheck className="inline mr-1" /> : <FaTimes className="inline mr-1" />} Al menos una mayúscula (A–Z)
+                  </div>
+                  <div className={passwordRules.lower ? "text-green-600" : "text-red-600"}>
+                    {passwordRules.lower ? <FaCheck className="inline mr-1" /> : <FaTimes className="inline mr-1" />} Al menos una minúscula (a–z)
+                  </div>
+                  <div className={passwordRules.number ? "text-green-600" : "text-red-600"}>
+                    {passwordRules.number ? <FaCheck className="inline mr-1" /> : <FaTimes className="inline mr-1" />} Al menos un número (0–9)
+                  </div>
+                  <div className={passwordRules.special ? "text-green-600" : "text-red-600"}>
+                    {passwordRules.special ? <FaCheck className="inline mr-1" /> : <FaTimes className="inline mr-1" />} Al menos un símbolo (p. ej. !@#$%)
+                  </div>
+                </div>
+              </div>
+              <button
+                type="submit"
+                disabled={!isValidCode(recoveryCode) || !isValidPassword}
+                className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold py-3 rounded-xl ${
+                  !isValidCode(recoveryCode) || !isValidPassword ? "opacity-60 cursor-not-allowed" : ""
+                }`}
+              >
+                Restablecer contraseña
+              </button>
+              <div className="mt-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowRecovery(false);
+                    navigate("/login");
+                  }}
+                  className="text-sm font-semibold text-gray-600 hover:text-gray-800 hover:underline"
+                >
+                  Volver al login
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 

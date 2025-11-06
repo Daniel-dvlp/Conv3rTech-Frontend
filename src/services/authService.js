@@ -28,6 +28,37 @@ class AuthService {
     }
   }
 
+  async requestPasswordRecovery(email) {
+    try {
+      const response = await api.post("/auth/password/recovery/request", {
+        correo: email,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || "Error solicitando recuperación",
+      };
+    }
+  }
+
+  async resetPasswordWithCode(email, code, newPassword) {
+    try {
+      const response = await api.post("/auth/password/recovery/reset", {
+        correo: email,
+        codigo: code,
+        nuevaContrasena: newPassword,
+      });
+      return response.data;
+    } catch (error) {
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Error al restablecer la contraseña",
+      };
+    }
+  }
+
   async logout() {
     try {
       await api.post("/auth/logout");

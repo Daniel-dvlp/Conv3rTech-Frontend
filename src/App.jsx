@@ -12,6 +12,8 @@ import DashboardPage from "./features/dashboard/DashboardPage";
 
 //Rutas Daniel
 import LoginPage from "./features/auth/pages/LoginPage";
+import RecoverRequestPage from "./features/auth/pages/RecoverRequestPage";
+import RecoverCodePage from "./features/auth/pages/RecoverCodePage";
 import WorkSchedulingPage from "./features/dashboard/pages/Work_scheduling/WorkSchedulingPage";
 import RolesPage from "./features/dashboard/pages/roles/RolesPage";
 import ProjectPage from "./features/dashboard/pages/project/ProjectPage";
@@ -44,6 +46,11 @@ function App() {
           <Route path="/" element={<Navigate to="/login" />} />
           {/* Ruta de Login */}
           <Route path="/login" element={<LoginPage />} />
+
+          {/* Flujo de recuperación de contraseña */}
+          <Route path="/recuperar" element={<RecoverRequestPage />} />
+          <Route path="/recuperar/codigo" element={<RecoverCodePage />} />
+          {/* Página de restablecer eliminada: mantenemos solo el modal en Login */}
 
           {/* Rutas protegidas del dashboard */}
           <Route
