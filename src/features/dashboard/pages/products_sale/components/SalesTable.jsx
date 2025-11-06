@@ -3,6 +3,12 @@ import { FaEye, FaDownload, FaMinusCircle } from 'react-icons/fa';
 import {showError} from '../../../../../shared/utils/alerts';
 
 const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return '$0';
+    const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-MX').format(parsedNum);
+  };
+  
   if (!sales || sales.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4 text-center">
@@ -55,7 +61,7 @@ const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
                 {new Date(sale.fecha_venta).toLocaleString()}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                ${sale.monto_venta.toLocaleString()}
+              ${formatNumber(sale.monto_venta)}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                 {sale.metodo_pago}

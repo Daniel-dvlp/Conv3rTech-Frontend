@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTrash, FaTimes } from 'react-icons/fa';
+import { FaTrash, FaTimes, FaPlus, FaMinus } from 'react-icons/fa';
 import { clientsService } from '../services/salesService';
 import SearchSelector from './SearchSelector';
 
@@ -16,6 +16,7 @@ const FormLabel = ({ htmlFor, children }) => (
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
+
 const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => {
     const [clienteSeleccionado, setClienteSeleccionado] = useState('');
     const [cliente, setCliente] = useState(null);
@@ -27,14 +28,16 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
     const [fechaVenta, setFechaVenta] = useState('');
     const [errores, setErrores] = useState({});
 
-    // Inicializar fecha con la fecha actual cuando se abre el modal
+    // Inicializar fecha y hora con la fecha actual cuando se abre el modal
     useEffect(() => {
         if (isOpen) {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            setFechaVenta(`${year}-${month}-${day}`);
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            setFechaVenta(`${year}-${month}-${day}T${hours}:${minutes}`);
         }
     }, [isOpen]);
 
@@ -75,9 +78,9 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
         if (producto && cantidad > 0) {
             // Verificar stock disponible
             if (producto.stock < Number(cantidad)) {
-                setErrores(prev => ({ 
-                    ...prev, 
-                    producto: `Stock insuficiente. Disponible: ${producto.stock}` 
+                setErrores(prev => ({
+                    ...prev,
+                    producto: `Stock insuficiente. Disponible: ${producto.stock}`
                 }));
                 return;
             }
@@ -88,12 +91,12 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                 const copia = [...productosAgregados];
                 const productoExistente = copia[indexExistente];
                 const nuevaCantidad = productoExistente.cantidad + Number(cantidad);
-                
+
                 // Verificar stock total
                 if (producto.stock < nuevaCantidad) {
-                    setErrores(prev => ({ 
-                        ...prev, 
-                        producto: `Stock insuficiente. Disponible: ${producto.stock}` 
+                    setErrores(prev => ({
+                        ...prev,
+                        producto: `Stock insuficiente. Disponible: ${producto.stock}`
                     }));
                     return;
                 }
@@ -102,6 +105,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                     ...productoExistente,
                     cantidad: nuevaCantidad,
                     subtotal: nuevaCantidad * productoExistente.precio,
+                    stock: producto.stock,
                 };
                 setProductosAgregados(copia);
             } else {
@@ -113,6 +117,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                     precio: producto.precio,
                     cantidad: Number(cantidad),
                     subtotal: producto.precio * Number(cantidad),
+                    stock: producto.stock,
                 };
                 setProductosAgregados(prev => [...prev, nuevo]);
             }
@@ -194,113 +199,36 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                         )}
                     </FormSection>
 
-                    <FormSection title="Productos">
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="md:col-span-2">
-                                <SearchSelector
-                                    options={products || []}
-                                    value={productoSeleccionado}
-                                    onChange={(value) => {
-                                        setProductoSeleccionado(value);
-                                        setErrores(prev => ({ ...prev, producto: null }));
-                                    }}
-                                    placeholder="Buscar producto por nombre, modelo o código..."
-                                    displayKey={(product) => `${product.nombre} - ${product.modelo}`}
-                                    searchKeys={['nombre', 'modelo', 'codigo_barra']}
-                                    error={errores.producto}
-                                    label="Producto"
-                                    required={true}
-                                />
-                            </div>
-                            <div>
-                                <FormLabel htmlFor="cantidad">Cantidad:</FormLabel>
-                                <input
-                                    type="number"
-                                    id="cantidad"
-                                    value={cantidad}
-                                    onChange={(e) => {
-                                        setCantidad(e.target.value);
-                                        setErrores(prev => ({ ...prev, producto: null }));
-                                    }}
-                                    className={`${inputBaseStyle} ${errores.producto ? 'border-red-500' : 'border-gray-300'}`}
-                                    placeholder="Cantidad"
-                                />
-                            </div>
-                        </div>
-                        
-                        <div className="flex justify-end">
-                            <button
-                                type="button"
-                                onClick={handleAgregarProducto}
-                                className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
-                            >
-                                Agregar producto
-                            </button>
-                        </div>
-
-                        {producto && (
-                            <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                                <p><strong>Producto:</strong> {producto.nombre}</p>
-                                <p><strong>Modelo:</strong> {producto.modelo}</p>
-                                <p><strong>Precio:</strong> ${producto.precio.toLocaleString()}</p>
-                                <p><strong>Stock disponible:</strong> {producto.stock}</p>
-                                <p><strong>Código:</strong> {producto.codigo_barra || 'Sin código'}</p>
-                            </div>
-                        )}
-
-                        <div className="overflow-x-auto mt-6">
-                            <table className="w-full text-sm text-center border">
-                                <thead className="bg-gray-100">
-                                    <tr>
-                                        <th className="p-2">Producto</th>
-                                        <th>Modelo</th>
-                                        <th>Cantidad</th>
-                                        <th>Precio Unit.</th>
-                                        <th>Total</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {productosAgregados.map((p, index) => (
-                                        <tr key={index} className="border-t">
-                                            <td className="p-2">{p.nombre}</td>
-                                            <td>{p.modelo}</td>
-                                            <td>{p.cantidad}</td>
-                                            <td>${p.precio.toLocaleString()}</td>
-                                            <td>${p.subtotal.toLocaleString()}</td>
-                                            <td>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        const copia = [...productosAgregados];
-                                                        copia.splice(index, 1);
-                                                        setProductosAgregados(copia);
-                                                    }}
-                                                    className="text-red-600 hover:text-red-800"
-                                                >
-                                                    <FaTrash />
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                            {errores.productos && <p className="text-red-500 text-sm mt-2">{errores.productos}</p>}
-                            {errores.producto && <p className="text-red-500 text-sm mt-2">{errores.producto}</p>}
-                        </div>
-                    </FormSection>
-
                     <FormSection title="Información de la venta">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <FormLabel htmlFor="fechaVenta">Fecha de venta:</FormLabel>
+                                <FormLabel htmlFor="fechaVenta">Fecha y hora de venta:</FormLabel>
                                 <input
-                                    type="date"
+                                    type="datetime-local"
                                     id="fechaVenta"
                                     value={fechaVenta}
+                                    max={new Date().toISOString().slice(0, 16)}
                                     onChange={(e) => {
+                                        const selectedDateTime = new Date(e.target.value);
+                                        const now = new Date();
+
+                                        if (selectedDateTime > now) {
+                                            setErrores(prev => ({ ...prev, fechaVenta: 'La fecha y hora no pueden ser futuras' }));
+                                            return;
+                                        }
+
                                         setFechaVenta(e.target.value);
                                         setErrores(prev => ({ ...prev, fechaVenta: null }));
+                                    }}
+                                    onBlur={(e) => {
+                                        const selectedDateTime = new Date(e.target.value);
+                                        const now = new Date();
+
+                                        if (selectedDateTime > now) {
+                                            setErrores(prev => ({ ...prev, fechaVenta: 'La fecha y hora no pueden ser futuras' }));
+                                        } else {
+                                            setErrores(prev => ({ ...prev, fechaVenta: null }));
+                                        }
                                     }}
                                     className={`${inputBaseStyle} ${errores.fechaVenta ? 'border-red-500' : 'border-gray-300'}`}
                                 />
@@ -338,11 +266,153 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                         </div>
                     </FormSection>
 
+                    <FormSection title="Productos">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="md:col-span-2">
+                                <SearchSelector
+                                    options={products || []}
+                                    value={productoSeleccionado}
+                                    onChange={(value) => {
+                                        setProductoSeleccionado(value);
+                                        setErrores(prev => ({ ...prev, producto: null }));
+                                    }}
+                                    placeholder="Buscar producto por nombre, modelo o código..."
+                                    displayKey={(product) => `${product.nombre} - ${product.modelo}`}
+                                    searchKeys={['nombre', 'modelo', 'codigo_barra']}
+                                    error={errores.producto}
+                                    label="Producto"
+                                    required={true}
+                                />
+                            </div>
+                            <div>
+                                <FormLabel htmlFor="cantidad">Cantidad:</FormLabel>
+                                <div className="flex gap-2">
+                                    <input
+                                        type="number"
+                                        id="cantidad"
+                                        value={cantidad}
+                                        onChange={(e) => {
+                                            setCantidad(e.target.value);
+                                            setErrores(prev => ({ ...prev, producto: null }));
+                                        }}
+                                        className={`${inputBaseStyle} ${errores.producto ? 'border-red-500' : 'border-gray-300'}`}
+                                        placeholder="Cantidad"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAgregarProducto}
+                                        className="inline-flex items-center justify-center w-10 h-10 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-2 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                                    >
+                                        <FaPlus />
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
 
-                    <FormSection title="Resumen">
-                        <p>Subtotal productos: <span className="font-semibold">${subtotal.toLocaleString()}</span></p>
-                        <p>IVA (19%): <span className="font-semibold">${iva.toLocaleString()}</span></p>
-                        <p>Total: <span className="font-bold text-conv3r-dark text-lg">${monto.toLocaleString()}</span></p>
+
+                        {producto && (
+                            <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
+                                <p><strong>Producto:</strong> {producto.nombre}</p>
+                                <p><strong>Modelo:</strong> {producto.modelo}</p>
+                                <p><strong>Precio:</strong> ${producto.precio.toLocaleString()}</p>
+                                <p><strong>Stock disponible:</strong> {producto.stock}</p>
+                                <p><strong>Código:</strong> {producto.codigo_barra || 'Sin código'}</p>
+                            </div>
+                        )}
+
+                        <div className="overflow-x-auto mt-6">
+                            <table className="w-full text-sm text-center border border-gray-200">
+                                <thead className="bg-conv3r-dark text-white">
+                                    <tr>
+                                        <th className="p-3 font-semibold">Producto</th>
+                                        <th className="font-semibold">Modelo</th>
+                                        <th className="font-semibold">Unidad</th>
+                                        <th className="font-semibold">Cantidad</th>
+                                        <th className="font-semibold">Precio Unitario</th>
+                                        <th className="p-3">Eliminar</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white text-gray-700">
+                                    {productosAgregados.map((p, index) => (
+                                        <tr key={index} className="border-t border-gray-200">
+                                            <td className="p-3">{p.nombre}</td>
+                                            <td className="p-3">{p.modelo}</td>
+                                            <td className="p-3">{p.unidad}</td>
+                                            <td className="p-3">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const copia = [...productosAgregados];
+                                                            if (copia[index].cantidad > 1) {
+                                                                copia[index].cantidad -= 1;
+                                                                copia[index].subtotal = copia[index].cantidad * copia[index].precio;
+                                                                setProductosAgregados(copia);
+                                                            }
+                                                        }}
+                                                        className="text-gray-600 hover:text-gray-800 p-1"
+                                                    >
+                                                        <FaMinus size={12} />
+                                                    </button>
+                                                    <span className="w-8 text-center">{p.cantidad}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            const copia = [...productosAgregados];
+                                                            if (copia[index].cantidad < p.stock) {
+                                                                copia[index].cantidad += 1;
+                                                                copia[index].subtotal = copia[index].cantidad * copia[index].precio;
+                                                                setProductosAgregados(copia);
+                                                            }
+                                                        }}
+                                                        className="text-gray-600 hover:text-gray-800 p-1"
+                                                    >
+                                                        <FaPlus size={12} />
+                                                    </button>
+                                                </div>
+                                            </td>
+                                            <td className="p-3">${p.precio.toLocaleString('es-CO')}</td>
+                                            <td className="w-12">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        const copia = [...productosAgregados];
+                                                        copia.splice(index, 1);
+                                                        setProductosAgregados(copia);
+                                                    }}
+                                                    className="text-red-600 hover:text-red-800 p-1"
+                                                >
+                                                    <FaTrash size={14} />
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                                <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                                    <tr>
+                                        <td colSpan="5" className="text-right font-semibold px-4 py-2">Subtotal:</td>
+                                        <td className="font-bold px-4 py-2 text-right text-conv3r-dark">
+                                            ${subtotal.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan="5" className="text-right font-semibold px-4 py-2">IVA (19%):</td>
+                                        <td className="font-bold px-4 py-2 text-right text-conv3r-dark">
+                                            ${iva.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td colSpan="5" className="text-right font-semibold px-4 py-2">Total:</td>
+                                        <td className="font-bold text-conv3r-gold text-lg px-4 py-2 text-right">
+                                            ${monto.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                        </td>
+                                    </tr>
+                                </tfoot>
+
+                            </table>
+                            {errores.productos && <p className="text-red-500 text-sm mt-2">{errores.productos}</p>}
+                            {errores.producto && <p className="text-red-500 text-sm mt-2">{errores.producto}</p>}
+                        </div>
                     </FormSection>
 
                     <div className="flex justify-end gap-4">
@@ -361,3 +431,4 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
 };
 
 export default NewProductSaleModal;
+

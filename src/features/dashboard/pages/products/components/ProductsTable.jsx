@@ -2,6 +2,13 @@ import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 
 const ProductsTable = ({ products, categories, onViewDetails, onEditProduct, onDeleteProduct }) => {
+  //FUNCIÓN PARA FORMATEAR LOS MONTOS.
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return '$0';
+    const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-MX').format(parsedNum);
+  };
+
   const getCategoryName = (id_categoria) => {
     if (!Array.isArray(categories)) return 'Desconocida';
     const cat = categories.find((c) => c.id_categoria === id_categoria);
@@ -17,7 +24,6 @@ const ProductsTable = ({ products, categories, onViewDetails, onEditProduct, onD
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Modelo</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
@@ -38,12 +44,11 @@ const ProductsTable = ({ products, categories, onViewDetails, onEditProduct, onD
                   <span className="text-gray-400 italic">Sin foto</span>
                 )}
               </td>
-
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{product.nombre}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.modelo}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{getCategoryName(product.id_categoria)}</td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.unidad_medida}</td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${Number(product.precio).toLocaleString()}</td>
+              {/* USO DE LA FUNCIÓN DE FORMATO DE MONTOS */}
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">${formatNumber(product.precio)}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">{product.stock < 5 ? <span className="text-red-500 font-semibold">{product.stock}</span> : product.stock}</td>
 
               <td className="px-4 py-3 whitespace-nowrap">
