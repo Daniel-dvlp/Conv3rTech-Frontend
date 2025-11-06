@@ -96,6 +96,8 @@ const LoginPage = () => {
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryCode, setRecoveryCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [isRecoveryLoading, setIsRecoveryLoading] = useState(false);
+  const [isResetLoading, setIsResetLoading] = useState(false);
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
 
@@ -173,6 +175,7 @@ const LoginPage = () => {
       return;
     }
     try {
+      setIsRecoveryLoading(true);
       const res = await authService.requestPasswordRecovery(recoveryEmail);
       if (res.success) {
         showToast("Código enviado. Revisa tu correo.", "success");
@@ -184,6 +187,8 @@ const LoginPage = () => {
       }
     } catch (err) {
       showToast("Error de conexión", "error");
+    } finally {
+      setIsRecoveryLoading(false);
     }
   };
 
@@ -206,6 +211,7 @@ const LoginPage = () => {
       return;
     }
     try {
+      setIsResetLoading(true);
       const res = await authService.resetPasswordWithCode(
         recoveryEmail,
         recoveryCode,
@@ -225,6 +231,8 @@ const LoginPage = () => {
       }
     } catch (err) {
       showToast("Error de conexión", "error");
+    } finally {
+      setIsResetLoading(false);
     }
   };
 
@@ -425,12 +433,15 @@ const LoginPage = () => {
               </div>
               <button
                 type="submit"
-                disabled={!validEmail}
-                className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold py-3 rounded-xl ${
-                  !validEmail ? "opacity-60 cursor-not-allowed" : ""
+                disabled={!validEmail || isRecoveryLoading}
+                className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold py-3 rounded-xl flex items-center justify-center gap-2 ${
+                  !validEmail || isRecoveryLoading ? "opacity-60 cursor-not-allowed" : ""
                 }`}
               >
-                Enviar código
+                {isRecoveryLoading && (
+                  <span className="inline-block w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin" />
+                )}
+                {isRecoveryLoading ? "Enviando..." : "Enviar código"}
               </button>
               <div className="mt-3 text-center">
                 <button
@@ -510,12 +521,15 @@ const LoginPage = () => {
               </div>
               <button
                 type="submit"
-                disabled={!isValidCode(recoveryCode) || !isValidPassword}
-                className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold py-3 rounded-xl ${
-                  !isValidCode(recoveryCode) || !isValidPassword ? "opacity-60 cursor-not-allowed" : ""
+                disabled={!isValidCode(recoveryCode) || !isValidPassword || isResetLoading}
+                className={`w-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-gray-800 font-bold py-3 rounded-xl flex items-center justify-center gap-2 ${
+                  !isValidCode(recoveryCode) || !isValidPassword || isResetLoading ? "opacity-60 cursor-not-allowed" : ""
                 }`}
               >
-                Restablecer contraseña
+                {isResetLoading && (
+                  <span className="inline-block w-4 h-4 border-2 border-gray-800 border-top-transparent rounded-full animate-spin" />
+                )}
+                {isResetLoading ? "Guardando..." : "Restablecer contraseña"}
               </button>
               <div className="mt-3 text-center">
                 <button

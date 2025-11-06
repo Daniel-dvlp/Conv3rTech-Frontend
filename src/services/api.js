@@ -17,7 +17,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    const status = error.response?.status;
+    const url = error.config?.url || "";
+    const hasToken = !!localStorage.getItem("token");
+    const isPublicAuthEndpoint = url.startsWith("/auth/login") || url.startsWith("/auth/password");
+
+    // Solo redirigir si hay sesión y el 401 proviene de un endpoint protegido
+    if (status === 401 && hasToken && !isPublicAuthEndpoint) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
       localStorage.removeItem("isAuthenticated");
