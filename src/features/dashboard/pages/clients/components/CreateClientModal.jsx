@@ -1,8 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus, FaTrash, FaBullseye } from 'react-icons/fa';
+import { Switch } from '@headlessui/react';
 
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
+
+const ToggleSwitch = ({ checked, onChange }) => (
+    <Switch
+        checked={checked}
+        onChange={onChange}
+        className={`${checked ? 'bg-green-500' : 'bg-gray-300'}
+    relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 focus:outline-none`}
+    >
+        <span
+            className={`${checked ? 'translate-x-5' : 'translate-x-1'}
+        inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300`}
+        />
+    </Switch>
+);
 
 const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] }) => {
 
@@ -289,25 +304,14 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
 
                             <div>
                                 <label className={labelStyle}>Estado</label>
-                                <div className="flex gap-6">
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.estado === true}
-                                            onChange={() => setFormData((prev) => ({ ...prev, estado: true }))}
-                                            className="h-4 w-4 text-green-600 border-gray-300 rounded"
-                                        />
-                                        <span className="text-sm text-gray-800">Activo</span>
-                                    </label>
-                                    <label className="flex items-center gap-2">
-                                        <input
-                                            type="checkbox"
-                                            checked={formData.estado === false}
-                                            onChange={() => setFormData((prev) => ({ ...prev, estado: false }))}
-                                            className="h-4 w-4 text-red-600 border-gray-300 rounded"
-                                        />
-                                        <span className="text-sm text-gray-800">Inactivo</span>
-                                    </label>
+                                <div className="flex items-center gap-4">
+                                    <span className="text-sm text-gray-700 font-medium">
+                                        {formData.estado_cliente ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                    <ToggleSwitch
+                                        checked={formData.estado_cliente}
+                                        onChange={() => setFormData(prev => ({ ...prev, estado_cliente: !prev.estado_cliente }))}
+                                    />
                                 </div>
                             </div>
                         </div>

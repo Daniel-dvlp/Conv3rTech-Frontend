@@ -23,9 +23,9 @@ const InfoRow = ({ label, children }) => (
 const ProductDetailModal = ({ product, categories, onClose }) => {
   if (!product) return null;
 
-  const getCategoryName = (id) => {
+  const getCategoryName = (id_categoria) => {
     if (!Array.isArray(categories)) return 'Desconocida';
-    const cat = categories.find((c) => c.id === id);
+    const cat = categories.find((c) => c.id_categoria === id_categoria);
     return cat ? cat.nombre : 'Desconocida';
   };
 
@@ -41,7 +41,7 @@ const ProductDetailModal = ({ product, categories, onClose }) => {
         <header className="flex justify-between items-center p-4 sm:p-6 border-b bg-white rounded-t-xl">
           <div>
             <h2 className="text-3xl font-bold text-gray-800">{product.nombre}</h2>
-            <p className="text-md text-gray-600">ID: {product.id}</p>
+            <p className="text-md text-gray-600">ID: {product.id_producto}</p>
           </div>
           <button
             onClick={onClose}
@@ -55,11 +55,11 @@ const ProductDetailModal = ({ product, categories, onClose }) => {
           <DetailCard title="Información del producto" icon={<FaInfoCircle className="text-gray-500" />}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <InfoRow label="Modelo">{product.modelo}</InfoRow>
-              <InfoRow label="Categoría">{getCategoryName(product.categoria)}</InfoRow>
-              <InfoRow label="Unidad de medida">{product.unidad}</InfoRow>
+              <InfoRow label="Categoría">{getCategoryName(product.id_categoria)}</InfoRow>
+              <InfoRow label="Unidad de medida">{product.unidad_medida}</InfoRow>
               <InfoRow label="Garantía">{product.garantia} meses</InfoRow>
-              <InfoRow label="Código">{product.codigo ? <span className="font-semibold text-gray-900">{product.codigo}</span> : 'N/A'}</InfoRow>
-              <InfoRow label="Precio">$COP {product.precio.toLocaleString('es-CO', { minimumFractionDigits: 2 })}</InfoRow>
+              <InfoRow label="Código">{product.codigo_barra ? <span className="font-semibold text-gray-900">{product.codigo_barra}</span> : 'N/A'}</InfoRow>
+              <InfoRow label="Precio">$COP {Number(product.precio).toLocaleString('es-CO', { minimumFractionDigits: 2 })}</InfoRow>
               <InfoRow label="Stock">{product.stock}</InfoRow>
               <InfoRow label="Estado">
                 <span
@@ -72,17 +72,17 @@ const ProductDetailModal = ({ product, categories, onClose }) => {
               </InfoRow>
             </div>
           </DetailCard>
-          <DetailCard title="Especificaciones técnicas" icon={<FaInfoCircle className="text-gray-500" />}>
-            {Array.isArray(product.especificaciones_tecnicas) && product.especificaciones_tecnicas.length > 0 ? (
+          <DetailCard title="Fichas técnicas" icon={<FaInfoCircle className="text-gray-500" />}>
+            {Array.isArray(product.fichas_tecnicas) && product.fichas_tecnicas.length > 0 ? (
               <ul className="list-disc pl-5 space-y-1 text-gray-700">
-                {product.especificaciones_tecnicas.map((spec, index) => (
+                {product.fichas_tecnicas.map((spec, index) => (
                   <li key={index}>
-                    <strong>{spec.concepto}:</strong> {spec.valor}
+                    <strong>{spec.caracteristica.nombre}:</strong> {spec.valor}
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-gray-500 italic">Sin especificaciones técnicas registradas.</p>
+              <p className="text-sm text-gray-500 italic">Sin fichas técnicas registradas.</p>
             )}
           </DetailCard>
           <DetailCard title="Imágenes del producto" icon={<FaInfoCircle className="text-gray-500" />}>

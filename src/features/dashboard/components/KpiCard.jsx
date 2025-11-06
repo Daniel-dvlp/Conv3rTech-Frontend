@@ -15,16 +15,32 @@ const KpiCard = ({ title, value, unit, icon }) => {
   const formattedValue = title === 'Ventas Hoy' ? new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value) : value;
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-2  flex items-center justify-between">
-      <div className="p-1">
-        <h3 className="text-sm font-semibold text-gray-500">{title}</h3>
-        <p className="text-2xl font-bold text-gray-900 mt-1">
-          {formattedValue} {unit && <span className="text-lg text-gray-600">{unit}</span>}
-        </p>
+    <div className="bg-white rounded-xl shadow-[0_4px_6px_rgba(0,0,0,0.1)] border border-gray-200 p-6">
+      <div className="flex items-center justify-between">
+        {/* Content */}
+        <div className="flex-1">
+          {/* Label */}
+          <p className="text-base font-medium text-gray-600 mb-2">{title}</p>
+          
+          {/* Value */}
+          <div className="flex items-baseline gap-2">
+            <p className="text-[2.25rem] font-bold text-gray-900 leading-none">
+              {formattedValue}
+            </p>
+            {unit && <span className="text-lg font-medium text-gray-500">{unit}</span>}
+          </div>
+        </div>
+        
+        {/* Icon Container */}
+        {IconComponent && (
+          <div className="bg-gradient-to-br from-conv3r-gold/15 to-conv3r-gold/8 rounded-full p-3 flex items-center justify-center">
+            <IconComponent className="text-[28px] text-conv3r-gold" />
+          </div>
+        )}
       </div>
-      {IconComponent && <IconComponent className="text-2xl text-blue-400 opacity-70 " />}
     </div>
   );
 };
 
 export default KpiCard;
+

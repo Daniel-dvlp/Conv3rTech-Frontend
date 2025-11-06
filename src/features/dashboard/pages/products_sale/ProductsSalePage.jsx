@@ -5,8 +5,8 @@ import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../shared/components/Pagination';
 import NewProductSaleModal from './components/NewProductSaleModal';
 import ProductSaleDetailModal from './components/ProductSaleDetailModal';
-import { mockSales } from './data/Sales_data';
-import { mockClientes } from '../clients/data/Clientes_data';
+import { salesService, clientsService } from './services/salesService';
+import { productsService } from '../products/services/productsService';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -23,13 +23,32 @@ const ProductsSalePage = () => {
   const [showNewModal, setShowNewModal] = useState(false);
   const [selectedProductSale, setSelectedProductSale] = useState(null);
   const [clients, setClients] = useState([]);
+  const [products, setProducts] = useState([]);
 
+  // Cargar ventas, clientes y productos
   useEffect(() => {
-    setTimeout(() => {
-      setSales(mockSales);
-      setClients(mockClientes);
-      setLoading(false);
-    }, 1500);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Cargar datos en paralelo
+        const [salesData, clientsData, productsData] = await Promise.all([
+          salesService.getAllSales(),
+          clientsService.getAllClients(),
+          productsService.getAllProducts()
+        ]);
+
+        setSales(Array.isArray(salesData) ? salesData : []);
+        setClients(Array.isArray(clientsData) ? clientsData : []);
+        setProducts(Array.isArray(productsData) ? productsData : []);
+
+      } catch (err) {
+        console.error('Error al cargar datos:', err);
+        showError('Error al cargar ventas, clientes o productos.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
 
   const normalize = (text) =>
@@ -39,11 +58,11 @@ const ProductsSalePage = () => {
     const normalizedSearch = normalize(searchTerm);
 
     return sales.filter((sale) =>
-      normalize(sale.numero).includes(normalizedSearch) ||
-      normalize(sale.cliente).includes(normalizedSearch) ||
-      normalize(sale.fechaHora).includes(normalizedSearch) ||
-      normalize(String(sale.monto)).includes(normalizedSearch) ||
-      normalize(sale.metodoPago).includes(normalizedSearch) ||
+      normalize(sale.numero_venta).includes(normalizedSearch) ||
+      normalize(`${sale.cliente?.nombre} ${sale.cliente?.apellido}`).includes(normalizedSearch) ||
+      normalize(new Date(sale.fecha_venta).toLocaleString()).includes(normalizedSearch) ||
+      normalize(String(sale.monto_venta)).includes(normalizedSearch) ||
+      normalize(sale.metodo_pago).includes(normalizedSearch) ||
       normalize(sale.estado).includes(normalizedSearch)
     );
   }, [sales, searchTerm]);
@@ -55,15 +74,30 @@ const ProductsSalePage = () => {
     return filteredSales.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredSales, currentPage]);
 
-  const handleAddSale = (newSale) => {
+  const handleAddSale = async (newSale) => {
     try {
-      setSales((prev) => [newSale, ...prev]);
+      const created = await salesService.createSale(newSale);
+      console.log('Venta creada:', created);
+      setSales((prev) => [created, ...prev]);
+      setShowNewModal(false);
       showSuccess('Venta registrada exitosamente');
     } catch (error) {
-      console.error(error);
-      showError('Ocurrió un error al guardar la venta');
-    } finally {
-      setShowNewModal(false);
+      console.error('Error al crear venta:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+
+      // Mostrar mensaje de error más específico
+      let errorMessage = 'No se pudo crear la venta. Verifique que todos los campos y datos sean correctos.';
+
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        errorMessage = error.response.data.errors.map(err => err.msg || err.message).join(', ');
+      } else if (error.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+
+      showError(errorMessage);
     }
   };
 
@@ -72,30 +106,30 @@ const ProductsSalePage = () => {
     const exportData = [];
 
     filteredSales.forEach((venta) => {
-      venta.productos.forEach((producto, index) => {
+      venta.detalles?.forEach((detalle, index) => {
         exportData.push({
-          'ID Venta': venta.id,
-          'Venta N°': venta.numero,
-          'Fecha y Hora': venta.fechaHora,
+          'ID Venta': venta.id_venta,
+          'Venta N°': venta.numero_venta,
+          'Fecha y Hora': new Date(venta.fecha_venta).toLocaleString(),
 
-          'Cliente': venta.cliente,
-          'Documento Cliente': venta.clienteData?.documento || '',
-          'Email Cliente': venta.clienteData?.email || '',
-          'Celular Cliente': venta.clienteData?.celular || '',
+          'Cliente': `${venta.cliente?.nombre} ${venta.cliente?.apellido}`,
+          'Documento Cliente': venta.cliente?.documento || '',
+          'Email Cliente': venta.cliente?.email || '',
+          'Celular Cliente': venta.cliente?.celular || '',
 
-          'Producto': producto.nombre,
-          'Modelo': producto.modelo || '',
-          'Unidad': producto.unidad || '',
-          'Cantidad': producto.cantidad,
-          'Precio Unitario': producto.precio,
-          'Subtotal Producto': producto.subtotal,
+          'Producto': detalle.producto?.nombre,
+          'Modelo': detalle.producto?.modelo || '',
+          'Unidad': detalle.producto?.unidad_medida || '',
+          'Cantidad': detalle.cantidad,
+          'Precio Unitario': detalle.precio_unitario,
+          'Subtotal Producto': detalle.subtotal_producto,
 
-          'Método de Pago': venta.metodoPago,
+          'Método de Pago': venta.metodo_pago,
           'Estado': venta.estado,
 
-          'Subtotal Venta': venta.subtotal,
-          'IVA': venta.iva,
-          'Monto Total': venta.monto,
+          'Subtotal Venta': venta.subtotal_venta,
+          'IVA': venta.monto_iva,
+          'Monto Total': venta.monto_venta,
         });
       });
     });
@@ -110,28 +144,28 @@ const ProductsSalePage = () => {
     const doc = new jsPDF();
 
     doc.setFontSize(16);
-    doc.text(`Factura de Venta - ${venta.numero}`, 14, 20);
+    doc.text(`Factura de Venta - ${venta.numero_venta}`, 14, 20);
 
     doc.setFontSize(12);
-    doc.text(`Fecha: ${venta.fechaHora}`, 14, 30);
-    doc.text(`Cliente: ${venta.cliente}`, 14, 38);
-    doc.text(`Documento: ${venta.clienteData?.documento || ''}`, 14, 46);
-    doc.text(`Email: ${venta.clienteData?.email || ''}`, 14, 54);
-    doc.text(`Celular: ${venta.clienteData?.celular || ''}`, 14, 62);
-    doc.text(`Método de Pago: ${venta.metodoPago}`, 14, 70);
+    doc.text(`Fecha: ${new Date(venta.fecha_venta).toLocaleString()}`, 14, 30);
+    doc.text(`Cliente: ${venta.cliente?.nombre} ${venta.cliente?.apellido}`, 14, 38);
+    doc.text(`Documento: ${venta.cliente?.documento || ''}`, 14, 46);
+    doc.text(`Email: ${venta.cliente?.email || ''}`, 14, 54);
+    doc.text(`Celular: ${venta.cliente?.celular || ''}`, 14, 62);
+    doc.text(`Método de Pago: ${venta.metodo_pago}`, 14, 70);
     doc.text(`Estado: ${venta.estado}`, 14, 78);
 
     autoTable(doc, {
       startY: 88,
       head: [['Producto', 'Modelo', 'Cantidad', 'Unidad', 'Precio Unitario', 'Subtotal']],
-      body: venta.productos.map(p => [
-        p.nombre,
-        p.modelo || '',
-        p.cantidad,
-        p.unidad || '',
-        `$${p.precio.toLocaleString()}`,
-        `$${p.subtotal.toLocaleString()}`
-      ]),
+      body: venta.detalles?.map(detalle => [
+        detalle.producto?.nombre,
+        detalle.producto?.modelo || '',
+        detalle.cantidad,
+        detalle.producto?.unidad_medida || '',
+        `$${detalle.precio_unitario.toLocaleString()}`,
+        `$${detalle.subtotal_producto.toLocaleString()}`
+      ]) || [],
       theme: 'grid',
       styles: { fontSize: 10 },
       headStyles: { fillColor: [100, 100, 100], textColor: 255, halign: 'center' }
@@ -140,12 +174,12 @@ const ProductsSalePage = () => {
     const finalY = doc.lastAutoTable?.finalY || 98;
 
     doc.setFontSize(12);
-    doc.text(`Subtotal: $${venta.subtotal.toLocaleString()}`, 14, finalY + 10);
-    doc.text(`IVA (19%): $${venta.iva.toLocaleString()}`, 14, finalY + 18);
+    doc.text(`Subtotal: $${venta.subtotal_venta.toLocaleString()}`, 14, finalY + 10);
+    doc.text(`IVA (19%): $${venta.monto_iva.toLocaleString()}`, 14, finalY + 18);
     doc.setFontSize(14);
-    doc.text(`Total: $${venta.monto.toLocaleString()}`, 14, finalY + 28);
+    doc.text(`Total: $${venta.monto_venta.toLocaleString()}`, 14, finalY + 28);
 
-    doc.save(`Factura_${venta.numero}.pdf`);
+    doc.save(`Factura_${venta.numero_venta}.pdf`);
   };
 
   const handleCancelSale = async (venta) => {
@@ -162,12 +196,12 @@ const ProductsSalePage = () => {
 
       if (!confirmed) return;
 
-      const updated = { ...venta, estado: 'Anulada' };
-      setSales((prev) => prev.map((v) => (v.id === venta.id ? updated : v)));
+      const updated = await salesService.changeSaleState(venta.id_venta, 'Anulada');
+      setSales((prev) => prev.map((v) => (v.id_venta === venta.id_venta ? updated : v)));
 
       showSuccess('Venta anulada exitosamente');
     } catch (error) {
-      console.error(error);
+      console.error('Error al anular venta:', error);
       showError('Ocurrió un error al anular la venta');
     }
   };
@@ -254,6 +288,8 @@ const ProductsSalePage = () => {
         isOpen={showNewModal}
         onClose={() => setShowNewModal(false)}
         onSave={handleAddSale}
+        clients={clients}
+        products={products}
       />
 
       {selectedProductSale && (

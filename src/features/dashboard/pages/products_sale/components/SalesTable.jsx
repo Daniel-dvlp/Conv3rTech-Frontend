@@ -3,6 +3,12 @@ import { FaEye, FaDownload, FaMinusCircle } from 'react-icons/fa';
 import {showError} from '../../../../../shared/utils/alerts';
 
 const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return '$0';
+    const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-MX').format(parsedNum);
+  };
+  
   if (!sales || sales.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-md p-4 text-center">
@@ -44,21 +50,21 @@ const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
         </thead>
         <tbody className="divide-y divide-gray-200">
           {sales.map((sale) => (
-            <tr key={sale.id} className="hover:bg-gray-50 transition-colors">
+            <tr key={sale.id_venta} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                {sale.numero}
+                {sale.numero_venta}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-800">
-                {sale.cliente}
+                {sale.cliente?.nombre} {sale.cliente?.apellido}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                {sale.fechaHora}
+                {new Date(sale.fecha_venta).toLocaleString()}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                ${sale.monto.toLocaleString()}
+              ${formatNumber(sale.monto_venta)}
               </td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                {sale.metodoPago}
+                {sale.metodo_pago}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getEstadoStyle(sale.estado)}`}>

@@ -10,13 +10,13 @@ import ProtectedRoute from "./shared/components/ProtectedRoute";
 
 import DashboardPage from "./features/dashboard/DashboardPage";
 
-//Rutas Daniel
+// Rutas Daniel
 import LoginPage from "./features/auth/pages/LoginPage";
 import RecoverRequestPage from "./features/auth/pages/RecoverRequestPage";
 import RecoverCodePage from "./features/auth/pages/RecoverCodePage";
-import WorkSchedulingPage from "./features/dashboard/pages/Work_scheduling/WorkSchedulingPage";
+import WorkSchedulingPage from "./features/dashboard/pages/Work_scheduling/WorkSchedulingPage.jsx";
 import RolesPage from "./features/dashboard/pages/roles/RolesPage";
-import ProjectPage from "./features/dashboard/pages/project/ProjectPage";
+import ProjectPage from "./features/dashboard/pages/Project/ProjectPage";
 import EditProfilePage from "./features/dashboard/pages/profile/EditProfilePage";
 
 // Rutas Luissy
@@ -27,7 +27,7 @@ import Payments_InstallmentsPage from "./features/dashboard/pages/payments_insta
 import ServicesCategoryPage from "./features/dashboard/pages/services_category/ServicesCategoryPage";
 import ServicesPage from "./features/dashboard/pages/services/ServicesPage";
 import AppoinmentsPage from "./features/dashboard/pages/appointment/AppointmentsPage";
-//Rutas Sarai
+// Rutas Sarai
 import ProductsPage from "./features/dashboard/pages/products/ProductsPage";
 import ProductsCategoryPage from "./features/dashboard/pages/products_category/ProductsCategoryPage";
 import ProductsSalePage from "./features/dashboard/pages/products_sale/ProductsSalePage";

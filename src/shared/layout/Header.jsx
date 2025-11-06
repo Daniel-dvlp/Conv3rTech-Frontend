@@ -1,21 +1,87 @@
-import React, { useState, useRef, useEffect } from "react";
-import {
-  FaUserCircle,
-  FaBell,
-  FaCog,
-  FaSignOutAlt,
-  FaUser,
-  FaChevronDown,
-} from "react-icons/fa";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
-import { showToast } from "../utils/alertas";
+import React, { useState, useRef, useEffect } from 'react';
+import { FaUserCircle, FaBell, FaCog, FaSignOutAlt, FaUser, FaChevronDown } from 'react-icons/fa';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { showToast } from '../utils/alertas';
 
 const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [currentModule, setCurrentModule] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  // Obtener datos del usuario desde localStorage
+  useEffect(() => {
+    const userFromStorage = localStorage.getItem('user');
+    if (userFromStorage) {
+      try {
+        const userData = JSON.parse(userFromStorage);
+        setCurrentUser(userData);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        // Si hay error, usar datos por defecto
+        setCurrentUser({
+          name: 'Usuario',
+          lastName: 'Sistema',
+          email: 'usuario@sistema.com',
+          avatarSeed: 'Usuario',
+          role: 'Usuario'
+        });
+      }
+    } else {
+      // Si no hay usuario en localStorage, redirigir al login
+      navigate('/');
+    }
+  }, [navigate]);
+
+  // Obtener la fecha actual
+  useEffect(() => {
+    const updateDate = () => {
+      const now = new Date();
+      const options = {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      };
+      setCurrentDate(now.toLocaleDateString('es-ES', options));
+    };
+
+    updateDate();
+    const interval = setInterval(updateDate, 60000); // Actualizar cada minuto
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Obtener el módulo actual basado en la ruta
+  useEffect(() => {
+    const path = location.pathname;
+    const moduleMap = {
+      '/dashboard/usuarios': 'Usuarios',
+      '/dashboard/roles': 'Roles',
+      '/dashboard/proveedores': 'Proveedores',
+      '/dashboard/categoria_productos': 'Categoría de Productos',
+      '/dashboard/productos': 'Productos',
+      '/dashboard/compras': 'Compras',
+      '/dashboard/categoria_servicios': 'Categoría de Servicios',
+      '/dashboard/ordenes_servicios': 'Órdenes de Servicios',
+      '/dashboard/programacion_laboral': 'Programación Laboral',
+      '/dashboard/clientes': 'Clientes',
+      '/dashboard/venta_productos': 'Venta de Productos',
+      '/dashboard/citas': 'Citas',
+      '/dashboard/cotizaciones': 'Cotizaciones',
+      '/dashboard/proyectos_servicios': 'Proyectos de Servicios',
+      '/dashboard/pagosyabonos': 'Pagos y Abonos',
+      '/dashboard/servicios': 'Servicios',
+      '/dashboard/profile': 'Perfil'
+    };
+
+    const module = moduleMap[path] || 'Dashboard';
+    setCurrentModule(module);
+  }, [location.pathname]);
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -85,7 +151,8 @@ const Header = () => {
   return (
     <header className="w-full h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
       <div className="flex items-center">
-        <h1 className="text-xl font-bold text-gray-800">Conv3rTech</h1>
+        {/* <h1 className="text-xl font-bold text-gray-800">Gestión de {currentModule}</h1>
+         */}
       </div>
 
       {/* Iconos alineados a la derecha */}

@@ -2,11 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaFileExcel, FaSearch } from 'react-icons/fa';
 import QuotesTable from './components/QuotesTable';
 import SkeletonRow from './components/SkeletonRow';
-import { mockQuotes } from './data/Quotes_data';
 import Pagination from '../../../../shared/components/Pagination';
 import QuoteDetailModal from './components/QuoteDetailModal';
 import QuoteEditModal from './components/QuoteEditModal';
-import { mockProducts } from '../products/data/Products_data.js';
+import NewQuoteModal from './components/NewQuoteModal';
+import CancelQuoteModal from './components/CancelQuoteModal';
+import { clientsApi } from '../clients/services/clientsApi';
+import { productsService } from '../products/services/productsService';
+import { quotesService, servicesCatalogApi } from './services/quotesService';
 import * as XLSX from 'xlsx';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -22,13 +25,32 @@ const QuotesPage = () => {
   const [selectedQuote, setSelectedQuote] = useState(null);
   const [quoteToEdit, setQuoteToEdit] = useState(null);
   const [products, setProducts] = useState([]);
+  const [clients, setClients] = useState([]);
+  const [services, setServices] = useState([]);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [quoteToCancel, setQuoteToCancel] = useState(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      setQuotes(mockQuotes);
-      setProducts(mockProducts)
-      setLoading(false);
-    }, 1500);
+    (async () => {
+      try {
+        const [quotesRes, clientsRes, productsRes, servicesRes] = await Promise.all([
+          quotesService.getAllQuotes(),
+          clientsApi.getAllClients(),
+          productsService.getAllProducts(),
+          servicesCatalogApi.getAllServices(),
+        ]);
+        const quotesData = Array.isArray(quotesRes) ? quotesRes : quotesRes?.data ?? [];
+        setQuotes(quotesData);
+        setClients(Array.isArray(clientsRes) ? clientsRes : clientsRes?.data ?? []);
+        setProducts(Array.isArray(productsRes) ? productsRes : productsRes?.data ?? []);
+        setServices(Array.isArray(servicesRes) ? servicesRes : servicesRes?.data ?? []);
+      } catch (e) {
+        console.error('Error cargando datos de cotizaciones', e);
+        showError('No se pudieron cargar las cotizaciones');
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, []);
 
   const mockServices = [
@@ -36,16 +58,30 @@ const QuotesPage = () => {
     { nombre: 'Mantenimiento', descripcion: 'Servicio de mantenimiento general', precio: 70000 },
     { nombre: 'Revisión', descripcion: 'Revisión técnica del equipo', precio: 30000 },
   ];
-  const normalize = (text) =>
-    text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const normalize = (text) => {
+    const s = (text ?? '').toString();
+    // Algunos navegadores antiguos podrían no soportar String.prototype.normalize
+    if (typeof s.normalize === 'function') {
+      return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
+    return s.toLowerCase();
+  };
 
   const filteredQuotes = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
-    return quotes.filter((quote) =>
-      normalize(quote.cliente).includes(normalizedSearch) ||
-      normalize(quote.estado).includes(normalizedSearch) ||
-      normalize(quote.ordenServicio).includes(normalizedSearch)
-    );
+    return quotes.filter((quote) => {
+      const clienteNombre = quote.cliente
+        || (quote.clienteData ? `${quote.clienteData.nombre} ${quote.clienteData.apellido}` : '')
+        || quote.cliente_nombre
+        || '';
+      const nombreCoti = quote.nombre_cotizacion || quote.ordenServicio || '';
+      const estado = quote.estado || '';
+      return (
+        normalize(clienteNombre).includes(normalizedSearch) ||
+        normalize(nombreCoti).includes(normalizedSearch) ||
+        normalize(estado).includes(normalizedSearch)
+      );
+    });
   }, [quotes, searchTerm]);
 
   const totalPages = Math.ceil(filteredQuotes.length / ITEMS_PER_PAGE);
@@ -55,11 +91,22 @@ const QuotesPage = () => {
     return filteredQuotes.slice(startIndex, startIndex + ITEMS_PER_PAGE);
   }, [filteredQuotes, currentPage]);
 
-  const handleSaveQuoteChanges = (updatedQuote) => {
+  const handleSaveQuoteChanges = async (updatedQuote) => {
     try {
-      setQuotes((prev) =>
-        prev.map((q) => (q.id === updatedQuote.id ? updatedQuote : q))
-      );
+      if (updatedQuote?.id_cotizacion) {
+        setQuotes((prev) =>
+          prev.map((q) => {
+            const qId = q.id_cotizacion ?? q.id;
+            const updatedId = updatedQuote.id_cotizacion ?? updatedQuote.id;
+            return qId === updatedId ? { ...q, ...updatedQuote } : q;
+          })
+        );
+      } else {
+        // Compatibilidad con mocks
+        setQuotes((prev) =>
+          prev.map((q) => (q.id === updatedQuote.id ? updatedQuote : q))
+        );
+      }
       showSuccess('Cotización actualizada exitosamente');
     } catch (error) {
       console.error(error);
@@ -79,43 +126,58 @@ const QuotesPage = () => {
       const exportData = [];
 
       quotes.forEach((quote) => {
+        const clienteNombre = quote.cliente
+          ? `${quote.cliente.nombre} ${quote.cliente.apellido}`
+          : quote.clienteData
+            ? `${quote.clienteData.nombre} ${quote.clienteData.apellido}`
+            : 'Cliente no especificado';
+
         const base = {
-          'ID Cotización': quote.id,
-          'Orden de Servicio': quote.ordenServicio,
-          'Cliente': `${quote.clienteData.nombre} ${quote.clienteData.apellido}`,
-          'Documento': quote.clienteData.documento,
-          'Correo electrónico': quote.clienteData.email,
-          'Estado': quote.estado,
-          'Fecha de Vencimiento': quote.fechaVencimiento,
-          'Subtotal Productos': quote.detalleOrden.subtotalProductos,
-          'Subtotal Servicios': quote.detalleOrden.subtotalServicios,
-          'IVA': quote.detalleOrden.iva,
-          'Total Cotización': quote.detalleOrden.total,
+          'ID Cotización': quote.id_cotizacion || quote.id,
+          'Nombre Cotización': quote.nombre_cotizacion || quote.ordenServicio || '',
+          'Cliente': clienteNombre,
+          'Documento': quote.cliente?.documento || quote.clienteData?.documento || '',
+          'Correo electrónico': quote.cliente?.correo || quote.clienteData?.correo || '',
+          'Estado': quote.estado || '',
+          'Fecha Creación': quote.fecha_creacion ? new Date(quote.fecha_creacion).toLocaleDateString('es-ES') : '',
+          'Fecha de Vencimiento': quote.fecha_vencimiento ? new Date(quote.fecha_vencimiento).toLocaleDateString('es-ES') : '',
+          'Subtotal Productos': quote.subtotal_productos || 0,
+          'Subtotal Servicios': quote.subtotal_servicios || 0,
+          'IVA': quote.monto_iva || 0,
+          'Total Cotización': quote.monto_cotizacion || 0,
+          'Observaciones': quote.observaciones || '',
+          'Motivo de Rechazo': (quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? (quote.motivo_anulacion || 'Sin motivo especificado') : '',
         };
 
-        quote.detalleOrden.productos.forEach((p) => {
-          exportData.push({
-            ...base,
-            Tipo: 'Producto',
-            Nombre: p.nombre,
-            Descripción: p.descripcion,
-            Cantidad: p.cantidad,
-            'Precio Unitario': p.precio,
-            Total: p.total,
+        // Si hay detalles de productos/servicios, agregarlos
+        if (quote.detalles && Array.isArray(quote.detalles)) {
+          quote.detalles.forEach((detalle) => {
+            if (detalle.producto) {
+              exportData.push({
+                ...base,
+                Tipo: 'Producto',
+                Nombre: detalle.producto.nombre || '',
+                Modelo: detalle.producto.modelo || '',
+                Cantidad: detalle.cantidad || 0,
+                'Precio Unitario': detalle.precio_unitario || 0,
+                Subtotal: detalle.subtotal || 0,
+              });
+            } else if (detalle.servicio) {
+              exportData.push({
+                ...base,
+                Tipo: 'Servicio',
+                Nombre: detalle.servicio.nombre || '',
+                Descripción: detalle.servicio.descripcion || '',
+                Cantidad: detalle.cantidad || 0,
+                'Precio Unitario': detalle.precio_unitario || 0,
+                Subtotal: detalle.subtotal || 0,
+              });
+            }
           });
-        });
-
-        quote.detalleOrden.servicios.forEach((s) => {
-          exportData.push({
-            ...base,
-            Tipo: 'Servicio',
-            Nombre: s.servicio,
-            Descripción: s.descripcion,
-            Cantidad: s.cantidad,
-            'Precio Unitario': s.precio,
-            Total: s.total,
-          });
-        });
+        } else {
+          // Si no hay detalles, agregar la fila base
+          exportData.push(base);
+        }
       });
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -134,49 +196,98 @@ const QuotesPage = () => {
   const handleDownloadPDF = (cotizacion) => {
     const doc = new jsPDF();
     doc.setFontSize(16);
-    doc.text(`Cotización - ${cotizacion.ordenServicio}`, 14, 20);
+    doc.text(`Cotización - ${cotizacion.nombre_cotizacion || cotizacion.ordenServicio}`, 14, 20);
 
     doc.setFontSize(12);
-    doc.text(`Fecha de Vencimiento: ${cotizacion.fechaVencimiento}`, 14, 30);
-    doc.text(`Cliente: ${cotizacion.cliente}`, 14, 38);
-    doc.text(`Documento: ${cotizacion.clienteData?.documento || ''}`, 14, 46);
-    doc.text(`Email: ${cotizacion.clienteData?.email || ''}`, 14, 54);
+    doc.text(`Fecha de Vencimiento: ${cotizacion.fecha_vencimiento ? new Date(cotizacion.fecha_vencimiento).toLocaleDateString('es-ES') : ''}`, 14, 30);
+
+    const clienteNombre = cotizacion.cliente
+      ? `${cotizacion.cliente.nombre} ${cotizacion.cliente.apellido}`
+      : cotizacion.clienteData
+        ? `${cotizacion.clienteData.nombre} ${cotizacion.clienteData.apellido}`
+        : 'Cliente no especificado';
+
+    doc.text(`Cliente: ${clienteNombre}`, 14, 38);
+    doc.text(`Documento: ${cotizacion.cliente?.documento || cotizacion.clienteData?.documento || ''}`, 14, 46);
+    doc.text(`Email: ${cotizacion.cliente?.correo || cotizacion.clienteData?.correo || ''}`, 14, 54);
     doc.text(`Estado: ${cotizacion.estado}`, 14, 62);
 
     const detalle = [];
 
-    if (cotizacion.detalleOrden.productos.length > 0) {
-      detalle.push([
-        { content: 'Productos', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
-      ]);
-      detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
-      cotizacion.detalleOrden.productos.forEach((p) => {
+    // Usar datos reales de la cotización
+    if (cotizacion.detalles && Array.isArray(cotizacion.detalles)) {
+      // Agregar productos
+      const productos = cotizacion.detalles.filter(d => d.producto);
+      if (productos.length > 0) {
         detalle.push([
-          p.nombre,
-          p.descripcion,
-          p.cantidad,
-          `$${p.precioUnitario.toLocaleString()}`,
-          '',
-          `$${p.total.toLocaleString()}`
+          { content: 'Productos', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
         ]);
-      });
-    }
+        detalle.push(['Nombre', 'Modelo', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        productos.forEach((detalleItem) => {
+          detalle.push([
+            detalleItem.producto.nombre || '',
+            detalleItem.producto.modelo || '',
+            detalleItem.cantidad || 0,
+            `$${(detalleItem.precio_unitario || 0).toLocaleString()}`,
+            '',
+            `$${(detalleItem.subtotal || 0).toLocaleString()}`
+          ]);
+        });
+      }
 
-    if (cotizacion.detalleOrden.servicios.length > 0) {
-      detalle.push([
-        { content: 'Servicios', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
-      ]);
-      detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
-      cotizacion.detalleOrden.servicios.forEach((s) => {
+      // Agregar servicios
+      const servicios = cotizacion.detalles.filter(d => d.servicio);
+      if (servicios.length > 0) {
         detalle.push([
-          s.servicio,
-          s.descripcion,
-          s.cantidad,
-          `$${s.precioUnitario.toLocaleString()}`,
-          '',
-          `$${s.total.toLocaleString()}`
+          { content: 'Servicios', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
         ]);
-      });
+        detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        servicios.forEach((detalleItem) => {
+          detalle.push([
+            detalleItem.servicio.nombre || '',
+            detalleItem.servicio.descripcion || '',
+            detalleItem.cantidad || 0,
+            `$${(detalleItem.precio_unitario || 0).toLocaleString()}`,
+            '',
+            `$${(detalleItem.subtotal || 0).toLocaleString()}`
+          ]);
+        });
+      }
+    } else if (cotizacion.detalleOrden) {
+      // Compatibilidad con datos antiguos
+      if (cotizacion.detalleOrden.productos && cotizacion.detalleOrden.productos.length > 0) {
+        detalle.push([
+          { content: 'Productos', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
+        ]);
+        detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        cotizacion.detalleOrden.productos.forEach((p) => {
+          detalle.push([
+            p.nombre,
+            p.descripcion,
+            p.cantidad,
+            `$${p.precioUnitario.toLocaleString()}`,
+            '',
+            `$${p.total.toLocaleString()}`
+          ]);
+        });
+      }
+
+      if (cotizacion.detalleOrden.servicios && cotizacion.detalleOrden.servicios.length > 0) {
+        detalle.push([
+          { content: 'Servicios', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
+        ]);
+        detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        cotizacion.detalleOrden.servicios.forEach((s) => {
+          detalle.push([
+            s.servicio,
+            s.descripcion,
+            s.cantidad,
+            `$${s.precioUnitario.toLocaleString()}`,
+            '',
+            `$${s.total.toLocaleString()}`
+          ]);
+        });
+      }
     }
 
     autoTable(doc, {
@@ -190,39 +301,62 @@ const QuotesPage = () => {
     const finalY = doc.lastAutoTable?.finalY || 90;
 
     doc.setFontSize(12);
-    doc.text(`Subtotal Productos: $${cotizacion.detalleOrden.subtotalProductos.toLocaleString()}`, 14, finalY + 10);
-    doc.text(`Subtotal Servicios: $${cotizacion.detalleOrden.subtotalServicios.toLocaleString()}`, 14, finalY + 18);
-    doc.text(`IVA (19%): $${cotizacion.detalleOrden.iva.toLocaleString()}`, 14, finalY + 26);
+    doc.text(`Subtotal Productos: $${(cotizacion.subtotal_productos || 0).toLocaleString()}`, 14, finalY + 10);
+    doc.text(`Subtotal Servicios: $${(cotizacion.subtotal_servicios || 0).toLocaleString()}`, 14, finalY + 18);
+    doc.text(`IVA (19%): $${(cotizacion.monto_iva || 0).toLocaleString()}`, 14, finalY + 26);
 
     doc.setFontSize(14);
-    doc.text(`Total: $${cotizacion.detalleOrden.total.toLocaleString()}`, 14, finalY + 36);
+    doc.text(`Total: $${(cotizacion.monto_cotizacion || 0).toLocaleString()}`, 14, finalY + 36);
 
-    doc.save(`Cotizacion_${cotizacion.ordenServicio}.pdf`);
+    doc.save(`Cotizacion_${cotizacion.nombre_cotizacion || cotizacion.ordenServicio || 'SinNombre'}.pdf`);
   };
 
-  const handleCancelQuote = async (quote) => {
+  const handleCancelQuote = (quote) => {
+    if (quote.estado === 'Rechazada') {
+      showInfo('Esta cotización ya se encuentra anulada');
+      return;
+    }
+    setQuoteToCancel(quote);
+  };
+
+  const handleConfirmCancel = async (motivo) => {
+    if (!quoteToCancel) return;
+    
     try {
-      if (quote.estado === 'Anulada') {
-        showInfo('Esta cotización ya se encuentra anulada');
+      const quoteId = quoteToCancel.id_cotizacion ?? quoteToCancel.id;
+      if (!quoteId) {
+        showError('No se pudo identificar la cotización');
         return;
       }
 
-      const confirmed = await confirmDelete(
-        '¿Estás segura de que deseas anular esta cotización?',
-        'Esta acción no se puede deshacer.'
-      );
+      // Enviar estado 'Rechazada' al backend con motivo_anulacion
+      const updated = await quotesService.changeQuoteState(quoteId, 'Rechazada', motivo);
+      
+      setQuotes((prevQuotes) => prevQuotes.map((q) => {
+        const qId = q.id_cotizacion ?? q.id;
+        return qId === quoteId ? { ...q, ...updated, estado: 'Rechazada', motivo_anulacion: motivo } : q;
+      }));
+      
+      showSuccess('Cotización rechazada exitosamente');
+      setQuoteToCancel(null);
+    } catch (error) {
+      console.error('Error al anular cotización:', error);
+      const message = error?.response?.data?.message || error?.message || 'Ocurrió un error al anular la cotización';
+      showError(message);
+    }
+  };
 
-      if (!confirmed) return;
-
-      const updatedQuote = { ...quote, estado: 'Anulada' };
-      setQuotes((prevQuotes) =>
-        prevQuotes.map((q) => (q.id === quote.id ? updatedQuote : q))
-      );
-
-      showSuccess('Cotización anulada exitosamente');
+  const handleCreateQuote = async (payload) => {
+    try {
+      const created = await quotesService.createQuote(payload);
+      showSuccess('Cotización creada exitosamente');
+      setIsCreateOpen(false);
+      // Opcional: insertar arriba si el listado ya es real. Con mocks, lo dejamos fuera.
+      // setQuotes(prev => [created, ...prev]);
     } catch (error) {
       console.error(error);
-      showError('Ocurrió un error al anular la cotización');
+      const message = error?.response?.data?.message || 'Ocurrió un error al crear la cotización';
+      showError(message);
     }
   };
 
@@ -253,6 +387,12 @@ const QuotesPage = () => {
             <FaFileExcel />
             Exportar
           </button>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors"
+          >
+            Crear cotización
+          </button>
         </div>
       </div>
 
@@ -261,13 +401,12 @@ const QuotesPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Orden de Servicio</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cliente</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Monto Total</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Estado</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -310,7 +449,28 @@ const QuotesPage = () => {
           onSave={handleSaveQuoteChanges}
           quoteToEdit={quoteToEdit}
           products={products}
-          services={mockServices}
+          services={services}
+          clients={clients}
+        />
+      )}
+
+      {isCreateOpen && (
+        <NewQuoteModal
+          isOpen={isCreateOpen}
+          onClose={() => setIsCreateOpen(false)}
+          onSave={handleCreateQuote}
+          clients={clients}
+          products={products}
+          services={services}
+        />
+      )}
+
+      {quoteToCancel && (
+        <CancelQuoteModal
+          isOpen={!!quoteToCancel}
+          onClose={() => setQuoteToCancel(null)}
+          onConfirm={handleConfirmCancel}
+          quote={quoteToCancel}
         />
       )}
     </div>

@@ -173,8 +173,11 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
                 <select id="tipoDocumento" name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
                   <option value="">Seleccionar...</option>
                   <option value="CC">CC</option>
-                  <option value="TI">TI</option>
+                  <option value="PPT">PPT</option>
+                  <option value="NIT">NIT</option>
+                  <option value="PA">PA</option>
                   <option value="CE">CE</option>
+                  <option value="TI">TI</option>
                 </select>
               </div>
 
@@ -239,9 +242,10 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
                 <option value="">Seleccionar...</option>
                 <option value="Activo">Activo</option>
                 <option value="Inactivo">Inactivo</option>
-                <option value="Vacaciones">Vacaciones</option>
-                <option value="Enfermo">Enfermo</option>
-                <option value="Otro">Otro</option>
+                <option value="Suspendido">Suspendido</option>
+                <option value="En vacaciones">En vacaciones</option>
+                <option value="Retirado">Retirado</option>
+                <option value="Licencia médica">Licencia médica</option>
               </select>
               {errors.status && (
                 <p className="text-red-500 text-sm mt-1">{errors.status}</p>
