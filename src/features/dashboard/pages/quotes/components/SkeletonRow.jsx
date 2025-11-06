@@ -3,32 +3,28 @@ import React from 'react';
 const SkeletonRow = () => {
   return (
     <tr className="animate-pulse">
-      {/* ID */}
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="h-4 w-10 bg-gray-200 rounded"></div>
-      </td>
 
-      {/* Cliente */}
+      {/* Nombre de la Cotización */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="h-4 w-32 bg-gray-200 rounded"></div>
       </td>
 
-      {/* Orden de Servicio */}
+      {/* Cliente */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="h-4 w-20 bg-gray-200 rounded"></div>
       </td>
 
-      {/* Monto de la Cotización */}
+      {/* Monto de la Cotización (total) */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="h-4 w-24 bg-gray-200 rounded"></div>
       </td>
 
-      {/* Fecha de Vencimiento */}
+      {/* Fecha de Vencimiento de la Cotización */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="h-4 w-28 bg-gray-200 rounded"></div>
       </td>
 
-      {/* Estado */}
+      {/* Estado de la Cotización */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="h-5 w-28 bg-gray-200 rounded-full"></div>
       </td>

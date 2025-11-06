@@ -70,7 +70,7 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
             <tr key={compra.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{compra.numeroRecibo}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{compra.proveedor}</td>
-              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${compra.total.toLocaleString('es-CO')}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${(compra.total || 0).toLocaleString('es-CO')}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{compra.fechaRegistro}</td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <span

@@ -1,6 +1,8 @@
 // src/features/dashboard/pages/purchases/hooks/usePurchases.js
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { purchasesApi } from '../services/purchasesApi';
+import { productsService } from '../../products/services/productsService';
+import { suppliersApi } from '../../suppliers/services/suppliersApi';
 import { toast } from 'react-hot-toast';
 
 // Función para transformar datos del backend al formato del frontend
@@ -68,6 +70,8 @@ export const usePurchases = () => {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [suppliers, setSuppliers] = useState([]);
+  const [products, setProducts] = useState([]);
 
   // Cargar todas las compras
   const loadPurchases = useCallback(async () => {
@@ -82,6 +86,21 @@ export const usePurchases = () => {
       toast.error('Error al cargar compras');
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  // Cargar proveedores y productos
+  const loadSuppliersAndProducts = useCallback(async () => {
+    try {
+      const [suppliersData, productsData] = await Promise.all([
+        suppliersApi.getAllSuppliers(),
+        productsService.getAllProducts()
+      ]);
+      setSuppliers(suppliersData);
+      setProducts(productsData);
+    } catch (err) {
+      console.error('Error al cargar proveedores y productos:', err);
+      toast.error('Error al cargar datos adicionales');
     }
   }, []);
 
@@ -165,15 +184,18 @@ export const usePurchases = () => {
     }
   }, []);
 
-  // Cargar compras al montar el componente
+  // Cargar compras, proveedores y productos al montar el componente
   useEffect(() => {
     loadPurchases();
-  }, [loadPurchases]);
+    loadSuppliersAndProducts();
+  }, [loadPurchases, loadSuppliersAndProducts]);
 
   return {
     purchases,
     loading,
     error,
+    suppliers,
+    products,
     loadPurchases,
     createPurchase,
     updatePurchase,
