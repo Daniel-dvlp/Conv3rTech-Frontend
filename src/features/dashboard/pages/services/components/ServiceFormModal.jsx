@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import MockCategories from "../../services_category/data/ServicesCategory_data";
+import { serviceCategoryService } from '../../services_category/services/serviceCategoryService.js';
 import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) => {
@@ -7,12 +7,12 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
     nombre: '',
     categoriaId: '',
     precio: '',
-    duracion: '',
     descripcion: '',
     imagen: null,
     horas: '',
     minutos: '',
     estado: 'activo',
+    url_imagen: '',
   });
 
   const [previewImage, setPreviewImage] = useState(null);
@@ -20,47 +20,74 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
   const fileInputRef = useRef();
 
   useEffect(() => {
-    setCategories(MockCategories);
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      const response = await serviceCategoryService.getAllCategories();
+      const categoriesData = response?.data || response || [];
+      setCategories(categoriesData);
+    } catch (error) {
+      console.error('Error al cargar categorías:', error);
+      setCategories([]);
+    }
+  };
 
   useEffect(() => {
     if (esEdicion && servicio) {
-      const [horas = '', minutos = ''] = servicio.duracion
-        ?.match(/(\d+)h\s*(\d+)?m?/)?.slice(1) || [];
+      // Usar id_categoria_servicio del backend o buscar por nombre
+      const categoriaId = servicio.id_categoria_servicio || 
+        (servicio.categoria?.id || servicio.categoria?.id_categoria_servicio) ||
+        (categories.find(cat => cat.nombre === servicio.categoria?.nombre || cat.nombre === servicio.categoria)?.id);
 
-      const categoriaEncontrada = MockCategories.find(cat => cat.nombre === servicio.categoria);
+      // Parsear duración si existe (formato "1h 30m", "2h" o "45m")
+      let horas = '';
+      let minutos = '';
+      if (servicio.duracion) {
+        // Buscar horas: "1h" o "1h 30m"
+        const horasMatch = servicio.duracion.match(/(\d+)h/);
+        if (horasMatch) {
+          horas = horasMatch[1];
+        }
+        // Buscar minutos: "30m" o "1h 30m" o solo "45m"
+        const minutosMatch = servicio.duracion.match(/(\d+)m/);
+        if (minutosMatch) {
+          minutos = minutosMatch[1];
+        }
+      }
 
       setFormData({
         nombre: servicio.nombre || '',
-        categoriaId: categoriaEncontrada?.id || '',
+        categoriaId: categoriaId || '',
         precio: servicio.precio || '',
-        duracion: servicio.duracion || '',
         descripcion: servicio.descripcion || '',
-        imagen: null,
-        horas,
-        minutos,
-        id: servicio.id,
-        estado: servicio.estado || 'activo',
+        imagen: servicio.url_imagen || null,
+        horas: horas,
+        minutos: minutos,
+        id: servicio.id_servicio || servicio.id,
+        estado: (servicio.estado || 'activo').toLowerCase(),
+        url_imagen: servicio.url_imagen || '',
       });
 
-      if (servicio.imagen) {
-        setPreviewImage(servicio.imagen);
+      if (servicio.url_imagen || servicio.imagen) {
+        setPreviewImage(servicio.url_imagen || servicio.imagen);
       }
     } else {
       setFormData({
         nombre: '',
         categoriaId: '',
         precio: '',
-        duracion: '',
         descripcion: '',
         imagen: null,
         horas: '',
         minutos: '',
         estado: 'activo',
+        url_imagen: '',
       });
       setPreviewImage(null);
     }
-  }, [esEdicion, servicio]);
+  }, [esEdicion, servicio, categories]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,29 +103,47 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
   };
 
   const handleDurationChange = (type, value) => {
-    const horas = type === 'horas' ? value : formData.horas || '0';
-    const minutos = type === 'minutos' ? value : formData.minutos || '0';
-
     setFormData((prev) => ({
       ...prev,
       [type]: value,
-      duracion: `${horas}h ${minutos}m`,
     }));
   };
 
-  const handleSubmit = (e) => {
+  const formatDuration = (horas, minutos) => {
+    if (!horas && (!minutos || minutos === '0' || minutos === '')) return '';
+    const h = horas && horas !== '' && horas !== '0' ? `${horas}h` : '';
+    const m = minutos && minutos !== '0' && minutos !== '' ? `${minutos}m` : '';
+    if (h && m) return `${h} ${m}`;
+    return h || m;
+  };
+
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const categoriaSeleccionada = categories.find(cat => cat.id === parseInt(formData.categoriaId));
+    const duracionFormateada = formatDuration(formData.horas, formData.minutos);
+
     const datosAEnviar = {
-      ...formData,
-      id: formData.id || Date.now(),
-      categoria: categoriaSeleccionada ? categoriaSeleccionada.nombre : '',
+      nombre: formData.nombre,
+      descripcion: formData.descripcion,
+      precio: formData.precio,
+      estado: formData.estado,
+      id_categoria_servicio: parseInt(formData.categoriaId),
+      categoriaId: parseInt(formData.categoriaId),
+      url_imagen: formData.url_imagen || (typeof formData.imagen === 'string' ? formData.imagen : ''),
+      duracion: duracionFormateada,
     };
 
-    onSubmit(datosAEnviar);
-    showSuccess(`Servicio ${esEdicion ? 'actualizado' : 'creado'} correctamente`);
-    onClose();
+    if (esEdicion) {
+      datosAEnviar.id = formData.id;
+      datosAEnviar.id_servicio = formData.id;
+    }
+
+    try {
+      await onSubmit(datosAEnviar);
+    } catch (error) {
+      // El componente padre maneja los mensajes de error
+    }
   };
 
   if (!isOpen) return null;
@@ -143,48 +188,57 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
           </div>
 
           {/* Nombre */}
-          <input
-            type="text"
-            name="nombre"
-            placeholder="Nombre del servicio"
-            value={formData.nombre}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">* Nombre:</label>
+            <input
+              type="text"
+              name="nombre"
+              placeholder="Nombre del servicio"
+              value={formData.nombre}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            />
+          </div>
 
           {/* Categoría */}
-          <select
-            name="categoriaId"
-            value={formData.categoriaId}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            required
-          >
-            <option value="">Seleccione una categoría</option>
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.nombre}
-              </option>
-            ))}
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">* Categoría:</label>
+            <select
+              name="categoriaId"
+              value={formData.categoriaId}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              <option value="">Seleccione una categoría</option>
+              {categories.map((cat) => (
+                <option key={cat.id || cat.id_categoria_servicio} value={cat.id || cat.id_categoria_servicio}>
+                  {cat.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {/* Precio */}
-          <input
-            type="number"
-            name="precio"
-            placeholder="Precio"
-            value={formData.precio}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            required
-          />
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">* Precio:</label>
+            <input
+              type="number"
+              name="precio"
+              placeholder="Precio"
+              value={formData.precio}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              step="0.01"
+              min="0"
+              required
+            />
+          </div>
 
           {/* Duración */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Duración aproximada
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duración:</label>
             <div className="flex gap-2">
               <select
                 value={formData.horas}
@@ -192,18 +246,21 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
                 className="w-1/2 border rounded px-3 py-2"
               >
                 <option value="">Horas</option>
-                {[...Array(6)].map((_, i) => (
-                  <option key={i} value={i}>
-                    {i} hora{i !== 1 ? 's' : ''}
-                  </option>
-                ))}
+                {[...Array(5)].map((_, i) => {
+                  const horas = i + 1; // Comienza desde 1 hora
+                  return (
+                    <option key={horas} value={horas}>
+                      {horas} {horas === 1 ? 'hora' : 'horas'}
+                    </option>
+                  );
+                })}
               </select>
               <select
                 value={formData.minutos}
                 onChange={(e) => handleDurationChange('minutos', e.target.value)}
                 className="w-1/2 border rounded px-3 py-2"
               >
-                <option value="0">Minutos</option>
+                <option value="">Minutos</option>
                 <option value="10">10 min</option>
                 <option value="15">15 min</option>
                 <option value="20">20 min</option>
@@ -211,30 +268,41 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
                 <option value="45">45 min</option>
               </select>
             </div>
+            {(formData.horas || formData.minutos) && (
+              <p className="text-sm text-gray-500 mt-1">
+                Duración: {formatDuration(formData.horas, formData.minutos)}
+              </p>
+            )}
           </div>
 
           {/* Descripción */}
-          <textarea
-            name="descripcion"
-            placeholder="Descripción del servicio"
-            value={formData.descripcion}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            rows={3}
-            required
-          ></textarea>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">* Descripción:</label>
+            <textarea
+              name="descripcion"
+              placeholder="Descripción del servicio"
+              value={formData.descripcion}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              rows={3}
+              required
+            ></textarea>
+          </div>
 
           {/* Estado */}
-          <select
-            name="estado"
-            value={formData.estado}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            required
-          >
-            <option value="activo">Activo</option>
-            <option value="inactivo">Inactivo</option>
-          </select>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">* Estado:</label>
+            <select
+              name="estado"
+              value={formData.estado}
+              onChange={handleChange}
+              className="w-full border rounded px-3 py-2"
+              required
+            >
+              <option value="activo">Activo</option>
+              <option value="inactivo">Inactivo</option>
+            </select>
+          </div>
 
           {/* Botones */}
           <div className="flex justify-end gap-2">

@@ -12,6 +12,7 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
 
   const [previewImage, setPreviewImage] = useState(null);
   const fileInputRef = useRef();
+  const descripcionRef = useRef(null);
 
   // Cargar datos si es edición
   useEffect(() => {
@@ -43,9 +44,23 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
     }
   }, [categoria, esEdicion]);
 
+  // Ajustar altura del textarea automáticamente
+  useEffect(() => {
+    if (descripcionRef.current) {
+      descripcionRef.current.style.height = 'auto';
+      descripcionRef.current.style.height = `${descripcionRef.current.scrollHeight}px`;
+    }
+  }, [formData.descripcion, isOpen]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Autoajustar altura del textarea de descripción
+    if (name === 'descripcion' && descripcionRef.current) {
+      descripcionRef.current.style.height = 'auto';
+      descripcionRef.current.style.height = `${descripcionRef.current.scrollHeight}px`;
+    }
   };
 
   const handleImageChange = (e) => {
@@ -56,13 +71,18 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onSubmit(formData);
-    setFormData({ id: null, nombre: '', descripcion: '', imagen: null, estado: 'Activo' });
-    setPreviewImage(null);
-    showSuccess(esEdicion ? 'Categoría actualizada correctamente' : 'Categoría guardada correctamente');
-    onClose();
+    if (!formData.nombre?.trim()) return;
+    if (!formData.descripcion || formData.descripcion.trim().length < 10) return;
+    try {
+      await onSubmit(formData);
+      setFormData({ id: null, nombre: '', descripcion: '', imagen: null, estado: 'Activo' });
+      setPreviewImage(null);
+      onClose();
+    } catch (error) {
+      // El componente padre maneja los mensajes de error
+    }
   };
 
   if (!isOpen) return null;
@@ -116,16 +136,24 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
             required
           />
 
+          {/* En el futuro se subirá a Cloudinary; por ahora es opcional */}
+
           {/* Descripción */}
-          <textarea
-            name="descripcion"
-            placeholder="Descripción de la categoría"
-            value={formData.descripcion}
-            onChange={handleChange}
-            className="w-full border rounded px-3 py-2"
-            rows={3}
-            required
-          ></textarea>
+          <div className="border border-gray-200 rounded-xl p-3 shadow-sm">
+            <label className="block text-sm font-semibold text-gray-800 mb-1">
+              * Descripción:
+            </label>
+            <textarea
+              ref={descripcionRef}
+              name="descripcion"
+              placeholder="Descripción de la categoría"
+              value={formData.descripcion}
+              onChange={handleChange}
+              className="w-full text-gray-600 text-sm mt-1 border-none outline-none resize-none overflow-hidden bg-transparent"
+              style={{ minHeight: '60px' }}
+              required
+            ></textarea>
+          </div>
 
           {/* Estado */}
           <div>

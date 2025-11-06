@@ -11,9 +11,9 @@ const ServiceCategoryTable = ({ categorias, onVer, onEditar, onEliminar }) => {
         >
           {/* Imagen o placeholder */}
           <div className="w-28 h-28 bg-gray-200 rounded-md mb-4 flex items-center justify-center">
-            {categoria.imagen ? (
+            {categoria.url_imagen ? (
               <img
-                src={categoria.imagen}
+                src={categoria.url_imagen}
                 alt={categoria.nombre}
                 className="object-cover w-full h-full rounded-md"
               />
@@ -33,12 +33,12 @@ const ServiceCategoryTable = ({ categorias, onVer, onEditar, onEliminar }) => {
           {/* Estado */}
           <span
             className={`mt-2 text-sm font-semibold px-3 py-1 rounded-full ${
-              categoria.estado === 'Activo'
+              (categoria.estado || '').toLowerCase() === 'activo'
                 ? 'bg-green-100 text-green-700'
                 : 'bg-red-100 text-red-700'
             }`}
           >
-            {categoria.estado}
+            {(categoria.estado || '').toLowerCase() === 'activo' ? 'Activo' : 'Inactivo'}
           </span>
 
           {/* Acciones */}

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ServicesTable from './components/ServicesTable';
 import SkeletonCard from './components/SkeletonCard';
-import MockServices from './data/Services_data';
 import ServiceFormModal from './components/ServiceFormModal';
 import ServiceViewModal from './components/ServiceViewModal';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
+import { serviceService } from './services/serviceService.js';
+import { toast } from 'react-hot-toast';
 
 const ServiciosLoading = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -27,24 +28,30 @@ const ServicesPage = () => {
   const serviciosPorPagina = 8;
 
   useEffect(() => {
-    setTimeout(() => {
-      const serviciosConEstado = MockServices.map(s => ({
-        ...s,
-        estado: s.estado || 'activo',
-      }));
-      setServicios(serviciosConEstado);
-      setLoading(false);
-    }, 1500);
+    loadServices();
   }, []);
 
+  const loadServices = async () => {
+    try {
+      setLoading(true);
+      const response = await serviceService.getAllServices();
+      setServicios(response?.data || response || []);
+    } catch (error) {
+      toast.error('Error al cargar los servicios');
+      setServicios([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleVer = (id) => {
-    const servicio = servicios.find((s) => s.id === id);
+    const servicio = servicios.find((s) => s.id_servicio === id || s.id === id);
     setSelectedService(servicio);
     setViewModalOpen(true);
   };
 
   const handleEditar = (id) => {
-    const servicio = servicios.find((s) => s.id === id);
+    const servicio = servicios.find((s) => s.id_servicio === id || s.id === id);
     setSelectedService(servicio);
     setEsEdicion(true);
     setModalOpen(true);
@@ -52,53 +59,95 @@ const ServicesPage = () => {
 
   const handleEliminar = async (id) => {
     const confirmed = await confirmDelete('¿Deseas eliminar este servicio?');
-    if (confirmed) {
-      setServicios((prev) => prev.filter((s) => s.id !== id));
+    if (!confirmed) return;
+    try {
+      await serviceService.deleteService(id);
+      setServicios((prev) => prev.filter((s) => s.id_servicio !== id && s.id !== id));
       showSuccess('Servicio eliminado correctamente');
+      toast.success('Servicio eliminado exitosamente');
+    } catch (error) {
+      toast.error('Error al eliminar el servicio');
     }
   };
 
-  const handleAgregarServicio = (nuevoServicio) => {
-    const nuevo = {
-      id: servicios.length + 1,
-      ...nuevoServicio,
-      estado: 'activo',
-      tipo: nuevoServicio.categoria.toLowerCase().includes('mantenimiento')
-        ? 'mantenimiento'
-        : 'instalacion',
-    };
-    setServicios((prev) => [...prev, nuevo]);
+  const handleAgregarServicio = async (nuevoServicio) => {
+    try {
+      const response = await serviceService.createService(nuevoServicio);
+      const creado = response?.service || response;
+      setServicios((prev) => [...prev, creado]);
+      showSuccess('Servicio creado correctamente');
+      toast.success('Servicio creado exitosamente');
+    } catch (error) {
+      const apiMsg = error?.response?.data?.message;
+      const apiErrors = error?.response?.data?.errors;
+      const status = error?.response?.status;
+      const detail = Array.isArray(apiErrors) ? apiErrors.map(e => e.msg).join(' | ') : '';
+      toast.error(`${status || ''} ${apiMsg || 'Error al crear el servicio'}${detail ? ': ' + detail : ''}`.trim());
+      throw error;
+    }
   };
 
-  const handleActualizarServicio = (servicioEditado) => {
-    const actualizado = {
-      ...servicioEditado,
-      tipo: servicioEditado.categoria.toLowerCase().includes('mantenimiento')
-        ? 'mantenimiento'
-        : 'instalacion',
-    };
-    setServicios((prev) =>
-      prev.map((s) => (s.id === actualizado.id ? actualizado : s))
-    );
-    setEsEdicion(false);
-    setSelectedService(null);
+  const handleActualizarServicio = async (servicioEditado) => {
+    try {
+      const id = servicioEditado.id_servicio || servicioEditado.id;
+      const response = await serviceService.updateService(id, servicioEditado);
+      const actualizado = response?.service || response;
+      setServicios((prev) =>
+        prev.map((s) => ((s.id_servicio === id || s.id === id) ? actualizado : s))
+      );
+      setModalOpen(false);
+      setSelectedService(null);
+      setEsEdicion(false);
+      showSuccess('Servicio actualizado correctamente');
+      toast.success('Servicio actualizado exitosamente');
+    } catch (error) {
+      const apiMsg = error?.response?.data?.message;
+      const apiErrors = error?.response?.data?.errors;
+      const status = error?.response?.status;
+      const detail = Array.isArray(apiErrors) ? apiErrors.map(e => e.msg).join(' | ') : '';
+      toast.error(`${status || ''} ${apiMsg || 'Error al actualizar el servicio'}${detail ? ': ' + detail : ''}`.trim());
+      throw error;
+    }
   };
 
-  const handleToggleEstado = (id) => {
-    setServicios((prev) =>
-      prev.map((s) =>
-        s.id === id
-          ? { ...s, estado: s.estado === 'activo' ? 'inactivo' : 'activo' }
-          : s
-      )
-    );
+  const handleToggleEstado = async (id) => {
+    try {
+      const servicio = servicios.find((s) => s.id_servicio === id || s.id === id);
+      if (!servicio) return;
+      
+      const nuevoEstado = servicio.estado === 'activo' ? 'inactivo' : 'activo';
+      const idToUpdate = servicio.id_servicio || servicio.id;
+      
+      await serviceService.updateService(idToUpdate, { ...servicio, estado: nuevoEstado });
+      setServicios((prev) =>
+        prev.map((s) =>
+          (s.id_servicio === id || s.id === id)
+            ? { ...s, estado: nuevoEstado }
+            : s
+        )
+      );
+      toast.success('Estado actualizado exitosamente');
+    } catch (error) {
+      toast.error('Error al cambiar el estado del servicio');
+    }
   };
 
   const serviciosFiltrados = servicios
-    .filter((s) => filtro === 'todos' || s.tipo === filtro)
+    .filter((s) => {
+      if (filtro === 'todos') return true;
+      // Si el servicio tiene categoría, filtrar por el nombre de la categoría
+      const categoriaNombre = s.categoria?.nombre || s.categoria || '';
+      if (filtro === 'mantenimiento') {
+        return categoriaNombre.toLowerCase().includes('mantenimiento');
+      }
+      if (filtro === 'instalacion') {
+        return categoriaNombre.toLowerCase().includes('instalacion');
+      }
+      return false;
+    })
     .filter((s) =>
-      s.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      s.descripcion.toLowerCase().includes(busqueda.toLowerCase())
+      (s.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+      (s.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
     );
 
   const indexInicio = (currentPage - 1) * serviciosPorPagina;

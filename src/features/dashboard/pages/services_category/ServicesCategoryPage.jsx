@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ServiceCategoryTable from './components/ServicesCategoryTable.jsx';
 import SkeletonCategoryCard from './components/SkeletonCategoryCard.jsx';
-import MockCategories from './data/ServicesCategory_data.js';
 import CategoryFormModal from './components/CategoryFormModal.jsx';
 import CategoryViewModal from './components/CategoryViewModal.jsx';
 import { confirmDelete, showSuccess } from '../../../../shared/utils/alerts.js';
+import { serviceCategoryService } from './services/serviceCategoryService.js';
+import { toast } from 'react-hot-toast';
 
 const CategoriasLoading = () => {
   return (
@@ -30,11 +31,21 @@ const ServiceCategoryPage = () => {
   const categoriasPorPagina = 8;
 
   useEffect(() => {
-    setTimeout(() => {
-      setCategorias(MockCategories);
-      setLoading(false);
-    }, 1500);
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await serviceCategoryService.getAllCategories();
+      setCategorias(response?.data || response || []);
+    } catch (error) {
+      toast.error('Error al cargar las categorías');
+      setCategorias([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleVer = (id) => {
     const categoria = categorias.find((c) => c.id === id);
@@ -51,36 +62,42 @@ const ServiceCategoryPage = () => {
 
   const handleEliminar = async (id) => {
     const confirmed = await confirmDelete('¿Deseas eliminar esta categoría?');
-    if (confirmed) {
+    if (!confirmed) return;
+    try {
+      await serviceCategoryService.deleteCategory(id);
       setCategorias((prev) => prev.filter((c) => c.id !== id));
       showSuccess('Categoría eliminada correctamente');
+      toast.success('Categoría eliminada exitosamente');
+    } catch (error) {
+      toast.error('Error al eliminar la categoría');
     }
   };
 
-  const handleAgregarCategoria = (nuevaCategoria) => {
-    const nueva = {
-      id: categorias.length + 1,
-      ...nuevaCategoria,
-      tipo: nuevaCategoria.nombre.toLowerCase().includes('tecnologia')
-        ? 'tecnologia'
-        : 'seguridad',
-    };
-    setCategorias((prev) => [...prev, nueva]);
+  const handleAgregarCategoria = async (nuevaCategoria) => {
+    try {
+      const response = await serviceCategoryService.createCategory(nuevaCategoria);
+      const creada = response?.data || response;
+      setCategorias((prev) => [...prev, creada]);
+      showSuccess('Categoría creada correctamente');
+      toast.success('Categoría creada exitosamente');
+    } catch (error) {
+      toast.error('Error al crear la categoría');
+    }
   };
 
-  const handleActualizarCategoria = (categoriaEditada) => {
-    const actualizada = {
-      ...categoriaEditada,
-      tipo: categoriaEditada.nombre.toLowerCase().includes('tecnologia')
-        ? 'tecnologia'
-        : 'seguridad',
-    };
-    setCategorias((prev) =>
-      prev.map((c) => (c.id === actualizada.id ? actualizada : c))
-    );
-    setModalOpen(false);
-    setSelectedCategoria(null);
-    setEsEdicion(false);
+  const handleActualizarCategoria = async (categoriaEditada) => {
+    try {
+      const response = await serviceCategoryService.updateCategory(categoriaEditada.id, categoriaEditada);
+      const actualizada = response?.data || response;
+      setCategorias((prev) => prev.map((c) => (c.id === actualizada.id ? actualizada : c)));
+      setModalOpen(false);
+      setSelectedCategoria(null);
+      setEsEdicion(false);
+      showSuccess('Categoría actualizada correctamente');
+      toast.success('Categoría actualizada exitosamente');
+    } catch (error) {
+      toast.error('Error al actualizar la categoría');
+    }
   };
 
   // Búsqueda y filtro
