@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import ServiceCategoryTable from './components/ServicesCategoryTable.jsx';
 import SkeletonCategoryCard from './components/SkeletonCategoryCard.jsx';
-import MockCategories from './data/ServicesCategory_data.js';
 import CategoryFormModal from './components/CategoryFormModal.jsx';
 import CategoryViewModal from './components/CategoryViewModal.jsx';
 import { confirmDelete, showSuccess } from '../../../../shared/utils/alerts.js';
+import { serviceCategoryService } from './services/serviceCategoryService.js';
+import { toast } from 'react-hot-toast';
 
 const CategoriasLoading = () => {
   return (
@@ -25,12 +26,26 @@ const ServiceCategoryPage = () => {
   const [esEdicion, setEsEdicion] = useState(false);
   const [viewModalOpen, setViewModalOpen] = useState(false);
 
+  const [busqueda, setBusqueda] = useState('');
+  const [paginaActual, setPaginaActual] = useState(1);
+  const categoriasPorPagina = 8;
+
   useEffect(() => {
-    setTimeout(() => {
-      setCategorias(MockCategories);
-      setLoading(false);
-    }, 1500);
+    loadCategories();
   }, []);
+
+  const loadCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await serviceCategoryService.getAllCategories();
+      setCategorias(response?.data || response || []);
+    } catch (error) {
+      toast.error('Error al cargar las categorías');
+      setCategorias([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleVer = (id) => {
     const categoria = categorias.find((c) => c.id === id);
@@ -45,53 +60,69 @@ const ServiceCategoryPage = () => {
     setModalOpen(true);
   };
 
-const handleEliminar = async (id) => {
-  const confirmed = await confirmDelete('¿Deseas eliminar esta categoría?');
-  if (confirmed) {
-    setCategorias((prev) => prev.filter((c) => c.id !== id));
-    showSuccess('Categoría eliminada correctamente');
-  }
-};
-
-  const handleAgregarCategoria = (nuevaCategoria) => {
-    const nueva = {
-      id: categorias.length + 1,
-      ...nuevaCategoria,
-      tipo: nuevaCategoria.nombre.toLowerCase().includes('tecnologia')
-        ? 'tecnologia'
-        : 'seguridad',
-    };
-    setCategorias((prev) => [...prev, nueva]);
+  const handleEliminar = async (id) => {
+    const confirmed = await confirmDelete('¿Deseas eliminar esta categoría?');
+    if (!confirmed) return;
+    try {
+      await serviceCategoryService.deleteCategory(id);
+      setCategorias((prev) => prev.filter((c) => c.id !== id));
+      showSuccess('Categoría eliminada correctamente');
+      toast.success('Categoría eliminada exitosamente');
+    } catch (error) {
+      toast.error('Error al eliminar la categoría');
+    }
   };
 
-  const handleActualizarCategoria = (categoriaEditada) => {
-    const actualizada = {
-      ...categoriaEditada,
-      tipo: categoriaEditada.nombre.toLowerCase().includes('tecnologia')
-        ? 'tecnologia'
-        : 'seguridad',
-    };
-    setCategorias((prev) =>
-      prev.map((c) => (c.id === actualizada.id ? actualizada : c))
-    );
-    setModalOpen(false);
-    setSelectedCategoria(null);
-    setEsEdicion(false);
+  const handleAgregarCategoria = async (nuevaCategoria) => {
+    try {
+      const response = await serviceCategoryService.createCategory(nuevaCategoria);
+      const creada = response?.data || response;
+      setCategorias((prev) => [...prev, creada]);
+      showSuccess('Categoría creada correctamente');
+      toast.success('Categoría creada exitosamente');
+    } catch (error) {
+      toast.error('Error al crear la categoría');
+    }
   };
 
-  const categoriasFiltradas =
-    filtro === 'todas'
-      ? categorias
-      : categorias.filter((c) => c.tipo === filtro);
+  const handleActualizarCategoria = async (categoriaEditada) => {
+    try {
+      const response = await serviceCategoryService.updateCategory(categoriaEditada.id, categoriaEditada);
+      const actualizada = response?.data || response;
+      setCategorias((prev) => prev.map((c) => (c.id === actualizada.id ? actualizada : c)));
+      setModalOpen(false);
+      setSelectedCategoria(null);
+      setEsEdicion(false);
+      showSuccess('Categoría actualizada correctamente');
+      toast.success('Categoría actualizada exitosamente');
+    } catch (error) {
+      toast.error('Error al actualizar la categoría');
+    }
+  };
+
+  // Búsqueda y filtro
+  const categoriasFiltradas = categorias.filter((c) => {
+    const coincideTipo = filtro === 'todas' || c.tipo === filtro;
+    const coincideBusqueda =
+      (c.nombre?.toLowerCase() || '').includes(busqueda) ||
+      (c.descripcion?.toLowerCase() || '').includes(busqueda);
+    return coincideTipo && coincideBusqueda;
+  });
+
+  // Paginación
+  const totalPaginas = Math.ceil(categoriasFiltradas.length / categoriasPorPagina);
+  const indiceInicio = (paginaActual - 1) * categoriasPorPagina;
+  const categoriasPaginadas = categoriasFiltradas.slice(
+    indiceInicio,
+    indiceInicio + categoriasPorPagina
+  );
 
   return (
     <div className="p-6">
-      {/* Título actualizado */}
       <h2 className="text-3xl font-bold mb-6 text-center text-[#000435]">
         CATEGORÍAS DE SERVICIOS
       </h2>
 
-      {/* Botón Crear Categoría */}
       <div className="flex justify-end mb-4">
         <button
           onClick={() => {
@@ -105,12 +136,27 @@ const handleEliminar = async (id) => {
         </button>
       </div>
 
-      {/* Filtros con mejor estilo y hover dinámico */}
+      <div className="flex justify-center mb-6">
+        <input
+          type="text"
+          placeholder="Buscar"
+          className="px-4 py-2 border border-gray-300 rounded-md w-full max-w-md shadow-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          value={busqueda}
+          onChange={(e) => {
+            setBusqueda(e.target.value.toLowerCase());
+            setPaginaActual(1);
+          }}
+        />
+      </div>
+
       <div className="flex justify-center gap-3 mb-8">
         {['todas', 'seguridad', 'tecnologia'].map((tipo) => (
           <button
             key={tipo}
-            onClick={() => setFiltro(tipo)}
+            onClick={() => {
+              setFiltro(tipo);
+              setPaginaActual(1);
+            }}
             className={`px-5 py-1.5 rounded-full text-sm font-semibold transition border shadow-sm
               ${
                 filtro === tipo
@@ -123,19 +169,53 @@ const handleEliminar = async (id) => {
         ))}
       </div>
 
-      {/* Contenido */}
       {loading ? (
         <CategoriasLoading />
       ) : (
         <ServiceCategoryTable
-          categorias={categoriasFiltradas}
+          categorias={categoriasPaginadas}
           onVer={handleVer}
           onEditar={handleEditar}
           onEliminar={handleEliminar}
         />
       )}
 
-      {/* Modal para crear o editar categoría */}
+      {!loading && totalPaginas > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6">
+          <button
+            onClick={() => setPaginaActual((prev) => Math.max(prev - 1, 1))}
+            disabled={paginaActual === 1}
+            className="px-3 py-1 border rounded text-sm text-gray-600 disabled:opacity-50"
+          >
+            Anterior
+          </button>
+
+          {Array.from({ length: totalPaginas }, (_, i) => (
+            <button
+              key={i}
+              onClick={() => setPaginaActual(i + 1)}
+              className={`px-3 py-1 rounded text-sm font-semibold border ${
+                paginaActual === i + 1
+                  ? 'bg-yellow-400 text-white shadow'
+                  : 'bg-white text-gray-700'
+              }`}
+            >
+              {i + 1}
+            </button>
+          ))}
+
+          <button
+            onClick={() =>
+              setPaginaActual((prev) => Math.min(prev + 1, totalPaginas))
+            }
+            disabled={paginaActual === totalPaginas}
+            className="px-3 py-1 border rounded text-sm text-gray-600 disabled:opacity-50"
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
+
       <CategoryFormModal
         isOpen={modalOpen}
         onClose={() => {
@@ -148,7 +228,6 @@ const handleEliminar = async (id) => {
         esEdicion={esEdicion}
       />
 
-      {/* Modal para ver categoría */}
       <CategoryViewModal
         isOpen={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
