@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   FaTachometerAlt, FaDollarSign, FaClipboardList, FaCalendarAlt,
   FaConciergeBell, FaCog, FaSignOutAlt, FaLock, FaUnlock
 } from 'react-icons/fa';
 import { usePermissions } from '../hooks/usePermissions';
+import { useAuth } from '../contexts/AuthContext';
 
 // Componente Tooltip mejorado
 const Tooltip = ({ children, text, isExpanded }) => {
@@ -26,6 +27,8 @@ const Sidebar = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [openMenus, setOpenMenus] = useState({});
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useAuth();
   const { filterMenuItems, userRole } = usePermissions();
   
   // Ref para mantener el estado expandido durante la navegación
@@ -119,9 +122,31 @@ const Sidebar = () => {
   const filteredMainMenuItems = filterMenuItems(mainMenuItems);
   const filteredBottomMenuItems = filterMenuItems(bottomMenuItems);
 
-  const handleLogout = (e) => {
+  const handleLogout = async (e) => {
     e.preventDefault();
-    alert('Cerrando sesión...');
+    try {
+      const { showAlert } = await import("../utils/alertas");
+      const result = await showAlert({
+        title: "Cerrar sesión",
+        text: "¿Estás seguro de que deseas cerrar sesión?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cerrar sesión",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#e74c3c",
+      });
+      
+      if (result.isConfirmed) {
+        await logout();
+        const { showToast } = await import("../utils/alertas");
+        showToast("Sesión cerrada correctamente", "success");
+        navigate('/login');
+      }
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      const { showToast } = await import("../utils/alertas");
+      showToast("Error al cerrar sesión", "error");
+    }
   };
 
   const getBubbleClasses = (isActive) => {

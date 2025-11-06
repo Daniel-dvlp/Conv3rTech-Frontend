@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { FaUserCircle, FaBell, FaCog, FaSignOutAlt, FaUser, FaChevronDown } from 'react-icons/fa';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { showToast } from '../utils/alertas';
 
 const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
@@ -84,39 +86,56 @@ const Header = () => {
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
         setIsProfileMenuOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
-  const handleLogout = () => {
-    if (window.confirm('¿Estás seguro de que deseas cerrar sesión?')) {
-      // Limpiar datos de sesión
-      localStorage.removeItem('user');
-      localStorage.removeItem('isAuthenticated');
-      sessionStorage.clear();
-      navigate('/');
+  const handleLogout = async () => {
+    try {
+      const { showAlert } = await import("../utils/alertas");
+      const result = await showAlert({
+        title: "Cerrar sesión",
+        text: "¿Estás seguro de que deseas cerrar sesión?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, cerrar sesión",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#e74c3c",
+      });
+      
+      if (result.isConfirmed) {
+        await logout();
+        showToast("Sesión cerrada correctamente", "success");
+        navigate("/login");
+      }
+    } catch (error) {
+      console.error("Error en logout:", error);
+      showToast("Error al cerrar sesión", "error");
     }
   };
 
   const handleProfileClick = () => {
-    navigate('/dashboard/profile');
+    navigate("/dashboard/profile");
     setIsProfileMenuOpen(false);
   };
 
   const handleSettingsClick = () => {
-    navigate('/dashboard/settings');
+    navigate("/dashboard/settings");
     setIsProfileMenuOpen(false);
   };
 
   // Si no hay usuario, mostrar loading
-  if (!currentUser) {
+  if (!user) {
     return (
       <header className="w-full h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
         <div className="flex items-center">
@@ -135,29 +154,36 @@ const Header = () => {
         {/* <h1 className="text-xl font-bold text-gray-800">Gestión de {currentModule}</h1>
          */}
       </div>
-      
+
       {/* Iconos alineados a la derecha */}
       <div className="flex items-center gap-4">
         {/* Perfil con dropdown */}
         <div className="relative" ref={profileMenuRef}>
-          <button 
+          <button
             onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
             className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <div className="relative">
               <img
                 className="h-10 w-10 rounded-full ring-2 ring-conv3r-gold"
-                src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.avatarSeed}&backgroundColor=ffd700&textColor=1a1a1a`}
+                src={`https://api.dicebear.com/7.x/initials/svg?seed=${
+                  user.nombre || user.name
+                }&backgroundColor=ffd700&textColor=1a1a1a`}
                 alt="Avatar del usuario"
               />
               <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
             </div>
             <div className="hidden md:block text-left p-2">
-
-              <p className="text-sm font-semibold text-gray-800">{currentUser.name} {currentUser.lastName}</p>
-              <p className="text-xs text-gray-500">{currentUser.role}</p>
+              <p className="text-sm font-semibold text-gray-800">
+                {user.nombre} {user.apellido}
+              </p>
+              <p className="text-xs text-gray-500">{user.rol}</p>
             </div>
-            <FaChevronDown className={`text-gray-400 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`} />
+            <FaChevronDown
+              className={`text-gray-400 transition-transform ${
+                isProfileMenuOpen ? "rotate-180" : ""
+              }`}
+            />
           </button>
 
           {/* Dropdown Menu */}
@@ -168,13 +194,17 @@ const Header = () => {
                 <div className="flex items-center gap-3">
                   <img
                     className="h-12 w-12 rounded-full ring-2 ring-conv3r-gold"
-                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${currentUser.avatarSeed}&backgroundColor=ffd700&textColor=1a1a1a`}
+                    src={`https://api.dicebear.com/7.x/initials/svg?seed=${user.nombre}&backgroundColor=ffd700&textColor=1a1a1a`}
                     alt="Avatar del usuario"
                   />
                   <div>
-                    <p className="font-semibold text-gray-800">{currentUser.name} {currentUser.lastName}</p>
-                    <p className="text-sm text-gray-500">{currentUser.email}</p>
-                    <p className="text-xs text-conv3r-gold font-medium">{currentUser.role}</p>
+                    <p className="font-semibold text-gray-800">
+                      {user.nombre} {user.apellido}
+                    </p>
+                    <p className="text-sm text-gray-500">{user.correo}</p>
+                    <p className="text-xs text-conv3r-gold font-medium">
+                      {user.rol}
+                    </p>
                   </div>
                 </div>
               </div>
