@@ -12,6 +12,7 @@ import SalidaMaterialModal from "./components/SalidaMaterialModal";
 import * as XLSX from "xlsx";
 import { showToast, showAlert } from "../../../../shared/utils/alertas";
 import { usePermissions } from "../../../../shared/hooks/usePermissions";
+import { useAuth } from "../../../../shared/contexts/AuthContext";
 import projectsService from "../../../../services/projectsService";
 
 // --- CONSTANTE PARA EL NÚMERO DE ELEMENTOS POR PÁGINA ---
@@ -19,6 +20,7 @@ const ITEMS_PER_PAGE = 5;
 
 const ProjectPage = () => {
   const { checkManage } = usePermissions();
+  const { hasPermission, hasPrivilege } = useAuth();
   // --- TODA TU LÓGICA DE ESTADO Y FUNCIONES PERMANECE EXACTAMENTE IGUAL ---
   const [loading, setLoading] = useState(true);
   const [allProjects, setAllProjects] = useState([]);
@@ -252,20 +254,24 @@ const ProjectPage = () => {
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          <button
-            onClick={handleExport}
-            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors text-sm"
-          >
-            <FaFileExcel />
-            Exportar
-          </button>
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors text-sm"
-          >
-            <FaPlus />
-            Nuevo Proyecto
-          </button>
+          {hasPermission('proyectos_servicios') && (
+            <button
+              onClick={handleExport}
+              className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors text-sm"
+            >
+              <FaFileExcel />
+              Exportar
+            </button>
+          )}
+          {hasPrivilege('proyectos_servicios', 'Crear') && (
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors text-sm"
+            >
+              <FaPlus />
+              Nuevo Proyecto
+            </button>
+          )}
         </div>
       </div>
 
