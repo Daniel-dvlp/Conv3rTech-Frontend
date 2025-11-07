@@ -527,7 +527,7 @@ const LoginPage = () => {
                 }`}
               >
                 {isResetLoading && (
-                  <span className="inline-block w-4 h-4 border-2 border-gray-800 border-top-transparent rounded-full animate-spin" />
+                  <span className="inline-block w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin" />
                 )}
                 {isResetLoading ? "Guardando..." : "Restablecer contraseña"}
               </button>
