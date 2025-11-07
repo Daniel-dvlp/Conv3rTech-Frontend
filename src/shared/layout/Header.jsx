@@ -6,36 +6,14 @@ import { showToast } from '../utils/alertas';
 
 const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState(null);
   const [currentModule, setCurrentModule] = useState('');
   const [currentDate, setCurrentDate] = useState('');
   const profileMenuRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
 
-  // Obtener datos del usuario desde localStorage
-  useEffect(() => {
-    const userFromStorage = localStorage.getItem('user');
-    if (userFromStorage) {
-      try {
-        const userData = JSON.parse(userFromStorage);
-        setCurrentUser(userData);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        // Si hay error, usar datos por defecto
-        setCurrentUser({
-          name: 'Usuario',
-          lastName: 'Sistema',
-          email: 'usuario@sistema.com',
-          avatarSeed: 'Usuario',
-          role: 'Usuario'
-        });
-      }
-    } else {
-      // Si no hay usuario en localStorage, redirigir al login
-      navigate('/');
-    }
-  }, [navigate]);
+  // El usuario se obtiene del AuthContext; no es necesario leer localStorage aquí
 
   // Obtener la fecha actual
   useEffect(() => {

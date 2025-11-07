@@ -118,7 +118,26 @@ export const useUsers = () => {
   const loadRoles = useCallback(async () => {
     try {
       const data = await rolesApi.getAllRoles();
-      setRoles(data);
+      // Normalizar respuesta para garantizar un array
+      let rolesList = [];
+      if (Array.isArray(data)) {
+        rolesList = data;
+      } else if (Array.isArray(data?.data)) {
+        rolesList = data.data;
+      } else if (Array.isArray(data?.rows)) {
+        rolesList = data.rows;
+      } else if (Array.isArray(data?.result)) {
+        rolesList = data.result;
+      } else if (data && typeof data === 'object' && data !== null) {
+        // Algunos backends devuelven { success, data: { data: [...] } }
+        const nested = data.data;
+        if (Array.isArray(nested)) {
+          rolesList = nested;
+        } else if (Array.isArray(nested?.data)) {
+          rolesList = nested.data;
+        }
+      }
+      setRoles(rolesList);
     } catch (err) {
       console.error('Error al cargar roles:', err);
     }
