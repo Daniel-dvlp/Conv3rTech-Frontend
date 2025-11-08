@@ -3,12 +3,14 @@ import { FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
 import UserDetailModal from './UserDetailModal';
 import EditUserModal from './EditUserModal';
 import { mockRoles } from '../../roles/data/Roles_data';
+import { useAuth } from '../../../../../shared/contexts/AuthContext';
 
 
 const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina, onDelete, onUpdate, onChangeStatus, roles = [] }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
+  const { hasPermission, hasPrivilege } = useAuth();
 
   const startIndex = (paginaActual - 1) * itemsPorPagina;
   const usuariosPaginados = usuariosFiltrados.slice(startIndex, startIndex + itemsPorPagina);
@@ -77,15 +79,21 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
               </td>
               <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-center items-center gap-4">
-                  <button className="text-blue-600 hover:text-blue-900" title="Ver detalles" onClick={() => setSelectedUser(usuario)} >
-                    <FaEye size={20} />
-                  </button>
-                  <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
-                    <FaEdit size={20} />
-                  </button>
-                  {/* <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() =>onDelete(usuario.id_usuario)} >
-                    <FaTrashAlt size={20} />
-                  </button> */}
+                  {hasPermission('usuarios') && (
+                    <button className="text-blue-600 hover:text-blue-900" title="Ver detalles" onClick={() => setSelectedUser(usuario)} >
+                      <FaEye size={20} />
+                    </button>
+                  )}
+                  {hasPrivilege('usuarios', 'Editar') && (
+                    <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
+                      <FaEdit size={20} />
+                    </button>
+                  )}
+                  {hasPrivilege('usuarios', 'Eliminar') && (
+                    <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() => onDelete(usuario.id_usuario)} >
+                      <FaTrashAlt size={20} />
+                    </button>
+                  )}
                 </div>
                 {selectedUser && (
                   <UserDetailModal
