@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Usa variable de entorno de Vite; fallback a localhost para desarrollo
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'http://localhost:3006/api';
+const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://backend-conv3rtech.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
