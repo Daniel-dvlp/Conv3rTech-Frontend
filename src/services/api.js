@@ -29,6 +29,13 @@ api.interceptors.response.use(
       localStorage.removeItem("isAuthenticated");
       window.location.href = "/login";
     }
+
+    // Manejo más claro de 403 (Forbidden) en endpoints protegidos
+    if (status === 403) {
+      // Opcional: podrías navegar a una página de No Autorizado si existe
+      // window.location.href = "/unauthorized";
+      console.warn("Acceso denegado (403) en:", url);
+    }
     return Promise.reject(error);
   }
 );

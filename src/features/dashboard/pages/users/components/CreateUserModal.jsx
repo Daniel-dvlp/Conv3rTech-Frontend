@@ -91,7 +91,7 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
         const validaciones = evaluarContrasena(value);
         setValidacionesContrasena(validaciones);
 
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,10}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,15}$/;
         if (!passwordRegex.test(value)) {
           updatedErrors.contrasena = 'Debe cumplir todos los requisitos';
         } else {
@@ -320,7 +320,7 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
 
                   <div className="mt-1 ml-2 space-y-0 text-sm text-gray-600">
                     <p className={validacionesContrasena.longitud ? "text-green-600 mb-0" : "text-red-500 mb-0"} >
-                      {validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 10 caracteres
+                      {validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 15 caracteres
                     </p>
                     <p className={validacionesContrasena.mayuscula ? "text-green-600" : "text-red-500"}>
                       {validacionesContrasena.mayuscula ? '✓' : '✗'} Al menos una letra mayúscula
