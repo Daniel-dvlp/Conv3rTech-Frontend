@@ -28,7 +28,7 @@ export const mockProjects = [
       { servicio: 'Instalación por punto de cámara', cantidad: 32, precio: 50000 },
       { servicio: 'Configuración de red y DVR', cantidad: 1, precio: 300000 },
     ],
-    costos: { manoDeObra: 500000 },
+    costos: { manoDeObra: 5000000 },
     observaciones: 'El cliente solicitó añadir 2 cámaras exteriores adicionales. Pendiente de cotización.',
     sedes: [
       {
@@ -38,6 +38,36 @@ export const mockProjects = [
           { item: 'Cámara IP Domo 4MP', cantidad: 20 },
           { item: 'DVR 32 Canales', cantidad: 1 },
           { item: 'Cable UTP Cat 6 (caja)', cantidad: 3 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Instalación por punto de cámara', cantidad: 20, precio: 50000 },
+          { servicio: 'Configuración de red y DVR', cantidad: 1, precio: 300000 },
+        ],
+        presupuesto: {
+          materiales: 3500000, // 20*150000 + 1*800000 + 3*100000
+          servicios: 1300000,  // 20*50000 + 1*300000
+          total: 4800000,
+          restante: 3200000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-001',
+            fecha: '2025-01-15T10:30:00',
+            material: 'Cámara IP Domo 4MP',
+            cantidad: 5,
+            entregador: 'Carlos R.',
+            receptor: 'Juan Pérez',
+            observaciones: 'Entrega para instalación inicial'
+          },
+          {
+            id: 'SM-002',
+            fecha: '2025-01-16T14:15:00',
+            material: 'Cable UTP Cat 6 (caja)',
+            cantidad: 1,
+            entregador: 'Luis P.',
+            receptor: 'María González',
+            observaciones: 'Material adicional para ampliación'
+          }
         ]
       },
       {
@@ -46,6 +76,26 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Cámara IP Domo 4MP', cantidad: 12 },
           { item: 'Cable UTP Cat 6 (caja)', cantidad: 2 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Instalación por punto de cámara', cantidad: 12, precio: 50000 },
+        ],
+        presupuesto: {
+          materiales: 2000000, // 12*150000 + 2*100000
+          servicios: 600000,   // 12*50000
+          total: 2600000,
+          restante: 1800000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-003',
+            fecha: '2025-01-17T09:45:00',
+            material: 'Cámara IP Domo 4MP',
+            cantidad: 8,
+            entregador: 'Daniela V.',
+            receptor: 'Ana López',
+            observaciones: 'Entrega para oficina secundaria'
+          }
         ]
       }
     ]
@@ -82,6 +132,35 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Breakers 20A', cantidad: 10 },
           { item: 'Terminales de Cobre', cantidad: 30 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Revisión por punto eléctrico', cantidad: 100, precio: 15000 },
+        ],
+        presupuesto: {
+          materiales: 160000, // 10*10000 + 30*2000
+          servicios: 1500000, // 100*15000
+          total: 1660000,
+          restante: 1200000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-004',
+            fecha: '2025-01-18T08:00:00',
+            material: 'Breakers 20A',
+            cantidad: 5,
+            entregador: 'Carlos R.',
+            receptor: 'Dr. Roberto Silva',
+            observaciones: 'Entrega para mantenimiento preventivo'
+          },
+          {
+            id: 'SM-005',
+            fecha: '2025-01-19T11:20:00',
+            material: 'Terminales de Cobre',
+            cantidad: 25,
+            entregador: 'Carlos R.',
+            receptor: 'Ing. Patricia Morales',
+            observaciones: 'Material para conexiones eléctricas'
+          }
         ]
       },
       {
@@ -90,6 +169,26 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Breakers 20A', cantidad: 5 },
           { item: 'Terminales de Cobre', cantidad: 20 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Revisión por punto eléctrico', cantidad: 50, precio: 15000 },
+        ],
+        presupuesto: {
+          materiales: 90000,  // 5*10000 + 20*2000
+          servicios: 750000,  // 50*15000
+          total: 840000,
+          restante: 600000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-006',
+            fecha: '2025-01-20T13:45:00',
+            material: 'Breakers 20A',
+            cantidad: 3,
+            entregador: 'Carlos R.',
+            receptor: 'Dr. Laura Martínez',
+            observaciones: 'Entrega para ala de hospitalización'
+          }
         ]
       }
     ]
@@ -128,6 +227,36 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Panel LED 60x60', cantidad: 100 },
           { item: 'Tira LED 5m', cantidad: 25 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Diseño de Iluminación', cantidad: 1, precio: 1000000 },
+          { servicio: 'Instalación por punto de luz', cantidad: 125, precio: 20000 },
+        ],
+        presupuesto: {
+          materiales: 5125000, // 100*45000 + 25*25000
+          servicios: 2500000,  // 125*20000
+          total: 7625000,
+          restante: 4800000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-007',
+            fecha: '2025-01-21T10:00:00',
+            material: 'Panel LED 60x60',
+            cantidad: 30,
+            entregador: 'Ana G.',
+            receptor: 'Ing. Roberto Mendoza',
+            observaciones: 'Entrega para instalación inicial Piso 1'
+          },
+          {
+            id: 'SM-008',
+            fecha: '2025-01-22T14:30:00',
+            material: 'Tira LED 5m',
+            cantidad: 10,
+            entregador: 'Sofía M.',
+            receptor: 'Técnico Juan Carlos',
+            observaciones: 'Material para iluminación decorativa'
+          }
         ]
       },
       {
@@ -136,6 +265,26 @@ export const mockProjects = [
         materialesAsignados: [
           { item: 'Panel LED 60x60', cantidad: 100 },
           { item: 'Tira LED 5m', cantidad: 25 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Instalación por punto de luz', cantidad: 125, precio: 20000 },
+        ],
+        presupuesto: {
+          materiales: 5125000, // 100*45000 + 25*25000
+          servicios: 2500000,  // 125*20000
+          total: 7625000,
+          restante: 4800000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-009',
+            fecha: '2025-01-23T09:15:00',
+            material: 'Panel LED 60x60',
+            cantidad: 25,
+            entregador: 'Ana G.',
+            receptor: 'Supervisor María Elena',
+            observaciones: 'Entrega para Piso 2 - Área de recepción'
+          }
         ]
       }
     ]
@@ -172,6 +321,27 @@ export const mockProjects = [
         ubicacion: 'Calle 43A #7-50, Medellín',
         materialesAsignados: [
           { item: 'Licencia Software de Vulnerabilidades', cantidad: 1 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Análisis de Vulnerabilidades de Red', cantidad: 1, precio: 3000000 },
+          { servicio: 'Revisión de protocolo de CCTV', cantidad: 1, precio: 1500000 },
+        ],
+        presupuesto: {
+          materiales: 2000000,
+          servicios: 4500000,
+          total: 6500000,
+          restante: 2500000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-010',
+            fecha: '2025-01-24T08:45:00',
+            material: 'Licencia Software de Vulnerabilidades',
+            cantidad: 1,
+            entregador: 'Sofía M.',
+            receptor: 'Ing. de Seguridad Carlos Ruiz',
+            observaciones: 'Entrega de licencia para auditoría de seguridad'
+          }
         ]
       },
       {
@@ -179,6 +349,26 @@ export const mockProjects = [
         ubicacion: 'Carrera 43A #7-50, Medellín',
         materialesAsignados: [
           { item: 'Licencia Software de Vulnerabilidades', cantidad: 1 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Análisis de Vulnerabilidades de Red', cantidad: 1, precio: 3000000 },
+        ],
+        presupuesto: {
+          materiales: 2000000,
+          servicios: 3000000,
+          total: 5000000,
+          restante: 2000000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-011',
+            fecha: '2025-01-25T11:20:00',
+            material: 'Licencia Software de Vulnerabilidades',
+            cantidad: 1,
+            entregador: 'Daniela V.',
+            receptor: 'Gerente de IT Laura Martínez',
+            observaciones: 'Licencia para sucursal norte'
+          }
         ]
       }
     ]
@@ -219,6 +409,45 @@ export const mockProjects = [
           { item: 'Panel Solar 550W', cantidad: 20 },
           { item: 'Inversor de Corriente 10kW', cantidad: 1 },
           { item: 'Batería de Litio', cantidad: 4 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Instalación de estructura y paneles', cantidad: 20, precio: 150000 },
+          { servicio: 'Conexión e interconexión del sistema', cantidad: 1, precio: 2000000 },
+        ],
+        presupuesto: {
+          materiales: 24000000, // 20*700000 + 1*4000000 + 4*2500000
+          servicios: 5000000,   // 20*150000 + 1*2000000
+          total: 29000000,
+          restante: 15000000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-012',
+            fecha: '2025-01-26T07:30:00',
+            material: 'Panel Solar 550W',
+            cantidad: 10,
+            entregador: 'Luis P.',
+            receptor: 'Ing. Agrónomo Pedro Silva',
+            observaciones: 'Primera entrega de paneles para instalación inicial'
+          },
+          {
+            id: 'SM-013',
+            fecha: '2025-01-27T09:45:00',
+            material: 'Inversor de Corriente 10kW',
+            cantidad: 1,
+            entregador: 'Carlos R.',
+            receptor: 'Técnico Electricista Miguel Ángel',
+            observaciones: 'Entrega del inversor principal'
+          },
+          {
+            id: 'SM-014',
+            fecha: '2025-01-28T11:15:00',
+            material: 'Batería de Litio',
+            cantidad: 2,
+            entregador: 'Luis P.',
+            receptor: 'Supervisor de Obra Ana María',
+            observaciones: 'Entrega de baterías para sistema de respaldo'
+          }
         ]
       },
       {
@@ -228,6 +457,36 @@ export const mockProjects = [
           { item: 'Panel Solar 550W', cantidad: 20 },
           { item: 'Inversor de Corriente 10kW', cantidad: 1 },
           { item: 'Batería de Litio', cantidad: 4 },
+        ],
+        serviciosAsignados: [
+          { servicio: 'Instalación de estructura y paneles', cantidad: 20, precio: 150000 },
+          { servicio: 'Conexión e interconexión del sistema', cantidad: 1, precio: 2000000 },
+        ],
+        presupuesto: {
+          materiales: 24000000, // 20*700000 + 1*4000000 + 4*2500000
+          servicios: 5000000,   // 20*150000 + 1*2000000
+          total: 29000000,
+          restante: 15000000
+        },
+        salidasMaterial: [
+          {
+            id: 'SM-015',
+            fecha: '2025-01-29T08:20:00',
+            material: 'Panel Solar 550W',
+            cantidad: 15,
+            entregador: 'Carlos R.',
+            receptor: 'Encargado de Granja Roberto Díaz',
+            observaciones: 'Entrega para granja secundaria'
+          },
+          {
+            id: 'SM-016',
+            fecha: '2025-01-30T13:40:00',
+            material: 'Batería de Litio',
+            cantidad: 3,
+            entregador: 'Luis P.',
+            receptor: 'Técnico de Mantenimiento José Luis',
+            observaciones: 'Baterías para sistema secundario'
+          }
         ]
       }
     ]

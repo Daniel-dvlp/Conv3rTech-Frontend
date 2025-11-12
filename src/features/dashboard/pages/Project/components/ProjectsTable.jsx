@@ -1,8 +1,10 @@
 // src/features/dashboard/pages/project/components/ProjectsTable.jsx
 
 import React from 'react';
-import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
+import { FaEdit, FaTrashAlt, FaEye, FaTruck } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
+import { useAuth } from '../../../../../shared/contexts/AuthContext';
 
 // Pequeño componente interno para la barra de progreso
 const ProgressBar = ({ progress }) => (
@@ -14,7 +16,10 @@ const ProgressBar = ({ progress }) => (
   </div>
 );
 
-const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject }) => {
+const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject, onCreateSalida }) => {
+  const { checkManage } = usePermissions();
+  const { hasPermission, hasPrivilege } = useAuth();
+
   // Función para determinar el color del estado
   const getStatusClass = (status) => {
     switch (status) {
@@ -99,12 +104,31 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                 </div>
               </td>
               <td className="px-6 py-4">
-                <div className="flex items-center justify-end gap-4">
-                   <button onClick={() => onViewDetails(project)} className="text-blue-400 hover:text-blue-600 text-sm" title="Ver Detalles">
-                    <FaEye size={16} />
-                  </button>
-                   <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-sm" title="Editar"><FaEdit size={16} /></button>
-                   <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-sm" title="Eliminar"><FaTrashAlt size={16} /></button>
+                <div className="flex items-center justify-end gap-2">
+                   {hasPermission('proyectos_servicios') && (
+                     <button onClick={() => onViewDetails(project)} className="text-blue-400 hover:text-blue-600 text-sm p-1 rounded hover:bg-blue-50" title="Ver Detalles">
+                      <FaEye size={16} />
+                    </button>
+                   )}
+                   {hasPrivilege('proyectos_servicios', 'Editar') && (
+                     <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-sm p-1 rounded hover:bg-yellow-50" title="Editar">
+                      <FaEdit size={16} />
+                    </button>
+                   )}
+                   {checkManage('salida_material') && (
+                     <button 
+                       onClick={() => onCreateSalida(project)} 
+                       className="text-green-400 hover:text-green-600 text-sm p-1 rounded hover:bg-green-50" 
+                       title="Crear Entrega"
+                     >
+                       <FaTruck size={16} />
+                     </button>
+                   )}
+                   {hasPrivilege('proyectos_servicios', 'Eliminar') && (
+                     <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-sm p-1 rounded hover:bg-red-50" title="Eliminar">
+                      <FaTrashAlt size={16} />
+                    </button>
+                   )}
                 </div>
               </td>
             </tr>

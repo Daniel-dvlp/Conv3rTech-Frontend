@@ -214,7 +214,7 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
                   className={inputBaseStyle}
                 >
                   <option value="">Seleccionar...</option>
-                  {roles.map((rol) => (
+                  {(Array.isArray(roles) ? roles : []).map((rol) => (
                     <option key={rol.id_rol} value={rol.id_rol}>
                       {rol.nombre_rol}
                     </option>

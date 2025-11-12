@@ -8,6 +8,7 @@ import Pagination from '../../../../shared/components/Pagination';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { toast } from 'react-hot-toast';
 import { useUsers } from './hooks/useUsers';
+import { useAuth } from '../../../../shared/contexts/AuthContext';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { rolePermissions, getAccessibleModules } from '../../../../shared/config/rolePermissions';
@@ -29,6 +30,7 @@ const UsuariosPage = () => {
   const [openModal, setOpenModal] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState('');
+  const { hasPrivilege } = useAuth();
 
   const handleEliminarUsuario = async (usuarioId) => {
     const confirmed = await confirmDelete('¿Deseas eliminar este usuario?');
@@ -285,12 +287,14 @@ const UsuariosPage = () => {
           >
             <FaDownload /> Reporte de Usuarios
           </button>
-          <button
-            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-            onClick={() => setOpenModal(true)}
-          >
-            + Crear Usuario
-          </button>
+          {hasPrivilege('usuarios', 'Crear') && (
+            <button
+              className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+              onClick={() => setOpenModal(true)}
+            >
+              <FaPlus /> Crear Usuario
+            </button>
+          )}
         </div>
       </div>
 
