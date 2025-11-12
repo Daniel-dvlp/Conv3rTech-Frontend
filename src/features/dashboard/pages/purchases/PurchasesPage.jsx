@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { FaPlus, FaSearch, FaFileExcel } from 'react-icons/fa';
+import { toast } from 'react-hot-toast';
 import PurchasesTable from './components/PurchasesTable';
 import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../shared/components/Pagination';
@@ -67,7 +68,7 @@ const PaginaCompras = () => {
     if (paginaActual > totalPaginas) {
       setPaginaActual(totalPaginas || 1);
     }
-  }, [totalPaginas]);
+  }, [totalPaginas, paginaActual]);
 
   const manejarCambioPagina = (pagina) => {
     if (pagina >= 1 && pagina <= totalPaginas) {
@@ -77,29 +78,36 @@ const PaginaCompras = () => {
 
   const manejarGuardarCompra = async (nuevaCompraData) => {
     try {
-      const compraData = {
-        numeroRecibo: nuevaCompraData.numeroRecibo,
-        idProveedor: nuevaCompraData.idProveedor,
-        fechaRegistro: nuevaCompraData.fechaRegistro,
-        productos: nuevaCompraData.productos,
-        total: nuevaCompraData.total,
-        iva: nuevaCompraData.iva,
-        estado: 'Registrada',
-        fechaRecibo: nuevaCompraData.fechaRegistro
-      };
+      console.log('📝 Creando compra con datos:', nuevaCompraData);
+      await createPurchase(nuevaCompraData);
       
-      await createPurchase(compraData);
       setEsNuevaCompraAbierto(false);
     } catch (error) {
-      console.error('Error al guardar compra:', error);
+      console.error('❌ Error al crear compra:', error);
+      
+      // Manejo de errores simplificado como en ClientsPage
+      let mensajeError = 'Error al crear la compra';
+      
+      if (error.response?.data?.message) {
+        mensajeError = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        mensajeError = error.response.data.error;
+      } else if (error.message) {
+        mensajeError = error.message;
+      }
+      
+      toast.error(mensajeError);
+      
+      // Re-lanzar el error para que el modal lo maneje
+      throw error;
     }
   };
 
   // MODIFICACIÓN CLAVE: Ahora manejarAnularCompra acepta un 'motivo'
-  const manejarAnularCompra = async (idCompra, ) => {
+  const manejarAnularCompra = async (idCompra, motivo) => {
     try {
       // El backend cambia el estado a 'Anulada'
-      await changePurchaseStatus(idCompra, 'Anulada');
+      await changePurchaseStatus(idCompra, 'Anulada', motivo);
     } catch (error) {
       console.error('Error al anular compra:', error);
     }
@@ -340,16 +348,6 @@ const PaginaCompras = () => {
             onView={(compra) => setCompraSeleccionada(compra)}
             onAnnul={manejarAnularCompra} // Aquí se pasa la función actualizada
           />
-          {itemsActuales.length === 0 && terminoBusqueda !== '' && (
-            <p className="text-center text-gray-600 mt-4">
-              No se encontraron resultados para "{terminoBusqueda}".
-            </p>
-          )}
-          {itemsActuales.length === 0 && terminoBusqueda === '' && !cargando && (
-            <p className="text-center text-gray-600 mt-4">
-              No hay compras para mostrar.
-            </p>
-          )}
           {totalPaginas > 1 && (
             <Pagination
               currentPage={paginaActual}
