@@ -1,6 +1,8 @@
   import React, { useEffect, useMemo, useState } from 'react';
   import { FaTimes, FaInfoCircle } from 'react-icons/fa';
   import { quotesService } from '../services/quotesService';
+  import productsService from '../../../../../services/productsService';
+  import servicesService from '../../../../../services/servicesService';
 
   const DetailCard = ({ title, icon, children }) => (
     <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -23,6 +25,8 @@
     if (!quote) return null;
 
     const [details, setDetails] = useState([]);
+    const [productNames, setProductNames] = useState({});
+    const [serviceNames, setServiceNames] = useState({});
 
     // Compatibilidad con mocks y backend
     const clienteObj = quote.clienteData ?? quote.cliente ?? quote.cliente_nombre;
@@ -44,7 +48,50 @@
         const id = quote.id_cotizacion ?? quote.id;
         quotesService.getQuoteDetails(id)
           .then((res) => {
-            setDetails(Array.isArray(res) ? res : res?.data ?? []);
+            const dets = Array.isArray(res) ? res : res?.data ?? [];
+            setDetails(dets);
+
+            // Fetch names for products
+            const productIds = dets.filter(d => d.id_producto).map(d => d.id_producto);
+            if (productIds.length > 0) {
+              Promise.all(productIds.map(pid => productsService.getProductById(pid)))
+                .then(products => {
+                  const names = {};
+                  products.forEach(p => {
+                    const prodData = p.data || p;
+                    const productId = prodData.id || prodData.id_producto;
+                    const productName = prodData.nombre;
+                    if (productId && productName) {
+                      names[productId] = productName;
+                    }
+                  });
+                  setProductNames(names);
+                })
+                .catch((error) => {
+                  console.error('Error fetching product names:', error);
+                });
+            }
+
+            // Fetch names for services
+            const serviceIds = dets.filter(d => d.id_servicio).map(d => d.id_servicio);
+            if (serviceIds.length > 0) {
+              Promise.all(serviceIds.map(sid => servicesService.getServiceById(sid)))
+                .then(services => {
+                  const names = {};
+                  services.forEach(s => {
+                    const servData = s.data || s;
+                    const serviceId = servData.id || servData.id_servicio;
+                    const serviceName = servData.nombre;
+                    if (serviceId && serviceName) {
+                      names[serviceId] = serviceName;
+                    }
+                  });
+                  setServiceNames(names);
+                })
+                .catch((error) => {
+                  console.error('Error fetching service names:', error);
+                });
+            }
           })
           .catch(() => setDetails([]));
       }
@@ -90,6 +137,66 @@
                 ) : null}
                 <InfoRow label="Estado de la cotización">{quote.estado}</InfoRow>
               </div>
+            </DetailCard>
+
+            <DetailCard title="Productos incluidos">
+              {detalleOrden?.productos?.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-center border border-gray-200">
+                    <thead className="bg-conv3r-dark text-white">
+                      <tr>
+                        <th className="p-3 font-semibold">Producto</th>
+                        <th className="font-semibold">Cantidad</th>
+                        <th className="font-semibold">Precio Unit.</th>
+                        <th className="font-semibold">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white text-gray-700">
+                      {detalleOrden.productos.map((prod, idx) => (
+                        <tr key={idx} className="border-t border-gray-200">
+                          <td className="p-2">{prod.nombre}</td>
+                          <td>{prod.cantidad}</td>
+                          <td>${prod.precioUnitario.toLocaleString('es-CO')}</td>
+                          <td>${(prod.precioUnitario * prod.cantidad).toLocaleString('es-CO')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                      <tr>
+                        <td colSpan="3" className="text-right font-semibold px-4 py-2">Subtotal productos:</td>
+                        <td className="font-bold px-4 py-2 text-conv3r-dark">
+                          ${detalleOrden.subtotalProductos.toLocaleString('es-CO')}
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              ) : details?.some(d => d.id_producto) ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-center border border-gray-200">
+                    <thead className="bg-conv3r-dark text-white">
+                      <tr>
+                        <th className="p-3 font-semibold">Producto</th>
+                        <th className="font-semibold">Cantidad</th>
+                        <th className="font-semibold">Precio Unit.</th>
+                        <th className="font-semibold">Subtotal</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white text-gray-700">
+                      {details.filter(d => d.id_producto).map((p, idx) => (
+                        <tr key={`p-${idx}`} className="border-t border-gray-200">
+                          <td className="p-2">{productNames[p.id_producto] || p.nombre || `Producto ${p.id_producto}`}</td>
+                          <td>{p.cantidad}</td>
+                          <td>${Number(p.precio_unitario || 0).toLocaleString('es-CO')}</td>
+                          <td>${Number(p.subtotal || (p.precio_unitario * p.cantidad) || 0).toLocaleString('es-CO')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic">No hay productos en esta cotización.</p>
+              )}
             </DetailCard>
 
             <DetailCard title="Servicios incluidos">
@@ -140,7 +247,7 @@
                     <tbody className="bg-white text-gray-700">
                       {details.filter(d => d.id_servicio).map((s, idx) => (
                         <tr key={`s-${idx}`} className="border-t border-gray-200">
-                          <td className="p-2">{s.nombre || s.id_servicio}</td>
+                          <td className="p-2">{serviceNames[s.id_servicio] || s.nombre || `Servicio ${s.id_servicio}`}</td>
                           <td>{s.cantidad}</td>
                           <td>${Number(s.precio_unitario || 0).toLocaleString('es-CO')}</td>
                           <td>${Number(s.subtotal || (s.precio_unitario * s.cantidad) || 0).toLocaleString('es-CO')}</td>
@@ -151,67 +258,6 @@
                 </div>
               ) : (
                 <p className="text-sm text-gray-500 italic">No hay servicios registrados.</p>
-              )}
-            </DetailCard>
-
-
-            <DetailCard title="Productos incluidos">
-              {detalleOrden?.productos?.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-center border border-gray-200">
-                    <thead className="bg-conv3r-dark text-white">
-                      <tr>
-                        <th className="p-3 font-semibold">Producto</th>
-                        <th className="font-semibold">Cantidad</th>
-                        <th className="font-semibold">Precio Unit.</th>
-                        <th className="font-semibold">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white text-gray-700">
-                      {detalleOrden.productos.map((prod, idx) => (
-                        <tr key={idx} className="border-t border-gray-200">
-                          <td className="p-2">{prod.nombre}</td>
-                          <td>{prod.cantidad}</td>
-                          <td>${prod.precioUnitario.toLocaleString('es-CO')}</td>
-                          <td>${(prod.precioUnitario * prod.cantidad).toLocaleString('es-CO')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
-                      <tr>
-                        <td colSpan="3" className="text-right font-semibold px-4 py-2">Subtotal productos:</td>
-                        <td className="font-bold px-4 py-2 text-conv3r-dark">
-                          ${detalleOrden.subtotalProductos.toLocaleString('es-CO')}
-                        </td>
-                      </tr>
-                    </tfoot>
-                  </table>
-                </div>
-              ) : details?.some(d => d.id_producto) ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-center border border-gray-200">
-                    <thead className="bg-conv3r-dark text-white">
-                      <tr>
-                        <th className="p-3 font-semibold">Producto</th>
-                        <th className="font-semibold">Cantidad</th>
-                        <th className="font-semibold">Precio Unit.</th>
-                        <th className="font-semibold">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white text-gray-700">
-                      {details.filter(d => d.id_producto).map((p, idx) => (
-                        <tr key={`p-${idx}`} className="border-t border-gray-200">
-                          <td className="p-2">{p.nombre || p.id_producto}</td>
-                          <td>{p.cantidad}</td>
-                          <td>${Number(p.precio_unitario || 0).toLocaleString('es-CO')}</td>
-                          <td>${Number(p.subtotal || (p.precio_unitario * p.cantidad) || 0).toLocaleString('es-CO')}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-sm text-gray-500 italic">No hay productos en esta cotización.</p>
               )}
             </DetailCard>
 

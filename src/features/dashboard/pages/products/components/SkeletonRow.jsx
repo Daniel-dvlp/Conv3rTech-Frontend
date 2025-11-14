@@ -5,11 +5,6 @@ import React from 'react';
 const SkeletonRow = () => {
   return (
     <tr className="animate-pulse">
-      {/* Celda: Foto */}
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="h-10 w-10 rounded bg-gray-200"></div>
-      </td>
-
       {/* Celda: Nombre */}
       <td className="px-4 py-4">
         <div className="h-4 w-24 bg-gray-200 rounded"></div>
@@ -23,11 +18,6 @@ const SkeletonRow = () => {
       {/* Celda: Categoría */}
       <td className="px-4 py-4">
         <div className="h-4 w-28 bg-gray-200 rounded"></div>
-      </td>
-
-      {/* Celda: Unidad */}
-      <td className="px-4 py-4">
-        <div className="h-4 w-16 bg-gray-200 rounded"></div>
       </td>
 
       {/* Celda: Precio */}

@@ -232,7 +232,7 @@ const ProductsPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                {['Producto', 'Modelo', 'Estado', 'Acciones'].map((header) => (
+                {['Nombre', 'Modelo', 'Categoría', 'Precio', 'Stock', 'Estado', 'Acciones'].map((header) => (
                   <th
                     key={header}
                     className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
