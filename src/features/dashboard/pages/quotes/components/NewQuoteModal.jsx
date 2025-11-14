@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { FaTimes, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
 import SearchSelector from '../../products_sale/components/SearchSelector';
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
@@ -262,18 +262,24 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
               </div>
               <div>
                 <FormLabel htmlFor="cantidadProducto">Cantidad</FormLabel>
-                <input
-                  id="cantidadProducto"
-                  type="number"
-                  value={cantidadProducto}
-                  onChange={(e) => { setCantidadProducto(e.target.value); setErrores(prev => ({ ...prev, producto: null })); }}
-                  className={`${inputBaseStyle} ${errores.producto ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Cantidad"
-                />
+                <div className="flex gap-2">
+                  <input
+                    id="cantidadProducto"
+                    type="number"
+                    value={cantidadProducto}
+                    onChange={(e) => { setCantidadProducto(e.target.value); setErrores(prev => ({ ...prev, producto: null })); }}
+                    className={`${inputBaseStyle} ${errores.producto ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="Cantidad"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAgregarProducto}
+                    className="inline-flex items-center justify-center w-10 h-10 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-2 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <FaPlus />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-end mt-2">
-              <button type="button" onClick={handleAgregarProducto} className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]">Agregar producto</button>
             </div>
             {productoSel && (
               <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
@@ -285,33 +291,77 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
               </div>
             )}
             <div className="overflow-x-auto mt-4">
-              <table className="w-full text-sm text-center border">
-                <thead className="bg-gray-100">
+              <table className="w-full text-sm text-center border border-gray-200">
+                <thead className="bg-conv3r-dark text-white">
                   <tr>
-                    <th className="p-2">Producto</th>
-                    <th>Modelo</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Total</th>
-                    <th></th>
+                    <th className="p-3 font-semibold">Producto</th>
+                    <th className="font-semibold">Modelo</th>
+                    <th className="font-semibold">Unidad</th>
+                    <th className="font-semibold">Cantidad</th>
+                    <th className="font-semibold">Precio Unitario</th>
+                    <th className="font-semibold">Subtotal</th>
+                    <th className="p-3">Eliminar</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white text-gray-700">
                   {productosAgregados.map((p, idx) => (
-                    <tr key={idx} className="border-t">
-                      <td className="p-2">{p.nombre}</td>
-                      <td>{p.modelo}</td>
-                      <td>{p.cantidad}</td>
-                      <td>${p.precio.toLocaleString()}</td>
-                      <td>${p.subtotal.toLocaleString()}</td>
-                      <td>
-                        <button type="button" onClick={() => { const copy = [...productosAgregados]; copy.splice(idx, 1); setProductosAgregados(copy); }} className="text-red-600 hover:text-red-800">
-                          <FaTrash />
+                    <tr key={idx} className="border-t border-gray-200">
+                      <td className="p-3">{p.nombre}</td>
+                      <td className="p-3">{p.modelo}</td>
+                      <td className="p-3">{p.unidad_medida || 'N/A'}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const copy = [...productosAgregados];
+                              if (copy[idx].cantidad > 1) {
+                                copy[idx].cantidad -= 1;
+                                copy[idx].subtotal = copy[idx].cantidad * copy[idx].precio;
+                                setProductosAgregados(copy);
+                              }
+                            }}
+                            className="text-gray-600 hover:text-gray-800 p-1"
+                          >
+                            <FaMinus size={12} />
+                          </button>
+                          <span className="w-8 text-center">{p.cantidad}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const copy = [...productosAgregados];
+                              copy[idx].cantidad += 1;
+                              copy[idx].subtotal = copy[idx].cantidad * copy[idx].precio;
+                              setProductosAgregados(copy);
+                            }}
+                            className="text-gray-600 hover:text-gray-800 p-1"
+                          >
+                            <FaPlus size={12} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="p-3">${p.precio.toLocaleString('es-CO')}</td>
+                      <td className="p-3">${p.subtotal.toLocaleString('es-CO')}</td>
+                      <td className="w-12">
+                        <button
+                          type="button"
+                          onClick={() => { const copy = [...productosAgregados]; copy.splice(idx, 1); setProductosAgregados(copy); }}
+                          className="text-red-600 hover:text-red-800 p-1"
+                        >
+                          <FaTrash size={14} />
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                  <tr>
+                    <td colSpan="6" className="text-right font-semibold px-4 py-2">Subtotal:</td>
+                    <td className="font-bold px-4 py-2 text-right text-conv3r-gold">
+                      ${subtotalProductos.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
               {errores.detalles && <p className="text-red-500 text-sm mt-2">{errores.detalles}</p>}
               {errores.producto && <p className="text-red-500 text-sm mt-2">{errores.producto}</p>}
@@ -335,18 +385,24 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
               </div>
               <div>
                 <FormLabel htmlFor="cantidadServicio">Cantidad</FormLabel>
-                <input
-                  id="cantidadServicio"
-                  type="number"
-                  value={cantidadServicio}
-                  onChange={(e) => { setCantidadServicio(e.target.value); setErrores(prev => ({ ...prev, servicio: null })); }}
-                  className={`${inputBaseStyle} ${errores.servicio ? 'border-red-500' : 'border-gray-300'}`}
-                  placeholder="Cantidad"
-                />
+                <div className="flex gap-2">
+                  <input
+                    id="cantidadServicio"
+                    type="number"
+                    value={cantidadServicio}
+                    onChange={(e) => { setCantidadServicio(e.target.value); setErrores(prev => ({ ...prev, servicio: null })); }}
+                    className={`${inputBaseStyle} ${errores.servicio ? 'border-red-500' : 'border-gray-300'}`}
+                    placeholder="Cantidad"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAgregarServicio}
+                    className="inline-flex items-center justify-center w-10 h-10 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-2 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <FaPlus />
+                  </button>
+                </div>
               </div>
-            </div>
-            <div className="flex justify-end mt-2">
-              <button type="button" onClick={handleAgregarServicio} className="inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all transform hover:scale-[1.02] active:scale-[0.98]">Agregar servicio</button>
             </div>
             {servicioSel && (
               <div className="mt-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
@@ -356,31 +412,73 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
               </div>
             )}
             <div className="overflow-x-auto mt-4">
-              <table className="w-full text-sm text-center border">
-                <thead className="bg-gray-100">
+              <table className="w-full text-sm text-center border border-gray-200">
+                <thead className="bg-conv3r-dark text-white">
                   <tr>
-                    <th className="p-2">Servicio</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Total</th>
-                    <th></th>
+                    <th className="p-3 font-semibold">Servicio</th>
+                    <th className="font-semibold">Cantidad</th>
+                    <th className="font-semibold">Precio Unitario</th>
+                    <th className="font-semibold">Subtotal</th>
+                    <th className="p-3">Eliminar</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="bg-white text-gray-700">
                   {serviciosAgregados.map((s, idx) => (
-                    <tr key={idx} className="border-t">
-                      <td className="p-2">{s.nombre}</td>
-                      <td>{s.cantidad}</td>
-                      <td>${s.precio.toLocaleString()}</td>
-                      <td>${s.subtotal.toLocaleString()}</td>
-                      <td>
-                        <button type="button" onClick={() => { const copy = [...serviciosAgregados]; copy.splice(idx, 1); setServiciosAgregados(copy); }} className="text-red-600 hover:text-red-800">
-                          <FaTrash />
+                    <tr key={idx} className="border-t border-gray-200">
+                      <td className="p-3">{s.nombre}</td>
+                      <td className="p-3">
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const copy = [...serviciosAgregados];
+                              if (copy[idx].cantidad > 1) {
+                                copy[idx].cantidad -= 1;
+                                copy[idx].subtotal = copy[idx].cantidad * copy[idx].precio;
+                                setServiciosAgregados(copy);
+                              }
+                            }}
+                            className="text-gray-600 hover:text-gray-800 p-1"
+                          >
+                            <FaMinus size={12} />
+                          </button>
+                          <span className="w-8 text-center">{s.cantidad}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const copy = [...serviciosAgregados];
+                              copy[idx].cantidad += 1;
+                              copy[idx].subtotal = copy[idx].cantidad * copy[idx].precio;
+                              setServiciosAgregados(copy);
+                            }}
+                            className="text-gray-600 hover:text-gray-800 p-1"
+                          >
+                            <FaPlus size={12} />
+                          </button>
+                        </div>
+                      </td>
+                      <td className="p-3">${s.precio.toLocaleString('es-CO')}</td>
+                      <td className="p-3">${s.subtotal.toLocaleString('es-CO')}</td>
+                      <td className="w-12">
+                        <button
+                          type="button"
+                          onClick={() => { const copy = [...serviciosAgregados]; copy.splice(idx, 1); setServiciosAgregados(copy); }}
+                          className="text-red-600 hover:text-red-800 p-1"
+                        >
+                          <FaTrash size={14} />
                         </button>
                       </td>
                     </tr>
                   ))}
                 </tbody>
+                <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                  <tr>
+                    <td colSpan="4" className="text-right font-semibold px-4 py-2">Subtotal:</td>
+                    <td className="font-bold px-4 py-2 text-right text-conv3r-gold">
+                      ${subtotalServicios.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
               {errores.servicio && <p className="text-red-500 text-sm mt-2">{errores.servicio}</p>}
             </div>
@@ -401,12 +499,27 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
             </div>
           </FormSection>
 
-          <FormSection title="Resumen">
-            <p>Subtotal productos: <span className="font-semibold">${subtotalProductos.toLocaleString()}</span></p>
-            <p>Subtotal servicios: <span className="font-semibold">${subtotalServicios.toLocaleString()}</span></p>
-            <p>IVA (19%): <span className="font-semibold">${iva.toLocaleString()}</span></p>
-            <p>Total: <span className="font-bold text-conv3r-dark text-lg">${total.toLocaleString()}</span></p>
+          <FormSection title="Resumen de Cotización">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal Productos:</span>
+                <span className="font-semibold text-gray-800">${subtotalProductos.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Subtotal Servicios:</span>
+                <span className="font-semibold text-gray-800">${subtotalServicios.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">IVA (19%):</span>
+                <span className="font-semibold text-gray-800">${iva.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+              <div className="flex justify-between text-lg">
+                <span className="text-gray-600 font-bold">Total:</span>
+                <span className="font-bold text-conv3r-gold">${total.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              </div>
+            </div>
           </FormSection>
+
 
           <div className="flex justify-end gap-4">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancelar</button>
