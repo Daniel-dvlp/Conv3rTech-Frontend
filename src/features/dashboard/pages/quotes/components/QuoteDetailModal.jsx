@@ -274,6 +274,11 @@
                     ${Number(detalleOrden?.subtotalServicios ?? quote.subtotal_servicios ?? 0).toLocaleString('es-CO')}
                   </span>
                 </InfoRow>
+                <InfoRow label="Subtotal de cotización">
+                  <span className="text-conv3r-dark font-semibold">
+                    ${(Number(detalleOrden?.subtotalProductos ?? quote.subtotal_productos ?? 0) + Number(detalleOrden?.subtotalServicios ?? quote.subtotal_servicios ?? 0)).toLocaleString('es-CO')}
+                  </span>
+                </InfoRow>
                 <InfoRow label="IVA">
                   <span className="text-conv3r-dark font-semibold">
                     ${Number(detalleOrden?.iva ?? quote.monto_iva ?? 0).toLocaleString('es-CO')}

@@ -87,31 +87,20 @@ const ProductsPage = () => {
   // Crear producto
   const handleAddProduct = async (newProduct) => {
     console.log('Datos a enviar:', JSON.stringify(newProduct, null, 2));
-    try {
-      const created = await productsService.createProduct(newProduct);
-      console.log('Producto creado:', created);
-      setProducts((prev) => [created, ...prev]);
-      setShowNewModal(false);
-      showSuccess('Producto agregado exitosamente');
+    const created = await productsService.createProduct(newProduct);
+    console.log('Producto creado:', created);
+    setProducts((prev) => [created, ...prev]);
+    setShowNewModal(false);
+    showSuccess('Producto agregado exitosamente');
 
-      // Actualizar características para que el select tenga la nueva característica disponible
-      try {
-        const updatedFeatures = await featuresService.getAllFeatures();
-        setFeatures(Array.isArray(updatedFeatures) ? updatedFeatures : []);
-      } catch (featureError) {
-        console.warn('Error al actualizar características:', featureError);
-      }
-    } catch (err) {
-      console.error('Error al crear producto:', err);
-      console.error('Error response:', err.response?.data);
-      console.error('Error status:', err.response?.status);
-      
-      // Mostrar mensaje de error más específico
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.errors?.[0]?.msg || 
-                          'No se pudo crear el producto. Verifique que todos los campos y datos sean correctos.';
-      showError(errorMessage);
+    // Actualizar características para que el select tenga la nueva característica disponible
+    try {
+      const updatedFeatures = await featuresService.getAllFeatures();
+      setFeatures(Array.isArray(updatedFeatures) ? updatedFeatures : []);
+    } catch (featureError) {
+      console.warn('Error al actualizar características:', featureError);
     }
+    // Si hay error, se lanza y será capturado en el modal
   };
 
   // Editar producto

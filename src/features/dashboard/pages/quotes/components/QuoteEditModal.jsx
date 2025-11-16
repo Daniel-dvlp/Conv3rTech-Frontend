@@ -18,6 +18,7 @@ const FormLabel = ({ htmlFor, children }) => (
 );
 
 const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, services, clients }) => {
+  const today = new Date().toISOString().split('T')[0];
   const [quoteData, setQuoteData] = useState(null);
   const [clienteSeleccionado, setClienteSeleccionado] = useState('');
   const [cliente, setCliente] = useState(null);
@@ -31,6 +32,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
   const [serviciosAgregados, setServiciosAgregados] = useState([]);
   const [observaciones, setObservaciones] = useState('');
   const [loading, setLoading] = useState(false);
+  const [errores, setErrores] = useState({});
 
   useEffect(() => {
     if (!quoteToEdit || !isOpen) return;
@@ -40,6 +42,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
 
     setQuoteData(JSON.parse(JSON.stringify(quoteToEdit)));
     setObservaciones(quoteToEdit.observaciones || '');
+    setErrores({});
 
     // Cargar detalles de productos y servicios desde el backend si existe
     if (quoteToEdit.id_cotizacion) {
@@ -122,6 +125,28 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
   const subtotalServicios = useMemo(() => serviciosAgregados.reduce((acc, s) => acc + s.subtotal, 0), [serviciosAgregados]);
   const iva = useMemo(() => (subtotalProductos + subtotalServicios) * 0.19, [subtotalProductos, subtotalServicios]);
   const total = useMemo(() => subtotalProductos + subtotalServicios + iva, [subtotalProductos, subtotalServicios, iva]);
+
+  const validateField = (name, value) => {
+    const newErrors = { ...errores };
+    switch (name) {
+      case 'nombre_cotizacion':
+        if (!value?.trim()) newErrors.nombre = 'El nombre de la cotización es obligatorio';
+        else delete newErrors.nombre;
+        break;
+      case 'clienteSeleccionado':
+        if (!value) newErrors.cliente = 'Selecciona un cliente';
+        else delete newErrors.cliente;
+        break;
+      case 'fecha_vencimiento':
+        if (!value) newErrors.fecha = 'Selecciona la fecha de vencimiento';
+        else if (new Date(value) < new Date(new Date().setHours(0, 0, 0, 0))) newErrors.fecha = 'La fecha de vencimiento no puede ser anterior a hoy';
+        else delete newErrors.fecha;
+        break;
+      default:
+        break;
+    }
+    setErrores(newErrors);
+  };
 
   if (!isOpen || !quoteData) return null;
 
@@ -255,6 +280,18 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Validar campos obligatorios
+    const errs = {};
+    if (!quoteData.nombre_cotizacion?.trim()) errs.nombre = 'El nombre de la cotización es obligatorio';
+    if (!clienteSeleccionado) errs.cliente = 'Selecciona un cliente';
+    if (!quoteData.fecha_vencimiento) errs.fecha = 'Selecciona la fecha de vencimiento';
+    else if (new Date(quoteData.fecha_vencimiento) < new Date(new Date().setHours(0, 0, 0, 0))) errs.fecha = 'La fecha de vencimiento no puede ser anterior a hoy';
+    if (serviciosAgregados.length === 0) errs.detalles = 'Agrega al menos un servicio';
+
+    setErrores(errs);
+    if (Object.keys(errs).length > 0) return;
+
     if (!quoteData?.id_cotizacion) {
       // Compatibilidad con mocks
       onSave(quoteData);
@@ -323,19 +360,29 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       id="nombreCotizacion"
                       type="text"
                       value={quoteData.nombre_cotizacion || ''}
-                      onChange={(e) => setQuoteData(prev => ({ ...prev, nombre_cotizacion: e.target.value }))}
-                      className={inputBaseStyle}
+                      onChange={(e) => {
+                        setQuoteData(prev => ({ ...prev, nombre_cotizacion: e.target.value }));
+                        validateField('nombre_cotizacion', e.target.value);
+                      }}
+                      className={`${inputBaseStyle} ${errores.nombre ? 'border-red-500' : ''}`}
                       placeholder="Ej. Sistema CCTV para Sede Norte"
                     />
+                    {errores.nombre && (
+                      <p className="text-red-500 text-sm mt-1">{errores.nombre}</p>
+                    )}
                   </div>
                   <div className="md:col-span-1">
                     <SearchSelector
                       options={clients || []}
                       value={clienteSeleccionado}
-                      onChange={(value) => setClienteSeleccionado(value)}
+                      onChange={(value) => {
+                        setClienteSeleccionado(value);
+                        validateField('clienteSeleccionado', value);
+                      }}
                       placeholder="Buscar cliente por nombre o documento..."
                       displayKey={(client) => `${client.nombre} ${client.apellido}`}
                       searchKeys={['nombre', 'apellido', 'documento']}
+                      error={errores.cliente}
                       label="Cliente"
                       required={true}
                     />
@@ -346,9 +393,16 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       id="fechaVenc"
                       type="date"
                       value={(quoteData.fecha_vencimiento || '').slice(0, 10)}
-                      onChange={(e) => setQuoteData(prev => ({ ...prev, fecha_vencimiento: e.target.value }))}
-                      className={inputBaseStyle}
+                      min={today}
+                      onChange={(e) => {
+                        setQuoteData(prev => ({ ...prev, fecha_vencimiento: e.target.value }));
+                        validateField('fecha_vencimiento', e.target.value);
+                      }}
+                      className={`${inputBaseStyle} ${errores.fecha ? 'border-red-500' : ''}`}
                     />
+                    {errores.fecha && (
+                      <p className="text-red-500 text-sm mt-1">{errores.fecha}</p>
+                    )}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -566,6 +620,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
               <FormSection title="Resumen">
                 <p>Subtotal productos: <span className="font-semibold">${subtotalProductos.toLocaleString()}</span></p>
                 <p>Subtotal servicios: <span className="font-semibold">${subtotalServicios.toLocaleString()}</span></p>
+                <p>Subtotal de cotización: <span className="font-semibold">${(subtotalProductos + subtotalServicios).toLocaleString()}</span></p>
                 <p>IVA (19%): <span className="font-semibold">${iva.toLocaleString()}</span></p>
                 <p>Total: <span className="font-bold text-conv3r-dark text-lg">${total.toLocaleString()}</span></p>
               </FormSection>

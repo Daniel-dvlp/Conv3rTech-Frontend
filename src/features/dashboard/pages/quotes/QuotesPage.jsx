@@ -303,10 +303,11 @@ const QuotesPage = () => {
     doc.setFontSize(12);
     doc.text(`Subtotal Productos: $${(cotizacion.subtotal_productos || 0).toLocaleString()}`, 14, finalY + 10);
     doc.text(`Subtotal Servicios: $${(cotizacion.subtotal_servicios || 0).toLocaleString()}`, 14, finalY + 18);
-    doc.text(`IVA (19%): $${(cotizacion.monto_iva || 0).toLocaleString()}`, 14, finalY + 26);
+    doc.text(`Subtotal de cotización: $${(Number(cotizacion.subtotal_productos || 0) + Number(cotizacion.subtotal_servicios || 0)).toLocaleString()}`, 14, finalY + 26);
+    doc.text(`IVA (19%): $${(cotizacion.monto_iva || 0).toLocaleString()}`, 14, finalY + 34);
 
     doc.setFontSize(14);
-    doc.text(`Total: $${(cotizacion.monto_cotizacion || 0).toLocaleString()}`, 14, finalY + 36);
+    doc.text(`Total: $${(cotizacion.monto_cotizacion || 0).toLocaleString()}`, 14, finalY + 42);
 
     doc.save(`Cotizacion_${cotizacion.nombre_cotizacion || cotizacion.ordenServicio || 'SinNombre'}.pdf`);
   };
@@ -347,17 +348,12 @@ const QuotesPage = () => {
   };
 
   const handleCreateQuote = async (payload) => {
-    try {
-      const created = await quotesService.createQuote(payload);
-      showSuccess('Cotización creada exitosamente');
-      setIsCreateOpen(false);
-      // Opcional: insertar arriba si el listado ya es real. Con mocks, lo dejamos fuera.
-      // setQuotes(prev => [created, ...prev]);
-    } catch (error) {
-      console.error(error);
-      const message = error?.response?.data?.message || 'Ocurrió un error al crear la cotización';
-      showError(message);
-    }
+    const created = await quotesService.createQuote(payload);
+    showSuccess('Cotización creada exitosamente');
+    setIsCreateOpen(false);
+    // Opcional: insertar arriba si el listado ya es real. Con mocks, lo dejamos fuera.
+    // setQuotes(prev => [created, ...prev]);
+    // Si hay error, se lanza y será capturado en el modal
   };
 
 
