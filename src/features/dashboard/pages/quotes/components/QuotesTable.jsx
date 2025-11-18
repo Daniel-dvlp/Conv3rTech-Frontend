@@ -6,7 +6,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
   const formatNumber = (num) => {
     if (num === null || num === undefined) return '$0';
     const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
-    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-MX').format(parsedNum);
+    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-ES').format(parsedNum);
   };
 
   const handleDisabledAction = () => {

@@ -18,6 +18,12 @@ const FormLabel = ({ htmlFor, children }) => (
 );
 
 const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, services, clients }) => {
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return '0';
+    const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsedNum) ? '0' : new Intl.NumberFormat('es-ES').format(parsedNum);
+  };
+
   const today = new Date().toISOString().split('T')[0];
   const [quoteData, setQuoteData] = useState(null);
   const [clienteSeleccionado, setClienteSeleccionado] = useState('');
@@ -500,8 +506,8 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                           <td className="p-2">{p.nombre}</td>
                           <td>{p.modelo}</td>
                           <td>{p.cantidad}</td>
-                          <td>${p.precio.toLocaleString()}</td>
-                          <td>${p.subtotal.toLocaleString()}</td>
+                          <td>${formatNumber(p.precio)}</td>
+                          <td>${formatNumber(p.subtotal)}</td>
                           <td>
                             <button
                               type="button"
@@ -518,6 +524,14 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                      <tr>
+                        <td colSpan="4" className="text-right font-semibold px-4 py-2">Subtotal productos:</td>
+                        <td className="font-bold px-4 py-2 text-right text-conv3r-gold">
+                          ${formatNumber(subtotalProductos)}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </FormSection>
@@ -580,8 +594,8 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                         <tr key={idx} className="border-t">
                           <td className="p-2">{s.nombre}</td>
                           <td>{s.cantidad}</td>
-                          <td>${s.precio.toLocaleString()}</td>
-                          <td>${s.subtotal.toLocaleString()}</td>
+                          <td>${formatNumber(s.precio)}</td>
+                          <td>${formatNumber(s.subtotal)}</td>
                           <td>
                             <button
                               type="button"
@@ -598,6 +612,14 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                      <tr>
+                        <td colSpan="3" className="text-right font-semibold px-4 py-2">Subtotal servicios:</td>
+                        <td className="font-bold px-4 py-2 text-right text-conv3r-gold">
+                          ${formatNumber(subtotalServicios)}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </FormSection>
@@ -618,11 +640,11 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
               </FormSection>
 
               <FormSection title="Resumen">
-                <p>Subtotal productos: <span className="font-semibold">${subtotalProductos.toLocaleString()}</span></p>
-                <p>Subtotal servicios: <span className="font-semibold">${subtotalServicios.toLocaleString()}</span></p>
-                <p>Subtotal de cotización: <span className="font-semibold">${(subtotalProductos + subtotalServicios).toLocaleString()}</span></p>
-                <p>IVA (19%): <span className="font-semibold">${iva.toLocaleString()}</span></p>
-                <p>Total: <span className="font-bold text-conv3r-dark text-lg">${total.toLocaleString()}</span></p>
+                <p>Subtotal productos: <span className="font-semibold">${formatNumber(subtotalProductos)}</span></p>
+                <p>Subtotal servicios: <span className="font-semibold">${formatNumber(subtotalServicios)}</span></p>
+                <p>Subtotal de cotización: <span className="font-semibold">${formatNumber(subtotalProductos + subtotalServicios)}</span></p>
+                <p>IVA (19%): <span className="font-semibold">${formatNumber(iva)}</span></p>
+                <p>Total: <span className="font-bold text-conv3r-dark text-lg">${formatNumber(total)}</span></p>
               </FormSection>
             </div>
           )}

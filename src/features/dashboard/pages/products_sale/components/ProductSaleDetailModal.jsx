@@ -21,10 +21,16 @@ const InfoRow = ({ label, children }) => (
 const ProductSaleDetailModal = ({ productSale, onClose }) => {
   if (!productSale) return null;
 
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return '0';
+    const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsedNum) ? '0' : new Intl.NumberFormat('es-ES').format(parsedNum);
+  };
+
   // Calcular totales desde los detalles de la venta
   const subtotal = productSale.subtotal_venta ?? 0;
   const iva = productSale.monto_iva ?? 0;
-  const monto = productSale.monto_venta ?? 0;  
+  const monto = productSale.monto_venta ?? 0;
 
   return (
     <div
@@ -80,8 +86,8 @@ const ProductSaleDetailModal = ({ productSale, onClose }) => {
                         <td className="p-3">{detalle.producto?.modelo}</td>
                         <td className="p-3">{detalle.producto?.unidad_medida}</td>
                         <td className="p-3">{detalle.cantidad}</td>
-                        <td className="p-3">${detalle.precio_unitario.toLocaleString('es-CO')}</td>
-                        <td className="p-3">${detalle.subtotal_producto.toLocaleString('es-CO')}</td>
+                        <td className="p-3">${formatNumber(detalle.precio_unitario)}</td>
+                        <td className="p-3">${formatNumber(detalle.subtotal_producto)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -89,19 +95,19 @@ const ProductSaleDetailModal = ({ productSale, onClose }) => {
                     <tr>
                       <td colSpan="5" className="text-right font-semibold px-4 py-2">Subtotal:</td>
                       <td className="font-bold px-4 py-2 text-conv3r-dark">
-                        ${subtotal.toLocaleString('es-CO')}
+                        ${formatNumber(subtotal)}
                       </td>
                     </tr>
                     <tr>
                       <td colSpan="5" className="text-right font-semibold px-4 py-2">IVA (19%):</td>
                       <td className="font-bold px-4 py-2 text-conv3r-dark">
-                        ${iva.toLocaleString('es-CO')}
+                        ${formatNumber(iva)}
                       </td>
                     </tr>
                     <tr>
                       <td colSpan="5" className="text-right font-semibold px-4 py-2">Total:</td>
                       <td className="font-bold text-conv3r-gold text-lg px-4 py-2">
-                        ${monto.toLocaleString('es-CO')}
+                        ${formatNumber(monto)}
                       </td>
                     </tr>
                   </tfoot>

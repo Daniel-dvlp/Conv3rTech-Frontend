@@ -161,14 +161,6 @@
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
-                      <tr>
-                        <td colSpan="3" className="text-right font-semibold px-4 py-2">Subtotal productos:</td>
-                        <td className="font-bold px-4 py-2 text-conv3r-dark">
-                          ${detalleOrden.subtotalProductos.toLocaleString('es-CO')}
-                        </td>
-                      </tr>
-                    </tfoot>
                   </table>
                 </div>
               ) : details?.some(d => d.id_producto) ? (
@@ -223,14 +215,6 @@
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
-                      <tr>
-                        <td colSpan="4" className="text-right font-semibold px-4 py-2">Subtotal servicios:</td>
-                        <td className="font-bold px-4 py-2 text-conv3r-dark">
-                          ${detalleOrden.subtotalServicios.toLocaleString('es-CO')}
-                        </td>
-                      </tr>
-                    </tfoot>
                   </table>
                 </div>
               ) : details?.some(d => d.id_servicio) ? (
