@@ -5,10 +5,11 @@ import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../shared/components/Pagination';
 import NewProductSaleModal from './components/NewProductSaleModal';
 import ProductSaleDetailModal from './components/ProductSaleDetailModal';
+import CancelSaleModal from './components/CancelSaleModal';
 import { salesService, clientsService } from './services/salesService';
 import { productsService } from '../products/services/productsService';
 import * as XLSX from 'xlsx';
-import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+import { showSuccess, showError, showInfo } from '../../../../shared/utils/alerts';
 import {
   createBasePDF,
   addHeader,
@@ -28,6 +29,7 @@ const ProductsSalePage = () => {
   const [selectedProductSale, setSelectedProductSale] = useState(null);
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
+  const [saleToCancel, setSaleToCancel] = useState(null);
 
   // Cargar ventas, clientes y productos
   useEffect(() => {
@@ -245,27 +247,40 @@ const ProductsSalePage = () => {
     doc.save(`Factura_${venta.numero_venta}.pdf`);
   };
 
-  const handleCancelSale = async (venta) => {
-    try {
-      if (venta.estado === 'Anulada') {
-        showInfo('Esta venta ya se encuentra anulada');
-        return;
-      }
+  const handleCancelSale = (venta) => {
+    if (venta.estado === 'Anulada') {
+      showInfo('Esta venta ya se encuentra anulada');
+      return;
+    }
+    setSaleToCancel(venta);
+  };
 
-      const confirmed = await confirmDelete(
-        '¿Estás segura de que deseas anular esta venta?',
-        'Esta acción no se puede deshacer.'
+  const handleConfirmCancel = async (motivo) => {
+    if (!saleToCancel) return;
+    try {
+      const updated = await salesService.changeSaleState(
+        saleToCancel.id_venta,
+        'Anulada',
+        motivo
       );
 
-      if (!confirmed) return;
-
-      const updated = await salesService.changeSaleState(venta.id_venta, 'Anulada');
-      setSales((prev) => prev.map((v) => (v.id_venta === venta.id_venta ? updated : v)));
-
+      setSales((prev) =>
+        prev.map((v) =>
+          v.id_venta === saleToCancel.id_venta
+            ? { ...v, ...updated, estado: 'Anulada', motivo_anulacion: motivo }
+            : v
+        )
+      );
       showSuccess('Venta anulada exitosamente');
     } catch (error) {
       console.error('Error al anular venta:', error);
-      showError('Ocurrió un error al anular la venta');
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Ocurrió un error al anular la venta';
+      showError(message);
+    } finally {
+      setSaleToCancel(null);
     }
   };
 
@@ -359,6 +374,15 @@ const ProductsSalePage = () => {
         <ProductSaleDetailModal
           productSale={selectedProductSale}
           onClose={() => setSelectedProductSale(null)}
+        />
+      )}
+
+      {saleToCancel && (
+        <CancelSaleModal
+          isOpen={!!saleToCancel}
+          onClose={() => setSaleToCancel(null)}
+          onConfirm={handleConfirmCancel}
+          sale={saleToCancel}
         />
       )}
     </div>

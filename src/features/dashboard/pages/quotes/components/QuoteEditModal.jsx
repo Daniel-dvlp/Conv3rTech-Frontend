@@ -293,7 +293,12 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
     if (!clienteSeleccionado) errs.cliente = 'Selecciona un cliente';
     if (!quoteData.fecha_vencimiento) errs.fecha = 'Selecciona la fecha de vencimiento';
     else if (new Date(quoteData.fecha_vencimiento) < new Date(new Date().setHours(0, 0, 0, 0))) errs.fecha = 'La fecha de vencimiento no puede ser anterior a hoy';
-    if (serviciosAgregados.length === 0) errs.detalles = 'Agrega al menos un servicio';
+    if (productosAgregados.length === 0) {
+      errs.productos = 'Agrega al menos un producto';
+    }
+    if (serviciosAgregados.length === 0) {
+      errs.servicios = 'Agrega al menos un servicio';
+    }
 
     setErrores(errs);
     if (Object.keys(errs).length > 0) return;
@@ -533,6 +538,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       </tr>
                     </tfoot>
                   </table>
+                  {errores.productos && <p className="text-red-500 text-sm mt-2">{errores.productos}</p>}
                 </div>
               </FormSection>
 
@@ -621,6 +627,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       </tr>
                     </tfoot>
                   </table>
+                  {errores.servicios && <p className="text-red-500 text-sm mt-2">{errores.servicios}</p>}
                 </div>
               </FormSection>
 
@@ -639,12 +646,29 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                 </div>
               </FormSection>
 
-              <FormSection title="Resumen">
-                <p>Subtotal productos: <span className="font-semibold">${formatNumber(subtotalProductos)}</span></p>
-                <p>Subtotal servicios: <span className="font-semibold">${formatNumber(subtotalServicios)}</span></p>
-                <p>Subtotal de cotización: <span className="font-semibold">${formatNumber(subtotalProductos + subtotalServicios)}</span></p>
-                <p>IVA (19%): <span className="font-semibold">${formatNumber(iva)}</span></p>
-                <p>Total: <span className="font-bold text-conv3r-dark text-lg">${formatNumber(total)}</span></p>
+              <FormSection title="Resumen de Cotización">
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal Productos:</span>
+                    <span className="font-semibold text-gray-800">${formatNumber(subtotalProductos)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal Servicios:</span>
+                    <span className="font-semibold text-gray-800">${formatNumber(subtotalServicios)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Subtotal de cotización:</span>
+                    <span className="font-semibold text-gray-800">${formatNumber(subtotalProductos + subtotalServicios)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">IVA (19%):</span>
+                    <span className="font-semibold text-gray-800">${formatNumber(iva)}</span>
+                  </div>
+                  <div className="flex justify-between text-lg">
+                    <span className="text-gray-600 font-bold">Total:</span>
+                    <span className="font-bold text-conv3r-gold">${formatNumber(total)}</span>
+                  </div>
+                </div>
               </FormSection>
             </div>
           )}

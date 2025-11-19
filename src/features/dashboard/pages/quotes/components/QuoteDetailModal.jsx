@@ -23,7 +23,13 @@
 
   const QuoteDetailModal = ({ quote, onClose }) => {
     if (!quote) return null;
-
+  
+    const formatNumber = (num) => {
+      if (num === null || num === undefined) return '0';
+      const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+      return isNaN(parsedNum) ? '0' : new Intl.NumberFormat('es-ES').format(parsedNum);
+    };
+  
     const [details, setDetails] = useState([]);
     const [productNames, setProductNames] = useState({});
     const [serviceNames, setServiceNames] = useState({});
@@ -246,33 +252,28 @@
             </DetailCard>
 
 
-            <DetailCard title="Totales">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <InfoRow label="Subtotal productos">
-                  <span className="text-conv3r-dark font-semibold">
-                    ${Number(detalleOrden?.subtotalProductos ?? quote.subtotal_productos ?? 0).toLocaleString('es-CO')}
-                  </span>
-                </InfoRow>
-                <InfoRow label="Subtotal servicios">
-                  <span className="text-conv3r-dark font-semibold">
-                    ${Number(detalleOrden?.subtotalServicios ?? quote.subtotal_servicios ?? 0).toLocaleString('es-CO')}
-                  </span>
-                </InfoRow>
-                <InfoRow label="Subtotal de cotización">
-                  <span className="text-conv3r-dark font-semibold">
-                    ${(Number(detalleOrden?.subtotalProductos ?? quote.subtotal_productos ?? 0) + Number(detalleOrden?.subtotalServicios ?? quote.subtotal_servicios ?? 0)).toLocaleString('es-CO')}
-                  </span>
-                </InfoRow>
-                <InfoRow label="IVA">
-                  <span className="text-conv3r-dark font-semibold">
-                    ${Number(detalleOrden?.iva ?? quote.monto_iva ?? 0).toLocaleString('es-CO')}
-                  </span>
-                </InfoRow>
-                <InfoRow label="Total">
-                  <span className="text-conv3r-gold font-bold text-lg">
-                    ${Number(detalleOrden?.total ?? quote.monto_cotizacion ?? 0).toLocaleString('es-CO')}
-                  </span>
-                </InfoRow>
+            <DetailCard title="Resumen de Cotización">
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal Productos:</span>
+                  <span className="font-semibold text-gray-800">${formatNumber(Number(detalleOrden?.subtotalProductos ?? quote.subtotal_productos ?? 0))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal Servicios:</span>
+                  <span className="font-semibold text-gray-800">${formatNumber(Number(detalleOrden?.subtotalServicios ?? quote.subtotal_servicios ?? 0))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Subtotal de cotización:</span>
+                  <span className="font-semibold text-gray-800">${formatNumber(Number(detalleOrden?.subtotalProductos ?? quote.subtotal_productos ?? 0) + Number(detalleOrden?.subtotalServicios ?? quote.subtotal_servicios ?? 0))}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">IVA (19%):</span>
+                  <span className="font-semibold text-gray-800">${formatNumber(Number(detalleOrden?.iva ?? quote.monto_iva ?? 0))}</span>
+                </div>
+                <div className="flex justify-between text-lg">
+                  <span className="text-gray-600 font-bold">Total:</span>
+                  <span className="font-bold text-conv3r-gold">${formatNumber(Number(detalleOrden?.total ?? quote.monto_cotizacion ?? 0))}</span>
+                </div>
               </div>
             </DetailCard>
 

@@ -60,9 +60,13 @@ export const salesService = {
   },
 
   // Cambiar estado de venta (ej: Anular)
-  changeSaleState: async (id, estado) => {
+  changeSaleState: async (id, estado, motivo_anulacion) => {
     try {
-      const response = await api.patch(`/sales/${id}/estado`, { estado });
+      const payload = { estado };
+      if (motivo_anulacion) {
+        payload.motivo_anulacion = motivo_anulacion;
+      }
+      const response = await api.patch(`/sales/${id}/estado`, payload);
       // El backend devuelve { message, data }
       return response.data?.data ?? response.data;
     } catch (error) {

@@ -65,6 +65,12 @@ const ProductSaleDetailModal = ({ productSale, onClose }) => {
             </div>
           </DetailCard>
 
+          {productSale.motivo_anulacion && (
+            <DetailCard title="Motivo de anulación" icon={<FaInfoCircle className="text-red-500" />}>
+              <p className="text-sm text-red-700 whitespace-pre-wrap">{productSale.motivo_anulacion}</p>
+            </DetailCard>
+          )}
+
           <DetailCard title="Productos vendidos" icon={<FaInfoCircle className="text-gray-500" />}>
             {Array.isArray(productSale.detalles) && productSale.detalles.length > 0 ? (
               <div className="overflow-x-auto">

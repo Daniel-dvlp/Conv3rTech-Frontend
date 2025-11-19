@@ -16,6 +16,12 @@ const FormLabel = ({ htmlFor, children }) => (
 );
 
 const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services }) => {
+  const formatNumber = (num) => {
+    if (num === null || num === undefined) return '0';
+    const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+    return isNaN(parsedNum) ? '0' : new Intl.NumberFormat('es-ES').format(parsedNum);
+  };
+
   const today = new Date().toISOString().split('T')[0];
   const [nombreCotizacion, setNombreCotizacion] = useState('');
   const [clienteSeleccionado, setClienteSeleccionado] = useState('');
@@ -285,10 +291,11 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
       errs.fecha = 'La fecha de vencimiento no puede ser anterior a hoy';
     }
     
-    if (serviciosAgregados.length === 0 && productosAgregados.length === 0) {
-      errs.detalles = 'Agrega al menos un producto o servicio';
-    } else if (serviciosAgregados.length === 0) {
-      errs.detalles = 'Agrega al menos un servicio';
+    if (productosAgregados.length === 0) {
+      errs.productos = 'Agrega al menos un producto';
+    }
+    if (serviciosAgregados.length === 0) {
+      errs.servicios = 'Agrega al menos un servicio';
     }
 
     // Si hay errores, mostrarlos y NO continuar
@@ -566,8 +573,8 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                           </button>
                         </div>
                       </td>
-                      <td className="p-3">${p.precio.toLocaleString('es-CO')}</td>
-                      <td className="p-3">${p.subtotal.toLocaleString('es-CO')}</td>
+                      <td className="p-3">${formatNumber(p.precio)}</td>
+                      <td className="p-3">${formatNumber(p.subtotal)}</td>
                       <td className="w-12">
                         <button
                           type="button"
@@ -601,7 +608,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                   </tr>
                 </tfoot>
               </table>
-              {errores.detalles && <p className="text-red-500 text-sm mt-2">{errores.detalles}</p>}
+              {errores.productos && <p className="text-red-500 text-sm mt-2">{errores.productos}</p>}
               {errores.producto && <p className="text-red-500 text-sm mt-2">{errores.producto}</p>}
             </div>
           </FormSection>
@@ -709,8 +716,8 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                           </button>
                         </div>
                       </td>
-                      <td className="p-3">${s.precio.toLocaleString('es-CO')}</td>
-                      <td className="p-3">${s.subtotal.toLocaleString('es-CO')}</td>
+                      <td className="p-3">${formatNumber(s.precio)}</td>
+                      <td className="p-3">${formatNumber(s.subtotal)}</td>
                       <td className="w-12">
                         <button
                           type="button"
@@ -744,6 +751,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                   </tr>
                 </tfoot>
               </table>
+              {errores.servicios && <p className="text-red-500 text-sm mt-2">{errores.servicios}</p>}
               {errores.servicio && <p className="text-red-500 text-sm mt-2">{errores.servicio}</p>}
             </div>
           </FormSection>
@@ -767,23 +775,23 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal Productos:</span>
-                <span className="font-semibold text-gray-800">${subtotalProductos.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-semibold text-gray-800">${formatNumber(subtotalProductos)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal Servicios:</span>
-                <span className="font-semibold text-gray-800">${subtotalServicios.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-semibold text-gray-800">${formatNumber(subtotalServicios)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Subtotal de cotización:</span>
-                <span className="font-semibold text-gray-800">${(subtotalProductos + subtotalServicios).toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-semibold text-gray-800">${formatNumber(subtotalProductos + subtotalServicios)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">IVA (19%):</span>
-                <span className="font-semibold text-gray-800">${iva.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-semibold text-gray-800">${formatNumber(iva)}</span>
               </div>
               <div className="flex justify-between text-lg">
                 <span className="text-gray-600 font-bold">Total:</span>
-                <span className="font-bold text-conv3r-gold">${total.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-bold text-conv3r-gold">${formatNumber(total)}</span>
               </div>
             </div>
           </FormSection>
