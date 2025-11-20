@@ -152,27 +152,51 @@ const ProductsPage = () => {
       const cat = categories.find((c) => c.id_categoria === id_categoria);
       return cat ? cat.nombre : 'Desconocida';
     };
-    const dataToExport = filteredProducts.map((product) => {
-      const especificacionesTexto = Array.isArray(product.especificaciones_tecnicas)
-        ? product.especificaciones_tecnicas
-          .map((spec) => `${spec.concepto}: ${spec.valor}`)
-          .join(' | ')
-        : 'Sin especificaciones';
 
-      return {
-        ID: product.id_producto,
-        Nombre: product.nombre,
-        Modelo: product.modelo,
-        Categoría: getCategoryName(product.id_categoria),
-        Unidad: product.unidad_medida,
-        Garantía: `${product.garantia} meses`,
-        Código: product.codigo_barra,
-        Precio: product.precio,
-        Stock: product.stock,
-        Estado: product.estado ? 'Activo' : 'Inactivo',
-        Especificaciones: especificacionesTexto,
-      };
-    });
+    const buildSpecsText = (product) => {
+      if (Array.isArray(product?.fichas_tecnicas) && product.fichas_tecnicas.length > 0) {
+        return product.fichas_tecnicas
+          .map((spec) => {
+            const label =
+              spec?.caracteristica?.nombre ??
+              spec?.nombre ??
+              spec?.concepto ??
+              'Característica';
+            const value = spec?.valor ?? spec?.detalle ?? '';
+            return value ? `${label}: ${value}` : label;
+          })
+          .join(' | ');
+      }
+
+      if (
+        Array.isArray(product?.especificaciones_tecnicas) &&
+        product.especificaciones_tecnicas.length > 0
+      ) {
+        return product.especificaciones_tecnicas
+          .map((spec) => {
+            const label = spec?.nombre ?? spec?.concepto ?? 'Característica';
+            const value = spec?.valor ?? spec?.detalle ?? '';
+            return value ? `${label}: ${value}` : label;
+          })
+          .join(' | ');
+      }
+
+      return 'Sin especificaciones';
+    };
+
+    const dataToExport = filteredProducts.map((product) => ({
+      ID: product.id_producto,
+      Nombre: product.nombre,
+      Modelo: product.modelo,
+      Categoría: getCategoryName(product.id_categoria),
+      Unidad: product.unidad_medida,
+      Garantía: `${product.garantia} meses`,
+      Código: product.codigo_barra,
+      Precio: product.precio,
+      Stock: product.stock,
+      Estado: product.estado ? 'Activo' : 'Inactivo',
+      Especificaciones: buildSpecsText(product),
+    }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
