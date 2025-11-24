@@ -419,7 +419,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                         <button
                             type="button"
                             onClick={handleGuardar}
-                            className="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-transform hover:scale-105"
+                            className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 hover:scale-105 transition-transform"
                         >
                             Guardar y finalizar
                         </button>
