@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { FaExclamationCircle } from 'react-icons/fa';
+import { FaExclamationCircle, FaCopy, FaCheck } from 'react-icons/fa';
 
 const ProjectCard = ({ project }) => {
-  const { id, name, client, progress, estimatedCompletion, priority } = project;
+  const { id, name, progress, estimatedCompletion, priority } = project;
+  const [copied, setCopied] = useState(false);
 
-  const [showTooltip, setShowTooltip] = useState(false);
 
   const priorityColors = {
-    'Alta': 'bg-red-50 text-red-700 border border-red-200',
-    'Media': 'bg-amber-50 text-amber-700 border border-amber-200',
-    'Baja': 'bg-green-50 text-green-700 border border-green-200',
+    'Alta': 'bg-red-100 text-red-700',
+    'Media': 'bg-orange-100 text-orange-700',
+    'Baja': 'bg-yellow-100 text-yellow-700',
   };
 
   const completionDate = new Date(estimatedCompletion);
@@ -27,75 +27,57 @@ const ProjectCard = ({ project }) => {
   if (diffDays > 0) {
     if (diffDays <= 30 && progress < 50) {
       isProgressLow = true;
-      warningMessage = `¡Atención! Bajo progreso (${progress}%) para la fecha de finalización. Faltan ${diffDays} días.`;
+      warningMessage = `¡Atención! Bajo progreso para la fecha de finalización. Faltan ${diffDays} días.`;
     } else if (diffDays <= 60 && progress < 30) {
       isProgressLow = true;
-      warningMessage = `¡Advertencia! Bajo progreso (${progress}%) para la fecha. Faltan ${diffDays} días.`;
+      warningMessage = `¡Advertencia! Bajo progreso para la fecha. Faltan ${diffDays} días.`;
     } else if (diffDays <= 90 && progress < 20) {
       isProgressLow = true;
-      warningMessage = `¡Recordatorio! Progreso lento (${progress}%) para la fecha. Faltan ${diffDays} días.`;
+      warningMessage = `¡Recordatorio! Progreso lento para la fecha. Faltan ${diffDays} días.`;
     }
   } else if (diffDays <= 0 && progress < 100) {
       isProgressLow = true;
-      warningMessage = `¡Proyecto atrasado! La fecha de finalización era ${new Date(estimatedCompletion).toLocaleDateString('es-CO')} y el progreso es ${progress}%.`;
+      warningMessage = `¡Proyecto atrasado! La fecha de finalización era ${new Date(estimatedCompletion).toLocaleDateString('es-CO')}.`;
   }
 
   return (
-    <div className="bg-gradient-to-r from-gray-50 to-white rounded-xl shadow-sm border border-gray-200 px-6 py-5 hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-6">
-        {/* Sección Izquierda: ID, Nombre, Cliente */}
-        <div className="flex items-center gap-4 min-w-0 flex-1">
-          <p className="text-sm font-semibold text-gray-900 flex-shrink-0 bg-gray-100 px-3 py-1.5 rounded-lg">{id}</p>
-          <div className="flex-grow min-w-0">
-            <p className="text-base font-semibold text-gray-900 truncate mb-1">{name}</p>
-            <p className="text-sm text-gray-600 truncate">Cliente: {client}</p>
+    <div className="bg-white p-3 rounded-lg border border-gray-200">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 mb-1">
+        <div className="flex items-center gap-2 min-w-0">
+          <p className="font-semibold text-gray-800 text-sm truncate" title={name}>{name}</p>
+          <div className="flex items-center gap-1">
+            <p className="text-xs leading-none text-gray-500 whitespace-nowrap">{id}</p>
+            <button
+              type="button"
+              aria-label="Copiar ID"
+              className="h-5 w-5 p-0 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 active:scale-[0.98] flex items-center justify-center -translate-y-[8px] shadow-sm"
+              onClick={() => {
+                navigator.clipboard.writeText(id).then(() => {
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                });
+              }}
+            >
+              {copied ? <FaCheck size={10} className="text-green-600" /> : <FaCopy size={10} />}
+            </button>
           </div>
         </div>
-        
-        {/* Sección Central: Barra de Progreso y Porcentaje */}
-        <div className="flex items-center gap-3 flex-1">
-          <div className="w-full bg-gray-200 rounded-full h-5 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-amber-600 via-conv3r-gold to-amber-400 h-full rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            ></div>
+        <div className="flex items-center gap-2 justify-end">
+          <div className="w-[220px] sm:w-[280px] md:w-[620px] bg-gray-200 rounded-full h-2">
+            <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
           </div>
-          <p className="text-sm font-bold text-conv3r-gold whitespace-nowrap">{progress}%</p> 
-        </div>
-
-        {/* Sección Derecha: Fecha de Finalización, Prioridad, Icono de Advertencia */}
-        <div className="text-right flex flex-col items-end gap-2 min-w-max">
-          <div className="flex items-center justify-end gap-2">
-            <div>
-              <p className="text-xs font-medium text-gray-600 mb-0.5">Fecha estimada finalización:</p>
-              <p className="text-sm font-semibold text-gray-900">
-                {new Date(estimatedCompletion).toLocaleDateString('es-CO', { year: 'numeric', month: '2-digit', day: '2-digit' })}
-              </p>
-            </div>
-            {isProgressLow && (
-              <div
-                className="relative"
-                onMouseEnter={() => setShowTooltip(true)}
-                onMouseLeave={() => setShowTooltip(false)}
-              >
-                <FaExclamationCircle className="text-red-500 text-xl cursor-pointer hover:text-red-600 transition-colors" />
-                {showTooltip && (
-                  <div className="absolute top-full right-0 mt-2 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-xl z-10 w-64 text-left">
-                    {warningMessage}
-                    <div className="absolute top-[-6px] right-3 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[6px] border-b-gray-900"></div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${priorityColors[priority]}`}>
-            {priority}
-          </span>
+          <p className="text-xs font-semibold text-gray-800 whitespace-nowrap leading-none translate-y-[8px]">{progress}%</p>
+          <span className={`px-2 py-0.5 text-[10px] font-medium rounded-full ${priorityColors[priority]}`}>{priority}</span>
         </div>
       </div>
+      {isProgressLow && (
+        <div className="mt-1 flex items-center gap-1 text-[11px] text-red-600">
+          <FaExclamationCircle className="text-red-500" />
+          <span>{warningMessage}</span>
+        </div>
+      )}
     </div>
   );
 };
 
 export default ProjectCard;
-

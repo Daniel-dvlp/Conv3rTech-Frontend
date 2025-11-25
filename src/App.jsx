@@ -34,7 +34,6 @@ import ProductsSalePage from "./features/dashboard/pages/products_sale/ProductsS
 //Rutas Cruz
 import PurchasesPage from "./features/dashboard/pages/purchases/PurchasesPage";
 import SuppliersPage from "./features/dashboard/pages/suppliers/SuppliersPage";
-import ServiceOrdersPage from "./features/dashboard/pages/service_orders/ServicesOrdersPage";
 import QuotesPage from "./features/dashboard/pages/quotes/QuotesPage";
 
 function App() {
@@ -127,14 +126,7 @@ function App() {
               }
             />
 
-            <Route
-              path="ordenes_servicios"
-              element={
-                <ProtectedRoute requiredModule="ordenes_servicios">
-                  <ServiceOrdersPage />
-                </ProtectedRoute>
-              }
-            />
+            
 
             <Route
               path="programacion_laboral"
