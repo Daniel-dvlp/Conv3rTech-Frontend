@@ -5,12 +5,17 @@ import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../shared/components/Pagination';
 import NewProductSaleModal from './components/NewProductSaleModal';
 import ProductSaleDetailModal from './components/ProductSaleDetailModal';
+import CancelSaleModal from './components/CancelSaleModal';
 import { salesService, clientsService } from './services/salesService';
 import { productsService } from '../products/services/productsService';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
-import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+import { showSuccess, showError, showInfo } from '../../../../shared/utils/alerts';
+import {
+  createBasePDF,
+  addHeader,
+  addFooter,
+  addGenericTable
+} from '../../../../shared/utils/pdf/pdfTemplate';
 
 
 const ITEMS_PER_PAGE = 5;
@@ -24,6 +29,7 @@ const ProductsSalePage = () => {
   const [selectedProductSale, setSelectedProductSale] = useState(null);
   const [clients, setClients] = useState([]);
   const [products, setProducts] = useState([]);
+  const [saleToCancel, setSaleToCancel] = useState(null);
 
   // Cargar ventas, clientes y productos
   useEffect(() => {
@@ -114,8 +120,6 @@ const ProductsSalePage = () => {
 
           'Cliente': `${venta.cliente?.nombre} ${venta.cliente?.apellido}`,
           'Documento Cliente': venta.cliente?.documento || '',
-          'Email Cliente': venta.cliente?.email || '',
-          'Celular Cliente': venta.cliente?.celular || '',
 
           'Producto': detalle.producto?.nombre,
           'Modelo': detalle.producto?.modelo || '',
@@ -141,68 +145,142 @@ const ProductsSalePage = () => {
   };
 
   const handleDownloadPDF = (venta) => {
-    const doc = new jsPDF();
+    const formatNumber = (num) => {
+      if (num === null || num === undefined) return '0';
+      const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+      return isNaN(parsedNum) ? '0' : new Intl.NumberFormat('es-ES').format(parsedNum);
+    };
 
-    doc.setFontSize(16);
-    doc.text(`Factura de Venta - ${venta.numero_venta}`, 14, 20);
+    const doc = createBasePDF();
 
-    doc.setFontSize(12);
-    doc.text(`Fecha: ${new Date(venta.fecha_venta).toLocaleString()}`, 14, 30);
-    doc.text(`Cliente: ${venta.cliente?.nombre} ${venta.cliente?.apellido}`, 14, 38);
-    doc.text(`Documento: ${venta.cliente?.documento || ''}`, 14, 46);
-    doc.text(`Email: ${venta.cliente?.email || ''}`, 14, 54);
-    doc.text(`Celular: ${venta.cliente?.celular || ''}`, 14, 62);
-    doc.text(`Método de Pago: ${venta.metodo_pago}`, 14, 70);
-    doc.text(`Estado: ${venta.estado}`, 14, 78);
+    // 1️⃣ ENCABEZADO GENERAL
+    let y = addHeader(doc, `Factura de Venta: ${venta.numero_venta}`);
 
-    autoTable(doc, {
-      startY: 88,
-      head: [['Producto', 'Modelo', 'Cantidad', 'Unidad', 'Precio Unitario', 'Subtotal']],
-      body: venta.detalles?.map(detalle => [
-        detalle.producto?.nombre,
-        detalle.producto?.modelo || '',
-        detalle.cantidad,
-        detalle.producto?.unidad_medida || '',
-        `$${detalle.precio_unitario.toLocaleString()}`,
-        `$${detalle.subtotal_producto.toLocaleString()}`
-      ]) || [],
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [100, 100, 100], textColor: 255, halign: 'center' }
-    });
+    // 2️⃣ INFORMACIÓN GENERAL
+    const clienteNombre = `${venta.cliente?.nombre || ''} ${venta.cliente?.apellido || ''}`.trim() || 'Cliente no especificado';
 
-    const finalY = doc.lastAutoTable?.finalY || 98;
-
-    doc.setFontSize(12);
-    doc.text(`Subtotal: $${venta.subtotal_venta.toLocaleString()}`, 14, finalY + 10);
-    doc.text(`IVA (19%): $${venta.monto_iva.toLocaleString()}`, 14, finalY + 18);
+    // Título "Información general"
     doc.setFontSize(14);
-    doc.text(`Total: $${venta.monto_venta.toLocaleString()}`, 14, finalY + 28);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(55, 65, 81); // gray-700
+    doc.text('Información general', 14, y);
+    y += 10;
+
+    // Configuración de columnas
+    const LEFT_COLUMN_X = 14;
+    const RIGHT_COLUMN_X = 110;
+    const LINE_HEIGHT = 8;
+    let currentY = y;
+
+    // Información del cliente (columna izquierda)
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Cliente: ${clienteNombre}`, LEFT_COLUMN_X, currentY);
+    currentY += LINE_HEIGHT;
+    doc.text(`Documento: ${venta.cliente?.documento || ''}`, LEFT_COLUMN_X, currentY);
+    currentY += LINE_HEIGHT;
+    doc.text(`Método de Pago: ${venta.metodo_pago}`, LEFT_COLUMN_X, currentY);
+
+    // Información de la venta (columna derecha, misma altura)
+    currentY = y; // Resetear para alinear
+    doc.text(`Fecha: ${new Date(venta.fecha_venta).toLocaleString('es-ES')}`, RIGHT_COLUMN_X, currentY);
+    currentY += LINE_HEIGHT;
+    doc.text(`Estado: ${venta.estado}`, RIGHT_COLUMN_X, currentY);
+
+    // Actualizar y para la siguiente sección
+    y = Math.max(y + (LINE_HEIGHT * 4), currentY + LINE_HEIGHT) + 4;
+
+    // 3️⃣ TABLA DE PRODUCTOS
+    if (venta.detalles && Array.isArray(venta.detalles) && venta.detalles.length > 0) {
+      const detalleProductos = [];
+      detalleProductos.push([
+        { content: 'Productos', colSpan: 6, styles: { halign: 'center', fillColor: [249, 250, 251], fontStyle: 'bold' } }
+      ]);
+      detalleProductos.push(['Nombre', 'Modelo', 'Cantidad', 'Unidad', 'Precio Unitario', 'Subtotal']);
+      venta.detalles.forEach((detalle) => {
+        detalleProductos.push([
+          detalle.producto?.nombre || '',
+          detalle.producto?.modelo || '',
+          detalle.cantidad || 0,
+          detalle.producto?.unidad_medida || '',
+          `$${formatNumber(detalle.precio_unitario || 0)}`,
+          `$${formatNumber(detalle.subtotal_producto || 0)}`
+        ]);
+      });
+      y = addGenericTable(doc, detalleProductos, y);
+    }
+
+    const finalY = y;
+
+    // 4️⃣ TOTALES
+    const totalsY = finalY + 8;
+
+    // Fondo gris claro para la sección de totales
+    doc.setFillColor(249, 250, 251); // gray-50
+    doc.rect(14, totalsY - 4, 182, 40, 'F');
+
+    // Borde superior
+    doc.setDrawColor(229, 231, 235); // gray-200
+    doc.setLineWidth(0.5);
+    doc.line(14, totalsY - 4, 196, totalsY - 4);
+
+    doc.setFontSize(11);
+    doc.setTextColor(55, 65, 81); // gray-700
+    doc.setFont('helvetica', 'normal');
+
+    doc.text(`Subtotal:`, 150, totalsY + 5, { align: 'right' });
+    doc.text(`$${formatNumber(venta.subtotal_venta || 0)}`, 190, totalsY + 5, { align: 'right' });
+
+    doc.text(`IVA (19%):`, 150, totalsY + 15, { align: 'right' });
+    doc.text(`$${formatNumber(venta.monto_iva || 0)}`, 190, totalsY + 15, { align: 'right' });
+
+    // Total final en dorado
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 179, 0); // conv3r-gold
+    doc.text(`Total:`, 150, totalsY + 28, { align: 'right' });
+    doc.text(`$${formatNumber(venta.monto_venta || 0)}`, 190, totalsY + 28, { align: 'right' });
+
+    // 5️⃣ PIE DE PÁGINA GENÉRICO
+    addFooter(doc);
 
     doc.save(`Factura_${venta.numero_venta}.pdf`);
   };
 
-  const handleCancelSale = async (venta) => {
-    try {
-      if (venta.estado === 'Anulada') {
-        showInfo('Esta venta ya se encuentra anulada');
-        return;
-      }
+  const handleCancelSale = (venta) => {
+    if (venta.estado === 'Anulada') {
+      showInfo('Esta venta ya se encuentra anulada');
+      return;
+    }
+    setSaleToCancel(venta);
+  };
 
-      const confirmed = await confirmDelete(
-        '¿Estás segura de que deseas anular esta venta?',
-        'Esta acción no se puede deshacer.'
+  const handleConfirmCancel = async (motivo) => {
+    if (!saleToCancel) return;
+    try {
+      const updated = await salesService.changeSaleState(
+        saleToCancel.id_venta,
+        'Anulada',
+        motivo
       );
 
-      if (!confirmed) return;
-
-      const updated = await salesService.changeSaleState(venta.id_venta, 'Anulada');
-      setSales((prev) => prev.map((v) => (v.id_venta === venta.id_venta ? updated : v)));
-
+      setSales((prev) =>
+        prev.map((v) =>
+          v.id_venta === saleToCancel.id_venta
+            ? { ...v, ...updated, estado: 'Anulada', motivo_anulacion: motivo }
+            : v
+        )
+      );
       showSuccess('Venta anulada exitosamente');
     } catch (error) {
       console.error('Error al anular venta:', error);
-      showError('Ocurrió un error al anular la venta');
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Ocurrió un error al anular la venta';
+      showError(message);
+    } finally {
+      setSaleToCancel(null);
     }
   };
 
@@ -296,6 +374,15 @@ const ProductsSalePage = () => {
         <ProductSaleDetailModal
           productSale={selectedProductSale}
           onClose={() => setSelectedProductSale(null)}
+        />
+      )}
+
+      {saleToCancel && (
+        <CancelSaleModal
+          isOpen={!!saleToCancel}
+          onClose={() => setSaleToCancel(null)}
+          onConfirm={handleConfirmCancel}
+          sale={saleToCancel}
         />
       )}
     </div>
