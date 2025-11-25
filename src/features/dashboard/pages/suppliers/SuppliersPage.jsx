@@ -7,6 +7,7 @@ import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../../src/shared/components/Pagination';
 import NewProviderModal from './components/NewSuppliersModal';
 import EditSupplierModal from './components/EditSupplierModal';
+import SupplierDetailModal from './components/SupplierDetailModal';
 import { Toaster } from 'react-hot-toast';
 import { useSuppliers } from './hooks/useSuppliers';
 
@@ -20,20 +21,24 @@ const SuppliersPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewSupplierModalOpen, setIsNewSupplierModalOpen] = useState(false);
   const [supplierToEdit, setSupplierToEdit] = useState(null);
+  const [supplierToView, setSupplierToView] = useState(null);
 
   const normalize = (text) =>
-    (text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    String(text || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
   const filteredSuppliers = useMemo(() => {
     const normalizedSearch = normalize(searchTerm);
     if (!normalizedSearch) return suppliers; // Retorna todos si no hay búsqueda
     return suppliers.filter((s) =>
-      normalize(s.nit).includes(normalizedSearch) ||
+      normalize(s.nit || '').includes(normalizedSearch) ||
       normalize(s.encargado).includes(normalizedSearch) ||
       normalize(s.empresa).includes(normalizedSearch) ||
-      normalize(s.telefono).includes(normalizedSearch) ||
-      normalize(s.correo).includes(normalizedSearch) ||
-      normalize(s.direccion).includes(normalizedSearch) ||
+      normalize(s.telefono_entidad).includes(normalizedSearch) ||
+      normalize(s.telefono_encargado || '').includes(normalizedSearch) ||
+      normalize(s.correo_principal).includes(normalizedSearch) ||
+      normalize(s.correo_secundario || '').includes(normalizedSearch) ||
+      normalize(s.direccion || '').includes(normalizedSearch) ||
+      normalize(s.observaciones || '').includes(normalizedSearch) ||
       normalize(s.estado).includes(normalizedSearch)
     );
   }, [suppliers, searchTerm]);
@@ -82,6 +87,11 @@ const SuppliersPage = () => {
     setSupplierToEdit(supplier); // Establece el proveedor a editar
   };
 
+  // Handler para abrir el modal de vista con el proveedor seleccionado
+  const handleViewSupplier = (supplier) => {
+    setSupplierToView(supplier); // Establece el proveedor a ver
+  };
+
   // Obtener la lista de NITs existentes para pasar a los modales (excluyendo el del proveedor actual en edición)
   const existingNits = useMemo(() => suppliers.map(s => s.nit), [suppliers]);
 
@@ -123,12 +133,11 @@ const SuppliersPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Entidad</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIT</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Empresa</th> {/* Empresa primero */}
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre del Encargado</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dirección</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono Entidad</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Encargado</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo Principal</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
               </tr>
@@ -144,6 +153,7 @@ const SuppliersPage = () => {
         <>
           <SuppliersTable
             suppliers={currentItems}
+            onView={handleViewSupplier} // <--- PASA LA FUNCIÓN PARA VER
             onEdit={handleEditSupplier} // <--- PASA LA FUNCIÓN PARA EDITAR
             onDelete={handleDeleteSupplier} // <--- PASA LA FUNCIÓN PARA ELIMINAR
           />
@@ -172,6 +182,12 @@ const SuppliersPage = () => {
         onSave={handleSaveEditedSupplier} // Usa el handler definido
         supplierToEdit={supplierToEdit} // Pasa el objeto del proveedor a editar
         existingNits={existingNits} // Pasa los NITs existentes para validación
+      />
+
+      {/* Modal para ver detalles del proveedor */}
+      <SupplierDetailModal
+        supplier={supplierToView}
+        onClose={() => setSupplierToView(null)}
       />
 
       {/* Componente para mostrar las notificaciones (toasts) */}
