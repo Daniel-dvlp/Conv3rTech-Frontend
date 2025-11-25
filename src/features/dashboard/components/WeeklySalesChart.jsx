@@ -1,44 +1,136 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 
 const WeeklySalesChart = ({ data }) => {
-  const [hoveredDay, setHoveredDay] = useState(null);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [mode, setMode] = useState('week');
+  const [mounted, setMounted] = useState(false);
+  const svgRef = useRef(null);
+  const lineRef = useRef(null);
+  const containerRef = useRef(null);
+  const [size, setSize] = useState({ width: 640, height: 220 });
 
-  // Calcular la venta máxima para escalar las barras
-  const maxSales = Math.max(...data.map(item => item.sales));
+  const chartData = useMemo(() => {
+    if (mode === 'week') return data;
+    const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+    return months.map((m, i) => ({ day: m, sales: Math.round((i+1) * 180) }));
+  }, [data, mode]);
+
+  useEffect(() => {
+    const ro = new ResizeObserver((entries) => {
+      const cr = entries[0].contentRect;
+      setSize({ width: Math.max(320, cr.width), height: Math.max(160, cr.height) });
+    });
+    if (containerRef.current) ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
+  const maxSales = 5000; // Valor máximo fijo para el eje Y
+  const width = size.width;
+  const height = size.height;
+  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const innerW = width - padding.left - padding.right;
+  const innerH = height - padding.top - padding.bottom;
+  const xAt = (i) => padding.left + (i * innerW) / (chartData.length - 1);
+  const yAt = (v) => padding.top + (1 - v / maxSales) * innerH;
+  const points = chartData.map((d, i) => [xAt(i), yAt(d.sales)]);
+  const linePath = `M ${points.map(p => `${p[0]} ${p[1]}`).join(' L ')}`;
+  const areaPath = `${linePath} L ${xAt(chartData.length - 1)} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z`;
+  const tickVals = [1000, 2000, 3000, 4000, 5000];
+
+  useEffect(() => {
+    setMounted(false);
+    requestAnimationFrame(() => setMounted(true));
+  }, [mode]);
+
+  useEffect(() => {
+    const el = lineRef.current;
+    if (!el) return;
+    const length = el.getTotalLength();
+    el.style.strokeDasharray = `${length}`;
+    el.style.strokeDashoffset = `${length}`;
+    el.getBoundingClientRect();
+    el.style.transition = 'stroke-dashoffset 700ms ease';
+    el.style.strokeDashoffset = '0';
+  }, [linePath]);
+
+  const onPointerMove = (e) => {
+    const rect = svgRef.current.getBoundingClientRect();
+    const vx = ((e.clientX - rect.left) / rect.width) * width;
+    const clamped = Math.max(padding.left, Math.min(vx, width - padding.right));
+    const ratio = (clamped - padding.left) / innerW;
+    const idx = Math.round(ratio * (chartData.length - 1));
+    if (idx !== hoveredIndex) setHoveredIndex(idx);
+  };
+
+  const onPointerLeave = () => setHoveredIndex(null);
+
+  const onKeyDown = (e) => {
+    if (e.key === 'ArrowRight') setHoveredIndex((i) => Math.min((i ?? 0) + 1, chartData.length - 1));
+    if (e.key === 'ArrowLeft') setHoveredIndex((i) => Math.max((i ?? chartData.length - 1) - 1, 0));
+  };
 
   return (
-    <div className="bg-white rounded-xl shadow-[0_4px_6px_rgba(0,0,0,0.1)] border border-gray-200 p-6">
-      <div className="mb-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-1">Ventas de la Última Semana</h3>
-        <p className="text-sm text-gray-600">Resumen de ventas por día</p>
+    <div className="rounded-xl p-6 bg-white border border-gray-200">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+        <div className="flex flex-col">
+          <h3 className="text-gray-900 text-lg font-bold leading-normal">Ventas Diarias</h3>
+          <p className="text-gray-500 text-sm">Total de ventas de los últimos 7 días.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setMode('week')} className={`text-sm font-semibold px-3 py-1.5 rounded-lg ${mode==='week'?'text-blue-600 bg-blue-100':'text-gray-500 hover:bg-gray-100'}`}>Semana</button>
+          <button onClick={() => setMode('month')} className={`text-sm font-semibold px-3 py-1.5 rounded-lg ${mode==='month'?'text-blue-600 bg-blue-100':'text-gray-500 hover:bg-gray-100'}`}>Mes</button>
+        </div>
       </div>
-      <div className="flex justify-around items-end h-64 pb-4 gap-2">
-        {data.map((item) => (
-          <div
-            key={item.day}
-            className="flex flex-col items-center justify-end h-full flex-1 relative group"
-            onMouseEnter={() => setHoveredDay(item.day)}
-            onMouseLeave={() => setHoveredDay(null)}
-          >
-            {hoveredDay === item.day && (
-              <div className="absolute -top-12 bg-gray-900 text-white text-xs px-3 py-2 rounded-lg mb-2 whitespace-nowrap shadow-lg z-10">
-                {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(item.sales)}
-                <div className="absolute bottom-[-6px] left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-gray-900"></div>
-              </div>
-            )}
-            <div
-              className="w-full bg-gradient-to-t from-amber-500 via-conv3r-gold to-amber-300 hover:from-amber-600 hover:via-conv3r-gold hover:to-amber-400 transition-all duration-300 cursor-pointer relative overflow-hidden"
-              style={{ 
-                height: `${(item.sales / maxSales) * 100}%`,
-                borderRadius: '4px 4px 0 0'
-              }}
-            >
-              {/* Subtle shimmer effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-white/20 to-transparent pointer-events-none"></div>
-            </div>
-            <p className="text-sm font-semibold text-gray-600 mt-3">{item.day}</p>
-          </div>
-        ))}
+      <div className="relative h-[220px] w-full" ref={containerRef}>
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-full"
+          onPointerMove={onPointerMove}
+          onPointerLeave={onPointerLeave}
+          role="img"
+          aria-label="Gráfico de ventas"
+          tabIndex={0}
+          onKeyDown={onKeyDown}
+          preserveAspectRatio="xMidYMid meet"
+        >
+          <defs>
+            <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.25" />
+              <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.05" />
+            </linearGradient>
+          </defs>
+          {tickVals.map((t, i) => (
+            <g key={i}>
+              <line x1={padding.left} x2={width - padding.right} y1={yAt(t)} y2={yAt(t)} stroke="#E5E7EB" strokeDasharray="4 4" />
+              <text x={padding.left - 8} y={yAt(t)} textAnchor="end" dominantBaseline="middle" fill="#6B7280" fontSize="12">{`$${t / 1000}k`}</text>
+            </g>
+          ))}
+          <path d={areaPath} fill="url(#areaGradient)" style={{ opacity: mounted ? 1 : 0, transition: 'opacity 700ms ease' }} />
+          <path ref={lineRef} d={linePath} fill="none" stroke="#3B82F6" strokeWidth="2.5" />
+          {points.map((p, i) => (
+            <g key={i} onMouseEnter={() => setHoveredIndex(i)} onMouseLeave={() => setHoveredIndex(null)}>
+              <circle cx={p[0]} cy={p[1]} r={4} fill="#3B82F6" />
+              <text x={p[0]} y={height - 6} textAnchor="middle" fill="#6B7280" fontSize="12">{chartData[i].day}</text>
+              {hoveredIndex === i && (
+                <g>
+                  <line x1={p[0]} x2={p[0]} y1={padding.top} y2={height - padding.bottom} stroke="#E5E7EB" strokeDasharray="3 3" />
+                  <circle cx={p[0]} cy={p[1]} r={6} fill="#3B82F6" stroke="white" strokeWidth={2} />
+                  <rect x={Math.max(padding.left + 4, Math.min(p[0] - 55, width - padding.right - 110))} y={p[1] - 60 > padding.top ? p[1] - 60 : p[1] + 12} rx={8} ry={8} width={110} height={48} fill="#1F2937" />
+                  <text x={Math.max(padding.left + 4, Math.min(p[0] - 55, width - padding.right - 110)) + 55} y={p[1] - 60 > padding.top ? p[1] - 44 : p[1] + 28} textAnchor="middle" fill="#F9FAFB" fontSize="12">
+                    {chartData[i].day}
+                  </text>
+                  <text x={Math.max(padding.left + 4, Math.min(p[0] - 55, width - padding.right - 110)) + 55} y={p[1] - 60 > padding.top ? p[1] - 28 : p[1] + 44} textAnchor="middle" fill="#FFFFFF" fontSize="14" fontWeight="600">
+                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(chartData[i].sales)}
+                  </text>
+                </g>
+              )}
+            </g>
+          ))}
+          {hoveredIndex === null && (
+            <g style={{ opacity: 0 }} />
+          )}
+        </svg>
       </div>
     </div>
   );

@@ -4,6 +4,9 @@ export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        display: ["Manrope", "sans-serif"],
+      },
       animation: {
         "fade-in": "fadeIn 0.25s ease-in-out",
       },
