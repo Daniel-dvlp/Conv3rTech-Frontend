@@ -11,8 +11,13 @@ import { clientsApi } from '../clients/services/clientsApi';
 import { productsService } from '../products/services/productsService';
 import { quotesService, servicesCatalogApi } from './services/quotesService';
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import {
+  createBasePDF,
+  addHeader,
+  addFooter,
+  addGenericTable
+} from '../../../../shared/utils/pdf/pdfTemplate';
 import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
 
 const ITEMS_PER_PAGE = 5;
@@ -194,119 +199,183 @@ const QuotesPage = () => {
 
 
   const handleDownloadPDF = (cotizacion) => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text(`Cotización - ${cotizacion.nombre_cotizacion || cotizacion.ordenServicio}`, 14, 20);
+    const formatNumber = (num) => {
+      if (num === null || num === undefined) return '0';
+      const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
+      return isNaN(parsedNum) ? '0' : new Intl.NumberFormat('es-ES').format(parsedNum);
+    };
 
-    doc.setFontSize(12);
-    doc.text(`Fecha de Vencimiento: ${cotizacion.fecha_vencimiento ? new Date(cotizacion.fecha_vencimiento).toLocaleDateString('es-ES') : ''}`, 14, 30);
+    const doc = createBasePDF();
 
+    // 1️⃣ ENCABEZADO GENERAL
+    let y = addHeader(doc, `Cotización: ${cotizacion.nombre_cotizacion || cotizacion.ordenServicio}`);
+
+    // 2️⃣ INFORMACIÓN GENERAL
     const clienteNombre = cotizacion.cliente
       ? `${cotizacion.cliente.nombre} ${cotizacion.cliente.apellido}`
       : cotizacion.clienteData
         ? `${cotizacion.clienteData.nombre} ${cotizacion.clienteData.apellido}`
         : 'Cliente no especificado';
 
-    doc.text(`Cliente: ${clienteNombre}`, 14, 38);
-    doc.text(`Documento: ${cotizacion.cliente?.documento || cotizacion.clienteData?.documento || ''}`, 14, 46);
-    doc.text(`Email: ${cotizacion.cliente?.correo || cotizacion.clienteData?.correo || ''}`, 14, 54);
-    doc.text(`Estado: ${cotizacion.estado}`, 14, 62);
+    // Título "Información general"
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(55, 65, 81); // gray-700
+    doc.text('Información general', 14, y);
+    y += 10;
 
-    const detalle = [];
+    // Configuración de columnas
+    const LEFT_COLUMN_X = 14;
+    const RIGHT_COLUMN_X = 110;
+    const LINE_HEIGHT = 8;
+    let currentY = y;
+
+    // Información del cliente (columna izquierda)
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Cliente: ${clienteNombre}`, LEFT_COLUMN_X, currentY);
+    currentY += LINE_HEIGHT;
+    doc.text(`Documento: ${cotizacion.cliente?.documento || cotizacion.clienteData?.documento || ''}`, LEFT_COLUMN_X, currentY);
+    currentY += LINE_HEIGHT;
+    doc.text(`Correo electrónico: ${cotizacion.cliente?.correo || cotizacion.clienteData?.correo || ''}`, LEFT_COLUMN_X, currentY);
+
+    // Información de la cotización (columna derecha, misma altura)
+    currentY = y; // Resetear para alinear con la información del cliente
+    doc.text(`Fecha de Vencimiento: ${cotizacion.fecha_vencimiento ? new Date(cotizacion.fecha_vencimiento).toLocaleDateString('es-ES') : ''}`, RIGHT_COLUMN_X, currentY);
+    currentY += LINE_HEIGHT;
+    doc.text(`Estado: ${cotizacion.estado || ''}`, RIGHT_COLUMN_X, currentY);
+
+    // Actualizar y para la siguiente sección (usar la posición más baja)
+    y = Math.max(y + (LINE_HEIGHT * 3), currentY + LINE_HEIGHT) + 15; // Espacio adicional después de la información
+
+    // 3️⃣ TABLAS SEPARADAS (Productos y Servicios)
+    // Color gris claro para secciones (gray-50: RGB(249, 250, 251))
+    const SECTION_BG = [249, 250, 251];
+    const SPACING_BETWEEN_TABLES = 10; // Espacio entre tablas
 
     // Usar datos reales de la cotización
     if (cotizacion.detalles && Array.isArray(cotizacion.detalles)) {
-      // Agregar productos
+      // TABLA DE PRODUCTOS
       const productos = cotizacion.detalles.filter(d => d.producto);
       if (productos.length > 0) {
-        detalle.push([
-          { content: 'Productos', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
+        const detalleProductos = [];
+        detalleProductos.push([
+          { content: 'Productos', colSpan: 5, styles: { halign: 'center', fillColor: SECTION_BG, fontStyle: 'bold' } }
         ]);
-        detalle.push(['Nombre', 'Modelo', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        detalleProductos.push(['Nombre', 'Modelo', 'Cantidad', 'Precio Unitario', 'Total']);
         productos.forEach((detalleItem) => {
-          detalle.push([
+          detalleProductos.push([
             detalleItem.producto.nombre || '',
             detalleItem.producto.modelo || '',
             detalleItem.cantidad || 0,
-            `$${(detalleItem.precio_unitario || 0).toLocaleString()}`,
-            '',
-            `$${(detalleItem.subtotal || 0).toLocaleString()}`
+            `$${formatNumber(detalleItem.precio_unitario || 0)}`,
+            `$${formatNumber(detalleItem.subtotal || 0)}`
           ]);
         });
+        y = addGenericTable(doc, detalleProductos, y);
+        y += SPACING_BETWEEN_TABLES; // Agregar espacio después de productos
       }
-
-      // Agregar servicios
+      
+      // TABLA DE SERVICIOS
       const servicios = cotizacion.detalles.filter(d => d.servicio);
       if (servicios.length > 0) {
-        detalle.push([
-          { content: 'Servicios', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
+        const detalleServicios = [];
+        detalleServicios.push([
+          { content: 'Servicios', colSpan: 5, styles: { halign: 'center', fillColor: SECTION_BG, fontStyle: 'bold' } }
         ]);
-        detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        detalleServicios.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', 'Total']);
         servicios.forEach((detalleItem) => {
-          detalle.push([
+          detalleServicios.push([
             detalleItem.servicio.nombre || '',
             detalleItem.servicio.descripcion || '',
             detalleItem.cantidad || 0,
-            `$${(detalleItem.precio_unitario || 0).toLocaleString()}`,
-            '',
-            `$${(detalleItem.subtotal || 0).toLocaleString()}`
+            `$${formatNumber(detalleItem.precio_unitario || 0)}`,
+            `$${formatNumber(detalleItem.subtotal || 0)}`
           ]);
         });
+        y = addGenericTable(doc, detalleServicios, y);
       }
     } else if (cotizacion.detalleOrden) {
       // Compatibilidad con datos antiguos
+      // TABLA DE PRODUCTOS
       if (cotizacion.detalleOrden.productos && cotizacion.detalleOrden.productos.length > 0) {
-        detalle.push([
-          { content: 'Productos', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
+        const detalleProductos = [];
+        detalleProductos.push([
+          { content: 'Productos', colSpan: 5, styles: { halign: 'center', fillColor: SECTION_BG, fontStyle: 'bold' } }
         ]);
-        detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        detalleProductos.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', 'Total']);
         cotizacion.detalleOrden.productos.forEach((p) => {
-          detalle.push([
+          detalleProductos.push([
             p.nombre,
             p.descripcion,
             p.cantidad,
-            `$${p.precioUnitario.toLocaleString()}`,
-            '',
-            `$${p.total.toLocaleString()}`
+            `$${formatNumber(p.precioUnitario)}`,
+            `$${formatNumber(p.total)}`
           ]);
         });
+        y = addGenericTable(doc, detalleProductos, y);
+        y += SPACING_BETWEEN_TABLES; // Agregar espacio después de productos
       }
 
+      // TABLA DE SERVICIOS
       if (cotizacion.detalleOrden.servicios && cotizacion.detalleOrden.servicios.length > 0) {
-        detalle.push([
-          { content: 'Servicios', colSpan: 6, styles: { halign: 'center', fillColor: [220, 220, 220] } }
+        const detalleServicios = [];
+        detalleServicios.push([
+          { content: 'Servicios', colSpan: 5, styles: { halign: 'center', fillColor: SECTION_BG, fontStyle: 'bold' } }
         ]);
-        detalle.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', '', 'Total']);
+        detalleServicios.push(['Nombre', 'Descripción', 'Cantidad', 'Precio Unitario', 'Total']);
         cotizacion.detalleOrden.servicios.forEach((s) => {
-          detalle.push([
+          detalleServicios.push([
             s.servicio,
             s.descripcion,
             s.cantidad,
-            `$${s.precioUnitario.toLocaleString()}`,
-            '',
-            `$${s.total.toLocaleString()}`
+            `$${formatNumber(s.precioUnitario)}`,
+            `$${formatNumber(s.total)}`
           ]);
         });
+        y = addGenericTable(doc, detalleServicios, y);
       }
     }
 
-    autoTable(doc, {
-      startY: 72,
-      body: detalle,
-      theme: 'grid',
-      styles: { fontSize: 10 },
-      headStyles: { fillColor: [100, 100, 100], textColor: 255, halign: 'center' }
-    });
+    const finalY = y;
 
-    const finalY = doc.lastAutoTable?.finalY || 90;
+    // 4️⃣ TOTALES (estilo footer de tabla)
+    const totalsY = finalY + 8;
+    
+    // Fondo gris claro para la sección de totales
+    doc.setFillColor(249, 250, 251); // gray-50
+    doc.rect(14, totalsY - 4, 182, 50, 'F');
+    
+    // Borde superior
+    doc.setDrawColor(229, 231, 235); // gray-200
+    doc.setLineWidth(0.5);
+    doc.line(14, totalsY - 4, 196, totalsY - 4);
 
-    doc.setFontSize(12);
-    doc.text(`Subtotal Productos: $${(cotizacion.subtotal_productos || 0).toLocaleString()}`, 14, finalY + 10);
-    doc.text(`Subtotal Servicios: $${(cotizacion.subtotal_servicios || 0).toLocaleString()}`, 14, finalY + 18);
-    doc.text(`IVA (19%): $${(cotizacion.monto_iva || 0).toLocaleString()}`, 14, finalY + 26);
+    doc.setFontSize(11);
+    doc.setTextColor(55, 65, 81); // gray-700
+    doc.setFont('helvetica', 'normal');
+    
+    doc.text(`Subtotal Productos:`, 150, totalsY + 5, { align: 'right' });
+    doc.text(`$${formatNumber(cotizacion.subtotal_productos || 0)}`, 190, totalsY + 5, { align: 'right' });
 
-    doc.setFontSize(14);
-    doc.text(`Total: $${(cotizacion.monto_cotizacion || 0).toLocaleString()}`, 14, finalY + 36);
+    doc.text(`Subtotal Servicios:`, 150, totalsY + 12, { align: 'right' });
+    doc.text(`$${formatNumber(cotizacion.subtotal_servicios || 0)}`, 190, totalsY + 12, { align: 'right' });
+
+    doc.text(`Subtotal de cotización:`, 150, totalsY + 19, { align: 'right' });
+    doc.text(`$${formatNumber(Number(cotizacion.subtotal_productos || 0) + Number(cotizacion.subtotal_servicios || 0))}`, 190, totalsY + 19, { align: 'right' });
+
+    doc.text(`IVA (19%):`, 150, totalsY + 26, { align: 'right' });
+    doc.text(`$${formatNumber(cotizacion.monto_iva || 0)}`, 190, totalsY + 26, { align: 'right' });
+
+    // Total final en dorado (conv3r-gold)
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(255, 179, 0); // conv3r-gold
+    doc.text(`Total:`, 150, totalsY + 35, { align: 'right' });
+    doc.text(`$${formatNumber(cotizacion.monto_cotizacion || 0)}`, 190, totalsY + 35, { align: 'right' });
+
+    // 5️⃣ PIE DE PÁGINA GENÉRICO
+    addFooter(doc);
 
     doc.save(`Cotizacion_${cotizacion.nombre_cotizacion || cotizacion.ordenServicio || 'SinNombre'}.pdf`);
   };
@@ -321,7 +390,7 @@ const QuotesPage = () => {
 
   const handleConfirmCancel = async (motivo) => {
     if (!quoteToCancel) return;
-    
+
     try {
       const quoteId = quoteToCancel.id_cotizacion ?? quoteToCancel.id;
       if (!quoteId) {
@@ -331,12 +400,12 @@ const QuotesPage = () => {
 
       // Enviar estado 'Rechazada' al backend con motivo_anulacion
       const updated = await quotesService.changeQuoteState(quoteId, 'Rechazada', motivo);
-      
+
       setQuotes((prevQuotes) => prevQuotes.map((q) => {
         const qId = q.id_cotizacion ?? q.id;
         return qId === quoteId ? { ...q, ...updated, estado: 'Rechazada', motivo_anulacion: motivo } : q;
       }));
-      
+
       showSuccess('Cotización rechazada exitosamente');
       setQuoteToCancel(null);
     } catch (error) {
@@ -347,17 +416,12 @@ const QuotesPage = () => {
   };
 
   const handleCreateQuote = async (payload) => {
-    try {
-      const created = await quotesService.createQuote(payload);
-      showSuccess('Cotización creada exitosamente');
-      setIsCreateOpen(false);
-      // Opcional: insertar arriba si el listado ya es real. Con mocks, lo dejamos fuera.
-      // setQuotes(prev => [created, ...prev]);
-    } catch (error) {
-      console.error(error);
-      const message = error?.response?.data?.message || 'Ocurrió un error al crear la cotización';
-      showError(message);
-    }
+    const created = await quotesService.createQuote(payload);
+    showSuccess('Cotización creada exitosamente');
+    setIsCreateOpen(false);
+    // Opcional: insertar arriba si el listado ya es real. Con mocks, lo dejamos fuera.
+    // setQuotes(prev => [created, ...prev]);
+    // Si hay error, se lanza y será capturado en el modal
   };
 
 
@@ -401,7 +465,7 @@ const QuotesPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nombre</th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Nombre cotización</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Cliente</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Monto Total</th>
                 <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>

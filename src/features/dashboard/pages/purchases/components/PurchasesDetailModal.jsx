@@ -136,16 +136,22 @@ const PurchaseDetailModal = ({ compra, onClose }) => {
             </div>
           </div>
 
-          {/* Observaciones (siempre visible si existe) */}
-          {compra.observaciones && (
-            <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3">
-                <FaStickyNote className="text-gray-500" />
-                <span>Observaciones</span>
-              </h3>
-              <p className="text-gray-800">{compra.observaciones}</p>
-            </div>
-          )}
+          {/* Observaciones (mostrar siempre la nueva columna aunque esté vacía) */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3">
+              <FaStickyNote className="text-gray-500" />
+              <span>Observaciones</span>
+            </h3>
+            {compra.observaciones ? (
+              <p className="text-gray-800 whitespace-pre-line">{compra.observaciones}</p>
+            ) : compra.motivoAnulacion ? (
+              <p className="text-gray-500 italic">
+                Sin observaciones adicionales. Revisar el motivo de anulación registrado más abajo.
+              </p>
+            ) : (
+              <p className="text-gray-500 italic">Sin observaciones registradas.</p>
+            )}
+          </div>
 
           {/* Motivo de Anulación (en su propia sección si la compra está anulada) */}
           {compra.estado === 'Anulada' && compra.motivoAnulacion && (

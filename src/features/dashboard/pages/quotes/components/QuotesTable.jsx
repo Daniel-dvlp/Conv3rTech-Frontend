@@ -6,7 +6,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
   const formatNumber = (num) => {
     if (num === null || num === undefined) return '$0';
     const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
-    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-MX').format(parsedNum);
+    return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-ES').format(parsedNum);
   };
 
   const handleDisabledAction = () => {
@@ -18,8 +18,9 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
       <table className="w-full">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre cotización</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento cliente</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto cotización</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
@@ -38,6 +39,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
               const apellido = rawCliente.apellido || '';
               clienteDisplay = `${nombre} ${apellido}`.trim() || rawCliente.documento || rawCliente.correo || '';
             }
+            const documento = rawCliente && typeof rawCliente === 'object' ? rawCliente.documento || '' : '';
             const monto = (
               quote.monto_cotizacion
               ?? quote.detalleOrden?.total
@@ -49,6 +51,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
               <tr key={keyId}>
                 <td className="px-4 py-3">{quote.nombre_cotizacion}</td>
                 <td className="px-4 py-3">{clienteDisplay}</td>
+                <td className="px-4 py-3">{documento}</td>
                 <td className="px-4 py-3">${formatNumber(monto)}</td>
                 <td className="px-4 py-3">{fechaVenc}</td>
               <td className="px-4 py-3">

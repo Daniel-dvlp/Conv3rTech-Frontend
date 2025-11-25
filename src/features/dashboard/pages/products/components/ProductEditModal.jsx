@@ -51,6 +51,39 @@ const ProductEditModal = ({
   const [errors, setErrors] = useState({});
   const [allFeatures, setAllFeatures] = useState(features || []);
 
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+    switch (name) {
+      case 'nombre':
+        if (!value?.trim()) newErrors.nombre = 'El nombre es obligatorio';
+        else delete newErrors.nombre;
+        break;
+      case 'modelo':
+        if (!value?.trim()) newErrors.modelo = 'El modelo es obligatorio';
+        else delete newErrors.modelo;
+        break;
+      case 'id_categoria':
+        if (!value) newErrors.id_categoria = 'Selecciona una categoría';
+        else delete newErrors.id_categoria;
+        break;
+      case 'unidad_medida':
+        if (!value) newErrors.unidad_medida = 'Selecciona una unidad de medida';
+        else delete newErrors.unidad_medida;
+        break;
+      case 'precio':
+        if (!value || value <= 0) newErrors.precio = 'Ingresa un precio válido mayor a 0';
+        else delete newErrors.precio;
+        break;
+      case 'garantia':
+        if (!value || value < 12) newErrors.garantia = 'La garantía debe ser de al menos 12 meses';
+        else delete newErrors.garantia;
+        break;
+      default:
+        break;
+    }
+    setErrors(newErrors);
+  };
+
   useEffect(() => {
     if (productToEdit) {
       setProductData(productToEdit);
@@ -81,13 +114,14 @@ const ProductEditModal = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // No permitir cambios en stock por seguridad
     if (name === 'stock') {
       return;
     }
-    
+
     setProductData((prev) => ({ ...prev, [name]: value }));
+    validateField(name, value);
   };
 
   const handleBlur = (e) => {
@@ -111,7 +145,7 @@ const ProductEditModal = ({
         delete updated[index].nuevaCaracteristica;
       }
     }
-    
+
     setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
   };
 
@@ -271,9 +305,13 @@ const ProductEditModal = ({
                   value={productData.nombre}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500' : ''}`}
                 />
+                {errors.nombre && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.nombre}
+                  </p>
+                )}
                 {errors.duplicate && (
                   <p className="text-red-500 text-sm mt-1">
                     {errors.duplicate}
@@ -291,9 +329,14 @@ const ProductEditModal = ({
                   value={productData.modelo}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.modelo ? 'border-red-500' : ''}`}
+                  
                 />
+                {errors.modelo && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.modelo}
+                  </p>
+                )}
               </div>
 
               {/* Categoría */}
@@ -304,8 +347,8 @@ const ProductEditModal = ({
                   name="id_categoria"
                   value={productData.id_categoria}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.id_categoria ? 'border-red-500' : ''}`}
+                  
                 >
                   <option value="" disabled>
                     Seleccione una categoría
@@ -319,6 +362,11 @@ const ProductEditModal = ({
                     </option>
                   ))}
                 </select>
+                {errors.id_categoria && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.id_categoria}
+                  </p>
+                )}
               </div>
 
               {/* Unidad */}
@@ -329,8 +377,8 @@ const ProductEditModal = ({
                   name="unidad_medida"
                   value={productData.unidad_medida}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.unidad_medida ? 'border-red-500' : ''}`}
+                  
                 >
                   <option value="">Seleccione la unidad:</option>
                   <option value="unidad">Unidad</option>
@@ -340,6 +388,11 @@ const ProductEditModal = ({
                   <option value="paquetes">Paquetes</option>
                   <option value="kit">Kit</option>
                 </select>
+                {errors.unidad_medida && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.unidad_medida}
+                  </p>
+                )}
               </div>
 
               {/* Precio */}
@@ -351,9 +404,14 @@ const ProductEditModal = ({
                   name="precio"
                   value={productData.precio}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}
+                  
                 />
+                {errors.precio && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.precio}
+                  </p>
+                )}
               </div>
 
               {/* Stock - Solo lectura por seguridad */}
@@ -382,12 +440,12 @@ const ProductEditModal = ({
                   name="garantia"
                   value={productData.garantia}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.garantia ? 'border-red-500' : ''}`}
+                  
                 />
-                {productData.garantia && productData.garantia < 12 && (
-                  <p className="text-red-500 text-sm mt-2">
-                    La garantía debe ser de al menos 12 meses.
+                {errors.garantia && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {errors.garantia}
                   </p>
                 )}
               </div>
@@ -432,7 +490,7 @@ const ProductEditModal = ({
                         value={ficha.nuevaCaracteristica || ""}
                         onChange={(e) => handleFichaChange(index, 'nuevaCaracteristica', e.target.value)}
                         className={inputBaseStyle}
-                        required
+                        
                       />
                       {/* Botón para volver al selector */}
                       <button
@@ -453,7 +511,7 @@ const ProductEditModal = ({
                         value={ficha.id_caracteristica}
                         onChange={(e) => handleFichaChange(index, 'id_caracteristica', e.target.value)}
                         className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
-                        required
+                        
                       >
                         <option value="">Seleccione una característica</option>
                         {Array.isArray(allFeatures) && allFeatures.map((feat) => (
@@ -487,7 +545,7 @@ const ProductEditModal = ({
                       handleFichaChange(index, 'valor', e.target.value)
                     }
                     className={inputBaseStyle}
-                    required
+                    
                   />
                 </div>
 

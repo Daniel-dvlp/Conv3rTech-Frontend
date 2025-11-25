@@ -14,7 +14,7 @@ import DashboardPage from "./features/dashboard/DashboardPage";
 import LoginPage from "./features/auth/pages/LoginPage";
 import RecoverRequestPage from "./features/auth/pages/RecoverRequestPage";
 import RecoverCodePage from "./features/auth/pages/RecoverCodePage";
-import WorkSchedulingPage from "./features/dashboard/pages/Work_scheduling/WorkSchedulingPage.jsx";
+import LaborSchedulingPage from "./features/dashboard/pages/labor_scheduling/laborSchedulingPage.jsx";
 import RolesPage from "./features/dashboard/pages/roles/RolesPage";
 import ProjectPage from "./features/dashboard/pages/Project/ProjectPage";
 import EditProfilePage from "./features/dashboard/pages/profile/EditProfilePage";
@@ -140,7 +140,7 @@ function App() {
               path="programacion_laboral"
               element={
                 <ProtectedRoute requiredModule="programacion_laboral">
-                  <WorkSchedulingPage />
+                  <LaborSchedulingPage />
                 </ProtectedRoute>
               }
             />

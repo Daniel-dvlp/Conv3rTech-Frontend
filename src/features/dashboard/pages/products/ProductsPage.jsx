@@ -87,31 +87,20 @@ const ProductsPage = () => {
   // Crear producto
   const handleAddProduct = async (newProduct) => {
     console.log('Datos a enviar:', JSON.stringify(newProduct, null, 2));
-    try {
-      const created = await productsService.createProduct(newProduct);
-      console.log('Producto creado:', created);
-      setProducts((prev) => [created, ...prev]);
-      setShowNewModal(false);
-      showSuccess('Producto agregado exitosamente');
+    const created = await productsService.createProduct(newProduct);
+    console.log('Producto creado:', created);
+    setProducts((prev) => [created, ...prev]);
+    setShowNewModal(false);
+    showSuccess('Producto agregado exitosamente');
 
-      // Actualizar características para que el select tenga la nueva característica disponible
-      try {
-        const updatedFeatures = await featuresService.getAllFeatures();
-        setFeatures(Array.isArray(updatedFeatures) ? updatedFeatures : []);
-      } catch (featureError) {
-        console.warn('Error al actualizar características:', featureError);
-      }
-    } catch (err) {
-      console.error('Error al crear producto:', err);
-      console.error('Error response:', err.response?.data);
-      console.error('Error status:', err.response?.status);
-      
-      // Mostrar mensaje de error más específico
-      const errorMessage = err.response?.data?.message || 
-                          err.response?.data?.errors?.[0]?.msg || 
-                          'No se pudo crear el producto. Verifique que todos los campos y datos sean correctos.';
-      showError(errorMessage);
+    // Actualizar características para que el select tenga la nueva característica disponible
+    try {
+      const updatedFeatures = await featuresService.getAllFeatures();
+      setFeatures(Array.isArray(updatedFeatures) ? updatedFeatures : []);
+    } catch (featureError) {
+      console.warn('Error al actualizar características:', featureError);
     }
+    // Si hay error, se lanza y será capturado en el modal
   };
 
   // Editar producto
@@ -163,27 +152,51 @@ const ProductsPage = () => {
       const cat = categories.find((c) => c.id_categoria === id_categoria);
       return cat ? cat.nombre : 'Desconocida';
     };
-    const dataToExport = filteredProducts.map((product) => {
-      const especificacionesTexto = Array.isArray(product.especificaciones_tecnicas)
-        ? product.especificaciones_tecnicas
-          .map((spec) => `${spec.concepto}: ${spec.valor}`)
-          .join(' | ')
-        : 'Sin especificaciones';
 
-      return {
-        ID: product.id_producto,
-        Nombre: product.nombre,
-        Modelo: product.modelo,
-        Categoría: getCategoryName(product.id_categoria),
-        Unidad: product.unidad_medida,
-        Garantía: `${product.garantia} meses`,
-        Código: product.codigo_barra,
-        Precio: product.precio,
-        Stock: product.stock,
-        Estado: product.estado ? 'Activo' : 'Inactivo',
-        Especificaciones: especificacionesTexto,
-      };
-    });
+    const buildSpecsText = (product) => {
+      if (Array.isArray(product?.fichas_tecnicas) && product.fichas_tecnicas.length > 0) {
+        return product.fichas_tecnicas
+          .map((spec) => {
+            const label =
+              spec?.caracteristica?.nombre ??
+              spec?.nombre ??
+              spec?.concepto ??
+              'Característica';
+            const value = spec?.valor ?? spec?.detalle ?? '';
+            return value ? `${label}: ${value}` : label;
+          })
+          .join(' | ');
+      }
+
+      if (
+        Array.isArray(product?.especificaciones_tecnicas) &&
+        product.especificaciones_tecnicas.length > 0
+      ) {
+        return product.especificaciones_tecnicas
+          .map((spec) => {
+            const label = spec?.nombre ?? spec?.concepto ?? 'Característica';
+            const value = spec?.valor ?? spec?.detalle ?? '';
+            return value ? `${label}: ${value}` : label;
+          })
+          .join(' | ');
+      }
+
+      return 'Sin especificaciones';
+    };
+
+    const dataToExport = filteredProducts.map((product) => ({
+      ID: product.id_producto,
+      Nombre: product.nombre,
+      Modelo: product.modelo,
+      Categoría: getCategoryName(product.id_categoria),
+      Unidad: product.unidad_medida,
+      Garantía: `${product.garantia} meses`,
+      Código: product.codigo_barra,
+      Precio: product.precio,
+      Stock: product.stock,
+      Estado: product.estado ? 'Activo' : 'Inactivo',
+      Especificaciones: buildSpecsText(product),
+    }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
     const workbook = XLSX.utils.book_new();
@@ -232,7 +245,7 @@ const ProductsPage = () => {
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                {['Producto', 'Modelo', 'Estado', 'Acciones'].map((header) => (
+                {['Nombre', 'Modelo', 'Categoría', 'Precio', 'Stock', 'Estado', 'Acciones'].map((header) => (
                   <th
                     key={header}
                     className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"
