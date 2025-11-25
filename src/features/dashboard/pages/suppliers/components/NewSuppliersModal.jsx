@@ -19,8 +19,8 @@ const FormLabel = ({ htmlFor, children }) => (
 
 const initialState = {
   nit: "",
-  nombre_empresa: "",
-  nombre_encargado: "",
+  empresa: "",
+  encargado: "",
   telefono_entidad: "",
   telefono_encargado: "",
   correo_principal: "",
@@ -60,18 +60,20 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           error = "Este NIT ya está registrado.";
         }
         break;
-      case "nombre_empresa":
+      case "empresa":
         if (!value.trim()) {
           error = "El nombre de la entidad es obligatorio.";
         }
         break;
-      case "nombre_encargado":
+      case "encargado":
         if (!value.trim()) {
           error = "El nombre del encargado es obligatorio.";
         }
         break;
       case "telefono_entidad":
-        if (value.trim() && !/^[0-9+\-\s()]+$/.test(value)) {
+        if (!value.trim()) {
+          error = "El teléfono de la entidad es obligatorio.";
+        } else if (!/^[0-9+\-\s()]+$/.test(value)) {
           error = "El teléfono de la entidad contiene caracteres no válidos.";
         }
         break;
@@ -136,11 +138,25 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     let formIsValid = true;
     const newErrors = {};
 
-    Object.keys(providerData).forEach(name => {
-      const error = validateField(name, providerData[name]);
+    // Validate required fields
+    const requiredFields = ['empresa', 'encargado', 'correo_principal'];
+    requiredFields.forEach(field => {
+      const error = validateField(field, providerData[field]);
       if (error) {
-        newErrors[name] = error;
+        newErrors[field] = error;
         formIsValid = false;
+      }
+    });
+
+    // Validate optional fields
+    const optionalFields = ['nit', 'telefono_entidad', 'telefono_encargado', 'correo_secundario'];
+    optionalFields.forEach(field => {
+      if (providerData[field].trim()) {
+        const error = validateField(field, providerData[field]);
+        if (error) {
+          newErrors[field] = error;
+          formIsValid = false;
+        }
       }
     });
 
@@ -159,8 +175,8 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
     const newProvider = {
       nit: providerData.nit,
-      nombre_empresa: providerData.nombre_empresa,
-      nombre_encargado: providerData.nombre_encargado,
+      empresa: providerData.empresa,
+      encargado: providerData.encargado,
       telefono_entidad: providerData.telefono_entidad,
       telefono_encargado: providerData.telefono_encargado,
       correo_principal: providerData.correo_principal,
@@ -210,21 +226,21 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           <FormSection title="Información Entidad">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
-                <FormLabel htmlFor="nombre_empresa">
+                <FormLabel htmlFor="empresa">
                   <span className="text-red-500">*</span> Nombre Entidad
                 </FormLabel>
                 <input
-                  id="nombre_empresa"
+                  id="empresa"
                   type="text"
-                  name="nombre_empresa"
-                  value={providerData.nombre_empresa}
+                  name="empresa"
+                  value={providerData.empresa}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`${inputBaseStyle} ${errors.nombre_empresa ? 'border-red-500' : ''}`}
+                  className={`${inputBaseStyle} ${errors.empresa ? 'border-red-500' : ''}`}
                   required
                   maxLength="150"
                 />
-                {errors.nombre_empresa && <p className="text-red-500 text-xs mt-1">{errors.nombre_empresa}</p>}
+                {errors.empresa && <p className="text-red-500 text-xs mt-1">{errors.empresa}</p>}
               </div>
 
               <div>
@@ -269,21 +285,21 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           <FormSection title="Información Encargado">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
-                <FormLabel htmlFor="nombre_encargado">
+                <FormLabel htmlFor="encargado">
                   <span className="text-red-500">*</span> Nombre Encargado
                 </FormLabel>
                 <input
-                  id="nombre_encargado"
+                  id="encargado"
                   type="text"
-                  name="nombre_encargado"
-                  value={providerData.nombre_encargado}
+                  name="encargado"
+                  value={providerData.encargado}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`${inputBaseStyle} ${errors.nombre_encargado ? 'border-red-500' : ''}`}
+                  className={`${inputBaseStyle} ${errors.encargado ? 'border-red-500' : ''}`}
                   required
                   maxLength="150"
                 />
-                {errors.nombre_encargado && <p className="text-red-500 text-xs mt-1">{errors.nombre_encargado}</p>}
+                {errors.encargado && <p className="text-red-500 text-xs mt-1">{errors.encargado}</p>}
               </div>
 
               <div>

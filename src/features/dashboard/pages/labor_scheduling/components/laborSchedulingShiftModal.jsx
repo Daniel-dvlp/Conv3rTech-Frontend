@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaSave, FaUser, FaCalendarAlt, FaClock, FaPlus } from 'react-icons/fa';
+import { FaTimes, FaSave, FaUser, FaCalendarAlt, FaClock, FaPlus, FaTrash } from 'react-icons/fa';
 import { usersService } from '../../../../../services';
 
 // Reutilizar componentes del formato estándar como en NewPurchasesModal
