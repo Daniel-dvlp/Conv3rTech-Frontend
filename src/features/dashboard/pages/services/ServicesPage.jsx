@@ -6,6 +6,8 @@ import ServiceViewModal from './components/ServiceViewModal';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { serviceService } from './services/serviceService.js';
 import { toast } from 'react-hot-toast';
+import { FaPlus, FaSearch } from "react-icons/fa";
+
 
 const ServiciosLoading = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -135,7 +137,6 @@ const ServicesPage = () => {
   const serviciosFiltrados = servicios
     .filter((s) => {
       if (filtro === 'todos') return true;
-      // Si el servicio tiene categoría, filtrar por el nombre de la categoría
       const categoriaNombre = s.categoria?.nombre || s.categoria || '';
       if (filtro === 'mantenimiento') {
         return categoriaNombre.toLowerCase().includes('mantenimiento');
@@ -157,35 +158,49 @@ const ServicesPage = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-3xl font-bold mb-6 text-center text-[#000435]">
-        SERVICIOS
-      </h2>
 
-      {/* Buscador centrado y botón */}
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Buscar servicio..."
-          className="border px-4 py-2 rounded w-full sm:w-96 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-          value={busqueda}
-          onChange={(e) => {
-            setBusqueda(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-        <button
-          onClick={() => {
-            setModalOpen(true);
-            setEsEdicion(false);
-            setSelectedService(null);
-          }}
-          className="bg-[#FFB800] text-black px-4 py-2 rounded hover:bg-[#e0a500] transition w-full sm:w-auto"
-        >
-          + Crear Servicio
-        </button>
+      {/* --------------------------- */}
+      {/*   HEADER ESTANDARIZADO     */}
+      {/* --------------------------- */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+
+        {/* TÍTULO A LA IZQUIERDA */}
+        <h2 className="text-3xl font-bold text-[#000435]">
+          SERVICIOS
+        </h2>
+
+        {/* BUSCADOR + BOTÓN A LA DERECHA */}
+        <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 sm:mt-0">
+          <div className="relative">
+          <input
+            type="text"
+            placeholder="Buscar servicio"
+            className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={busqueda}
+            onChange={(e) => {
+              setBusqueda(e.target.value);
+              setCurrentPage(1);
+            }}
+          />
+          <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+
+          <button
+            onClick={() => {
+              setModalOpen(true);
+              setEsEdicion(false);
+              setSelectedService(null);
+            }}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+          >
+          <FaPlus />
+            
+             Nuevo Servicio
+          </button>
+        </div>
       </div>
 
-      {/* Filtros por tipo */}
+      {/* Filtros */}
       <div className="flex flex-wrap justify-center gap-3 mb-6">
         {[
           { tipo: 'todos', label: 'Todos' },
@@ -199,10 +214,9 @@ const ServicesPage = () => {
               setCurrentPage(1);
             }}
             className={`px-5 py-1.5 rounded-full text-sm font-semibold transition border shadow-sm
-              ${
-                filtro === tipo
-                  ? 'bg-[#000435] text-white border-[#000435]'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-[#e0e7ff] hover:text-[#000435] hover:border-[#cbd5e1]'
+              ${filtro === tipo
+                ? 'bg-[#000435] text-white border-[#000435]'
+                : 'bg-white text-gray-600 border-gray-300 hover:bg-[#e0e7ff] hover:text-[#000435] hover:border-[#cbd5e1]'
               }`}
           >
             {label}
@@ -210,7 +224,7 @@ const ServicesPage = () => {
         ))}
       </div>
 
-      {/* Tabla o skeleton */}
+      {/* Tabla */}
       {loading ? (
         <ServiciosLoading />
       ) : (
@@ -223,7 +237,6 @@ const ServicesPage = () => {
             onToggleEstado={handleToggleEstado}
           />
 
-          {/* Paginador estilo categoría */}
           {totalPaginas > 1 && (
             <div className="flex justify-center items-center mt-10 gap-2">
               <button
@@ -268,7 +281,7 @@ const ServicesPage = () => {
         </>
       )}
 
-      {/* Modal de crear o editar */}
+      {/* Modal crear/editar */}
       <ServiceFormModal
         isOpen={modalOpen}
         onClose={() => {
@@ -281,7 +294,7 @@ const ServicesPage = () => {
         esEdicion={esEdicion}
       />
 
-      {/* Modal de ver */}
+      {/* Modal ver */}
       <ServiceViewModal
         isOpen={viewModalOpen}
         onClose={() => setViewModalOpen(false)}
