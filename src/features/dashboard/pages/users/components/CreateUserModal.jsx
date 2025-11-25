@@ -72,7 +72,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
 
       // Validación celular
       if (name === 'celular') {
-        const celularRegex = /^\+?[0-9]{10,13}$/;
+const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
         if (!celularRegex.test(value)) {
           updatedErrors.celular = 'Debe tener entre 10 y 13 dígitos, solo números (opcional + al inicio)';
         }
@@ -91,7 +91,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
         const validaciones = evaluarContrasena(value);
         setValidacionesContrasena(validaciones);
 
-        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,10}$/;
+        const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,15}$/;
         if (!passwordRegex.test(value)) {
           updatedErrors.contrasena = 'Debe cumplir todos los requisitos';
         } else {
@@ -121,8 +121,8 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
         } else {
           const existeCorreo = usuariosExistentes.some(
             (u) =>
-              typeof u.email === 'string' &&
-              u.email.toLowerCase() === value.toLowerCase()
+              typeof u.correo === 'string' &&
+              u.correo.toLowerCase() === value.toLowerCase()
           );
           updatedErrors.email = existeCorreo ? 'Este correo ya está registrado' : '';
         }
@@ -138,7 +138,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
     e.preventDefault();
     const newErrors = {};
 
-    const celularRegex = /^\+?[0-9]{10,13}$/;
+    const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     if (!formData.tipoDocumento) newErrors.tipoDocumento = "Selecciona un tipo de documento";
@@ -153,6 +153,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
     }
 
     if (!formData.rol) newErrors.rol = "Selecciona un rol";
+    if (!formData.status) newErrors.status = "Selecciona un estado";
 
     if (!formData.email) {
       newErrors.email = "El correo es obligatorio";
@@ -162,8 +163,8 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
 
     if (!formData.contrasena) {
       newErrors.contrasena = "La contraseña es obligatoria";
-    } else if (formData.contrasena.length < 6) {
-      newErrors.contrasena = "Debe tener al menos 6 caracteres";
+    } else if (formData.contrasena.length < 8) {
+      newErrors.contrasena = "Debe tener al menos 8 caracteres"; // Alinear con backend
     }
 
     if (!formData.confirmarContrasena) {
@@ -188,7 +189,8 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
       id_rol: parseInt(formData.rol), // Convertir a número
       documento: formData.documento,
       tipo_documento: formData.tipoDocumento,
-      celular: formData.celular
+      celular: formData.celular,
+      estado_usuario: formData.status
     };
     
     onSubmit(userDataForApi);
@@ -227,7 +229,6 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
                   <option value="NIT">NIT</option>
                   <option value="PA">PA</option>
                   <option value="CE">CE</option>
-                  <option value="TI">TI</option>
                 </select>
                 {errors.tipoDocumento && <p className="text-red-500 text-sm mt-1">{errors.tipoDocumento}</p>}
               </div>
@@ -273,6 +274,28 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
               </div>
 
+              <div className="col-span-2">
+                <FormLabel htmlFor="status">Estado del Usuario</FormLabel>
+                <select
+                  id="status"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleChange}
+                  className={inputBaseStyle}
+                >
+                  <option value="">Seleccionar...</option>
+                  <option value="Activo">Activo</option>
+                  <option value="Inactivo">Inactivo</option>
+                  <option value="Suspendido">Suspendido</option>
+                  <option value="En vacaciones">En vacaciones</option>
+                  <option value="Retirado">Retirado</option>
+                  <option value="Licencia médica">Licencia médica</option>
+                </select>
+                {errors.status && (
+                  <p className="text-red-500 text-sm mt-1">{errors.status}</p>
+                )}
+              </div>
+
               <div className="flex justify-around gap-4 col-span-2">
                 <div className='w-full'>
                   <FormLabel htmlFor="contrasena">Contraseña</FormLabel>
@@ -297,7 +320,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
 
                   <div className="mt-1 ml-2 space-y-0 text-sm text-gray-600">
                     <p className={validacionesContrasena.longitud ? "text-green-600 mb-0" : "text-red-500 mb-0"} >
-                      {validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 10 caracteres
+                      {validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 15 caracteres
                     </p>
                     <p className={validacionesContrasena.mayuscula ? "text-green-600" : "text-red-500"}>
                       {validacionesContrasena.mayuscula ? '✓' : '✗'} Al menos una letra mayúscula

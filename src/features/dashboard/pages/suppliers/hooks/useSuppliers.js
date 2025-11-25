@@ -10,10 +10,14 @@ const transformSupplierFromBackend = (supplier) => {
     nit: supplier.nit,
     empresa: supplier.nombre_empresa,
     encargado: supplier.nombre_encargado,
-    telefono: supplier.telefono,
-    correo: supplier.correo,
+    telefono_entidad: supplier.telefono_entidad,
+    telefono_encargado: supplier.telefono_encargado,
+    correo_principal: supplier.correo_principal,
+    correo_secundario: supplier.correo_secundario,
     direccion: supplier.direccion,
-    estado: supplier.estado ? 'Activo' : 'Inactivo',
+    estado: supplier.estado,
+    observaciones: supplier.observaciones,
+    fecha_registro: supplier.fecha_registro,
     // Mantener los campos originales para actualizaciones
     _backendData: supplier
   };
@@ -25,10 +29,13 @@ const transformSupplierToBackend = (supplier) => {
     nit: supplier.nit,
     nombre_empresa: supplier.empresa,
     nombre_encargado: supplier.encargado,
-    telefono: supplier.telefono,
-    correo: supplier.correo,
+    telefono_entidad: supplier.telefono_entidad,
+    telefono_encargado: supplier.telefono_encargado,
+    correo_principal: supplier.correo_principal,
+    correo_secundario: supplier.correo_secundario,
     direccion: supplier.direccion,
-    estado: supplier.estado === 'Activo' || supplier.estado === true
+    estado: supplier.estado,
+    observaciones: supplier.observaciones
   };
 };
 
@@ -115,17 +122,15 @@ export const useSuppliers = () => {
   const changeSupplierStatus = useCallback(async (id, newStatus) => {
     try {
       setLoading(true);
-      // Convertir 'Activo'/'Inactivo' a boolean
-      const statusBoolean = newStatus === 'Activo' || newStatus === true;
-      await suppliersApi.changeSupplierStatus(id, statusBoolean);
-      setSuppliers(prev => 
-        prev.map(supplier => 
-          supplier.id === id 
-            ? { ...supplier, estado: newStatus } 
+      await suppliersApi.changeSupplierStatus(id, { estado: newStatus });
+      setSuppliers(prev =>
+        prev.map(supplier =>
+          supplier.id === id
+            ? { ...supplier, estado: newStatus }
             : supplier
         )
       );
-      toast.success(`Proveedor ${newStatus ? 'activado' : 'desactivado'} exitosamente`);
+      toast.success(`Proveedor ${newStatus === 'Activo' ? 'activado' : 'desactivado'} exitosamente`);
     } catch (err) {
       setError(err.message);
       toast.error('Error al cambiar estado del proveedor');

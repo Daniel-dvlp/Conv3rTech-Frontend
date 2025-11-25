@@ -1,19 +1,18 @@
-import { toast } from 'react-toastify';
+import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
-import 'react-toastify/dist/ReactToastify.css';
 import 'sweetalert2/dist/sweetalert2.min.css';
 
 export const showToast = (message, type = 'info', options = {}) => {
-  toast[type](message, {
-    position: 'top-right',
-    autoClose: 3000,
-    hideProgressBar: false,
-    closeOnClick: true,
-    pauseOnHover: true,
-    draggable: true,
-    progress: undefined,
-    ...options,
-  });
+  // Compatibilidad con tipos: 'success', 'error', 'info', 'warning'
+  if (type === 'success') {
+    toast.success(message, options);
+  } else if (type === 'error') {
+    toast.error(message, options);
+  } else if (type === 'warning') {
+    toast(message, { icon: '⚠️', ...options });
+  } else {
+    toast(message, options);
+  }
 };
 
 export const showAlert = async ({
@@ -34,4 +33,4 @@ export const showAlert = async ({
     cancelButtonText,
     ...rest,
   });
-}; 
+};

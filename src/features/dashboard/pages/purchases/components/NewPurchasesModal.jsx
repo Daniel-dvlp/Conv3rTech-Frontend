@@ -1,6 +1,6 @@
 // src/features/dashboard/pages/purchases/NewPurchasesModal.jsx
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaPlus, FaTrash, FaEdit, FaBarcode } from "react-icons/fa";
 import { toast } from 'react-hot-toast';
@@ -23,11 +23,15 @@ const NewPurchasesModal = ({
   isOpen,
   onClose,
   onSave,
-  proveedores = [],
-  productos = [],
+  proveedores: proveedoresProp = [],
+  productos: productosProp = [],
 }) => {
+  const proveedores = useMemo(() => proveedoresProp || [], [proveedoresProp]);
+  const productos = useMemo(() => productosProp || [], [productosProp]);
+
   const modalContentRef = useRef();
   const navigate = useNavigate();
+  const formRef = useRef();
   const proveedorSelectRef = useRef();
   const fechaRegistroRef = useRef();
   const numeroReciboRef = useRef();
@@ -54,10 +58,10 @@ const NewPurchasesModal = ({
   const [purchaseData, setPurchaseData] = useState(initialState);
   const [nuevoProductoSeleccionado, setNuevoProductoSeleccionado] = useState({
     idProducto: "",
-    cantidad: 1,
+    cantidad: "",
     precioUnitarioCompra: "",
-    unidadDeMedida: "N/A",
-    codigoDeBarras: "N/A",
+    unidadDeMedida: "",
+    codigoDeBarras: "",
   });
   const [errors, setErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
@@ -69,10 +73,10 @@ const NewPurchasesModal = ({
       setPurchaseData(initialState);
       setNuevoProductoSeleccionado({
         idProducto: "",
-        cantidad: 1,
+        cantidad: "",
         precioUnitarioCompra: "",
-        unidadDeMedida: "N/A",
-        codigoDeBarras: "N/A",
+        unidadDeMedida: "",
+        codigoDeBarras: "",
       });
       setErrors({});
       setTouchedFields({});
@@ -83,44 +87,47 @@ const NewPurchasesModal = ({
       setPurchaseData(initialState);
       setNuevoProductoSeleccionado({
         idProducto: "",
-        cantidad: 1,
+        cantidad: "",
         precioUnitarioCompra: "",
-        unidadDeMedida: "N/A",
-        codigoDeBarras: "N/A",
+        unidadDeMedida: "",
+        codigoDeBarras: "",
       });
       setErrors({});
       setTouchedFields({});
       setEditingProductIndex(null);
       setIsClosingIntentionally(false);
     }
-  }, [isOpen, isClosingIntentionally, touchedFields.idProveedor, touchedFields.fechaRegistro, purchaseData.productosComprados.length]);
+  }, [isOpen, isClosingIntentionally, touchedFields.idProveedor, touchedFields.fechaRegistro, purchaseData.productosComprados.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   useEffect(() => {
-    if (nuevoProductoSeleccionado.idProducto) {
-      const productoInfo = productos.find(p => p.id === parseInt(nuevoProductoSeleccionado.idProducto));
+    if (nuevoProductoSeleccionado.idProducto && productos.length > 0) {
+      const productoInfo = productos.find(p => p.id_producto === parseInt(nuevoProductoSeleccionado.idProducto));
       if (productoInfo) {
+        
+        // Usar las propiedades correctas del módulo de productos
+        const precio = productoInfo.precio || 0;
+        const unidad = productoInfo.unidad_medida || "N/A";
+        const codigoBarras = productoInfo.codigo_barra || "N/A";
+        
         setNuevoProductoSeleccionado(prev => ({
           ...prev,
-          unidadDeMedida: productoInfo.unidadDeMedida || "N/A",
-          // Mantener precio/código de barras si se está editando y ya tenían un valor diferente
-          precioUnitarioCompra: editingProductIndex !== null
-            ? purchaseData.productosComprados[editingProductIndex]?.precioUnitarioCompra || productoInfo.precioUnitario
-            : productoInfo.precioUnitario,
+          unidadDeMedida: unidad,
+          precioUnitarioCompra: precio,
           codigoDeBarras: editingProductIndex !== null
-            ? purchaseData.productosComprados[editingProductIndex]?.codigoDeBarras || "N/A" // Usar el del producto original o N/A si no tiene
-            : "N/A", // Reiniciar a N/A si no se está editando
+            ? purchaseData.productosComprados[editingProductIndex]?.codigoDeBarras || codigoBarras
+            : codigoBarras,
         }));
       }
     } else {
       setNuevoProductoSeleccionado(prev => ({
         ...prev,
-        unidadDeMedida: "N/A",
+        unidadDeMedida: "",
         precioUnitarioCompra: "",
-        codigoDeBarras: "N/A",
+        codigoDeBarras: "",
       }));
     }
-  }, [nuevoProductoSeleccionado.idProducto, editingProductIndex, purchaseData.productosComprados]);
+  }, [nuevoProductoSeleccionado.idProducto, editingProductIndex, purchaseData.productosComprados, productos]);
 
 
   useEffect(() => {
@@ -148,7 +155,9 @@ const NewPurchasesModal = ({
         if (!value) error = 'Fecha de registro es obligatoria.';
         break;
       case 'numeroRecibo':
-        if (value && !/^[0-9-]+$/.test(value)) {
+        if (!value || value.trim() === '') {
+          error = 'Número de recibo es obligatorio.';
+        } else if (!/^[0-9-]+$/.test(value)) {
           error = 'Solo números y guiones son permitidos.';
         }
         break;
@@ -248,17 +257,18 @@ const NewPurchasesModal = ({
       return;
     }
 
-    const productoInfo = productos.find(p => p.id === parseInt(idProducto));
+    const productoInfo = productos.find(p => p.id_producto === parseInt(idProducto));
     if (!productoInfo) {
       setErrors(prev => ({ ...prev, nuevoProducto: "Producto no encontrado en la lista." }));
       return;
     }
 
+
     const newProduct = {
       idProducto: parseInt(idProducto),
       nombre: productoInfo.nombre,
       modelo: productoInfo.modelo,
-      unidadDeMedida: productoInfo.unidadDeMedida,
+      unidadDeMedida: productoInfo.unidad_medida || "N/A",
       cantidad: parseInt(cantidad),
       precioUnitarioCompra: parseFloat(precioUnitarioCompra),
       codigoDeBarras: codigoDeBarras === "N/A" ? "" : codigoDeBarras, // Guardar como string vacío si es N/A
@@ -346,116 +356,89 @@ const NewPurchasesModal = ({
     }
   };
 
-  const validateForm = () => {
-    let isValid = true;
-    const newErrors = {};
+  // (validateForm eliminado; la validación vive en handleSubmit)
 
-    if (!purchaseData.idProveedor) {
-      newErrors.idProveedor = "Debe seleccionar un proveedor.";
-      isValid = false;
-    }
-    if (!purchaseData.fechaRegistro) {
-      newErrors.fechaRegistro = "Fecha de registro es obligatoria.";
-      isValid = false;
-    }
-    if (purchaseData.productosComprados.length === 0) {
-      newErrors.productosComprados = "Debe agregar al menos un producto.";
-      isValid = false;
-    }
-    if (purchaseData.numeroRecibo && !/^[0-9-]+$/.test(purchaseData.numeroRecibo)) {
-      newErrors.numeroRecibo = 'Solo números y guiones son permitidos.';
-      isValid = false;
-    }
-
-    setErrors(newErrors);
-    return isValid;
-  };
-
-  const scrollToError = () => {
-    const errorFieldNames = Object.keys(errors).filter(key => errors[key]);
-    if (errorFieldNames.length > 0) {
-      let targetElement = null;
-      let refToFocus = null;
-
-      // Prioridad de scroll y foco
-      if (errors.idProveedor && proveedorSelectRef.current) {
-        targetElement = proveedorSelectRef.current;
-        refToFocus = proveedorSelectRef.current.querySelector('select');
-      } else if (errors.fechaRegistro && fechaRegistroRef.current) {
-        targetElement = fechaRegistroRef.current;
-        refToFocus = fechaRegistroRef.current;
-      } else if (errors.numeroRecibo && numeroReciboRef.current) {
-        targetElement = numeroReciboRef.current;
-        refToFocus = numeroReciboRef.current;
-      } else if (errors.productosComprados && productoSectionRef.current) {
-        // Si el error es de la lista de productos vacía, se enfoca en el select de añadir producto
-        targetElement = productoSectionRef.current;
-        refToFocus = productoSectionRef.current.querySelector('select[name="idProducto"]');
-      } else if (errors.nuevoProducto && productoSectionRef.current) {
-        // Si el error es de un campo específico al añadir/editar producto
-        targetElement = productoSectionRef.current;
-        if (errors.nuevoProducto.includes("Seleccione un producto")) {
-          refToFocus = productoSectionRef.current.querySelector('select[name="idProducto"]');
-        } else if (errors.nuevoProducto.includes("Cantidad")) {
-          refToFocus = nuevoProductoCantidadRef.current;
-        } else if (errors.nuevoProducto.includes("precio unitario")) {
-          refToFocus = nuevoProductoPrecioRef.current;
-        }
-      }
-
-      if (targetElement && modalContentRef.current) {
-        const modalScrollContainer = modalContentRef.current;
-        const offset = 150; // Ajuste para que quede más centrado en la pantalla
-
-        const elementRect = targetElement.getBoundingClientRect();
-        const containerRect = modalScrollContainer.getBoundingClientRect();
-
-        const elementTopInContainer = elementRect.top - containerRect.top;
-
-        modalScrollContainer.scrollTo({
-          top: modalScrollContainer.scrollTop + elementTopInContainer - offset,
-          behavior: 'smooth'
-        });
-
-        if (refToFocus) {
-          refToFocus.focus();
-        }
-      }
-    }
-  };
+  // (scrollToError eliminado; el enfoque se gestiona en el flujo de errores inline)
 
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Marcar todos los campos principales como "tocados" para que se muestren los errores
-    const allFieldNames = ['idProveedor', 'fechaRegistro', 'numeroRecibo', 'productosComprados'];
-    const updatedTouchedFields = {};
-    allFieldNames.forEach(name => {
-      updatedTouchedFields[name] = true;
-    });
-    setTouchedFields(prev => ({ ...prev, ...updatedTouchedFields }));
-
-    if (!validateForm()) {
-      console.log("Errores de validación:", errors); // Para depuración
-      scrollToError();
-      toast.error("Por favor, corrige los errores en el formulario.");
+    // Validación básica como en CreateClientModal
+    const newErrors = {};
+    
+    if (!purchaseData.numeroRecibo.trim()) {
+      newErrors.numeroRecibo = "El número de recibo es requerido";
+    }
+    
+    if (!purchaseData.fechaRegistro) {
+      newErrors.fechaRegistro = "La fecha de registro es requerida";
+    }
+    
+    if (!purchaseData.idProveedor) {
+      newErrors.idProveedor = "El proveedor es requerido";
+    }
+    
+    if (purchaseData.productosComprados.length === 0) {
+      newErrors.productosComprados = "Debe agregar al menos un producto";
+    }
+    
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      // Scroll to first error
+      setTimeout(() => {
+        const firstError = formRef.current?.querySelector('.text-red-500');
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
       return;
     }
-
-    onSave({
-      numeroRecibo: purchaseData.numeroRecibo,
-      proveedor: purchaseData.nombreProveedor,
+    
+    // Preparar datos en formato que espera el hook (frontend format)
+    const compraData = {
+      numeroRecibo: purchaseData.numeroRecibo.trim(),
+      idProveedor: Number(purchaseData.idProveedor),
       fechaRegistro: purchaseData.fechaRegistro,
-      productos: purchaseData.productosComprados,
-      observaciones: purchaseData.observaciones,
-      subtotal: purchaseData.subtotalProductos,
-      iva: purchaseData.iva,
-      total: purchaseData.total,
-    });
-    toast.success("Compra registrada correctamente.");
-    setIsClosingIntentionally(true); // Indicar que el cierre es intencional para resetear el estado
-    onClose();
+      fechaRecibo: purchaseData.fechaRegistro, // El hook usa fechaRecibo o fechaRegistro
+      observaciones: purchaseData.observaciones?.trim() || "",
+      productos: purchaseData.productosComprados.map(prod => ({
+        idProducto: Number(prod.idProducto),
+        cantidad: Number(prod.cantidad),
+        precioUnitarioCompra: Number(prod.precioUnitarioCompra),
+        codigoDeBarra: prod.codigoDeBarras || 'N/A',
+        nombre: prod.nombre,
+        modelo: prod.modelo,
+        unidadDeMedida: prod.unidadDeMedida
+      })),
+      subtotal: Number(purchaseData.subtotalProductos),
+      iva: Number(purchaseData.iva),
+      total: Number(purchaseData.total),
+      estado: 'Registrada'
+    };
+    
+    console.log("📝 Enviando datos de compra:", compraData);
+    
+    try {
+      await onSave(compraData);
+      setIsClosingIntentionally(true);
+      onClose();
+    } catch (error) {
+      console.error("❌ Error al guardar la compra:", error);
+      
+      // Manejo de errores simplificado como en CreateClientModal
+      let mensajeError = "Error al guardar la compra";
+      
+      if (error.response?.data?.message) {
+        mensajeError = error.response.data.message;
+      } else if (error.response?.data?.error) {
+        mensajeError = error.response.data.error;
+      } else if (error.message) {
+        mensajeError = error.message;
+      }
+      
+      toast.error(mensajeError);
+    }
   };
 
   const handleCloseModal = () => {
@@ -497,11 +480,11 @@ const NewPurchasesModal = ({
         </header>
 
         {/* El formulario es la parte desplazable */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300">
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="p-6 space-y-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300">
           <FormSection title="Información General">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <FormLabel htmlFor="numeroRecibo">Número de Recibo (Opcional)</FormLabel>
+                <FormLabel htmlFor="numeroRecibo"><span className="text-red-500">*</span> Número de Recibo</FormLabel>
                 <input
                   id="numeroRecibo"
                   type="text"
@@ -509,18 +492,25 @@ const NewPurchasesModal = ({
                   value={purchaseData.numeroRecibo}
                   onChange={handleChange}
                   onBlur={() => handleBlur('numeroRecibo')}
+                  onKeyPress={(e) => {
+                    const charCode = e.charCode;
+                    if ((charCode < 48 || charCode > 57) && (charCode < 65 || charCode > 90) && (charCode < 97 || charCode > 122)) {
+                      e.preventDefault();
+                    }
+                  }}
                   className={`${inputBaseStyle} ${
                     errors.numeroRecibo ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Ej: REC-2024001"
+                  required
                   ref={numeroReciboRef}
+                  maxLength="50"
                 />
                 {errors.numeroRecibo && (
                   <p className="text-red-500 text-sm mt-1">{errors.numeroRecibo}</p>
                 )}
               </div>
               <div>
-                <FormLabel htmlFor="fechaRegistro">Fecha de Registro <span className="text-red-500">*</span></FormLabel>
+                <FormLabel htmlFor="fechaRegistro"><span className="text-red-500">*</span> Fecha de Registro</FormLabel>
                 <input
                   id="fechaRegistro"
                   type="date"
@@ -542,40 +532,60 @@ const NewPurchasesModal = ({
           </FormSection>
 
           <FormSection title="Proveedor">
-            <div ref={proveedorSelectRef}>
-              <FormLabel htmlFor="idProveedor">Proveedor <span className="text-red-500">*</span></FormLabel>
-              <select
-                id="idProveedor"
-                name="idProveedor"
-                value={purchaseData.idProveedor}
-                onChange={handleChange}
-                onBlur={() => handleBlur('idProveedor')}
-                className={`${inputBaseStyle} appearance-none ${
-                  errors.idProveedor ? "border-red-500" : "border-gray-300"
-                }`}
-                required
-              >
-                <option value="">Seleccione un proveedor</option>
-                {proveedores.map((prov) => (
-                  <option key={prov.id} value={prov.id}>
-                    {prov.nombre} - NIT: {prov.nit}
-                  </option>
-                ))}
-              </select>
-              {errors.idProveedor && (
-                <p className="text-red-500 text-sm mt-1">{errors.idProveedor}</p>
-              )}
+            <div>
+              <div className="flex items-end gap-2">
+                <div className="flex-grow">
+                  <FormLabel htmlFor="idProveedor"><span className="text-red-500">*</span> Proveedor</FormLabel>
+                  <select
+                    id="idProveedor"
+                    name="idProveedor"
+                    value={purchaseData.idProveedor}
+                    onChange={handleChange}
+                    onBlur={() => handleBlur('idProveedor')}
+                    className={`${inputBaseStyle} appearance-none ${
+                      errors.idProveedor ? "border-red-500" : "border-gray-300"
+                    }`}
+                    required
+                    ref={proveedorSelectRef}
+                  >
+                    <option value="">Seleccione un proveedor</option>
+                    {proveedores && proveedores.length > 0 ? proveedores.map((prov) => (
+                      <option key={prov.id} value={prov.id}>
+                        {prov.nombre} - NIT: {prov.nit}
+                      </option>
+                    )) : (
+                      <option value="" disabled>No hay proveedores disponibles</option>
+                    )}
+                  </select>
+                  {errors.idProveedor && (
+                    <p className="text-red-500 text-sm mt-1">{errors.idProveedor}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard/proveedores')}
+                  className="inline-flex items-center justify-center p-2 rounded-lg text-white bg-conv3r-dark hover:bg-conv3r-dark-700 transition-colors h-[42px] mt-auto"
+                  title="Registrar nuevo proveedor"
+                >
+                  <FaPlus size={16} />
+                </button>
+              </div>
             </div>
           </FormSection>
 
-          <FormSection title="Productos de la Compra">
+          <FormSection title="Información de los Productos">
             {errors.productosComprados && (
               <p className="text-red-500 text-sm mb-2">{errors.productosComprados}</p>
             )}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3" ref={productoSectionRef}>
+              {errors.nuevoProducto && errors.nuevoProducto.includes("Cantidad") && (
+                <div className="md:col-span-4">
+                  <p className="text-red-500 text-sm mb-1">{errors.nuevoProducto}</p>
+                </div>
+              )}
               <div className="md:col-span-2 flex items-end gap-2">
                 <div className="flex-grow">
-                  <FormLabel>Producto <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel><span className="text-red-500">*</span> Producto</FormLabel>
                   <select
                     value={nuevoProductoSeleccionado.idProducto}
                     onChange={handleNuevoProductoChange}
@@ -585,11 +595,13 @@ const NewPurchasesModal = ({
                     }`}
                   >
                     <option value="">Seleccionar producto</option>
-                    {productos.map((prod) => (
-                      <option key={prod.id} value={prod.id}>
+                    {productos && productos.length > 0 ? productos.map((prod) => (
+                      <option key={prod.id_producto} value={prod.id_producto}>
                         {prod.nombre} ({prod.modelo})
                       </option>
-                    ))}
+                    )) : (
+                      <option value="" disabled>No hay productos disponibles</option>
+                    )}
                   </select>
                   {errors.nuevoProducto && (errors.nuevoProducto.includes("Seleccione") || errors.nuevoProducto.includes("encontrado")) && (
                     <p className="text-red-500 text-sm mt-1">{errors.nuevoProducto}</p>
@@ -617,36 +629,43 @@ const NewPurchasesModal = ({
                 />
               </div>
               <div>
-                <FormLabel>Cantidad <span className="text-red-500">*</span></FormLabel>
+                <FormLabel><span className="text-red-500">*</span> Cantidad</FormLabel>
                 <input
-                  type="number"
+                  type="text"
                   name="cantidad"
-                  min="1"
                   value={nuevoProductoSeleccionado.cantidad}
                   onChange={handleNuevoProductoChange}
+                  onKeyPress={(e) => {
+                    const charCode = e.charCode;
+                    if ((charCode < 48 || charCode > 57) && charCode !== 46 && charCode !== 44) {
+                      e.preventDefault();
+                    }
+                  }}
                   className={`${inputBaseStyle} ${
                     errors.nuevoProducto && errors.nuevoProducto.includes("Cantidad") ? "border-red-500" : "border-gray-300"
                   }`}
                   ref={nuevoProductoCantidadRef}
+                  maxLength="10"
                 />
-                {errors.nuevoProducto && errors.nuevoProducto.includes("Cantidad") && (
-                  <p className="text-red-500 text-sm mt-1">{errors.nuevoProducto}</p>
-                )}
               </div>
               <div className="md:col-span-2">
-                <FormLabel>Precio Unitario de Compra <span className="text-red-500">*</span></FormLabel>
+                <FormLabel><span className="text-red-500">*</span> Precio Unitario de Compra</FormLabel>
                 <input
-                  type="number"
+                  type="text"
                   name="precioUnitarioCompra"
-                  min="0"
-                  step="0.01"
                   value={nuevoProductoSeleccionado.precioUnitarioCompra}
                   onChange={handleNuevoProductoChange}
+                  onKeyPress={(e) => {
+                    const charCode = e.charCode;
+                    if ((charCode < 48 || charCode > 57) && charCode !== 46 && charCode !== 44) {
+                      e.preventDefault();
+                    }
+                  }}
                   className={`${inputBaseStyle} ${
                     errors.nuevoProducto && errors.nuevoProducto.includes("precio unitario") ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Ej: 15000.00"
                   ref={nuevoProductoPrecioRef}
+                  maxLength="20"
                 />
                 {errors.nuevoProducto && errors.nuevoProducto.includes("precio unitario") && (
                   <p className="text-red-500 text-sm mt-1">{errors.nuevoProducto}</p>
@@ -742,9 +761,7 @@ const NewPurchasesModal = ({
                 </div>
               </div>
             )}
-          </FormSection>
 
-          <FormSection title="Resumen Financiero">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="font-medium text-gray-700 mb-2">Detalles</h4>
@@ -773,7 +790,7 @@ const NewPurchasesModal = ({
               onChange={handleChange}
               rows={3}
               className={inputBaseStyle}
-              placeholder="Añade cualquier nota o detalle relevante sobre la compra..."
+              maxLength="500"
             ></textarea>
           </FormSection>
 

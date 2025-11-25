@@ -59,11 +59,32 @@ export const purchasesApi = {
   },
 
   // Cambiar estado de la compra
-  changePurchaseStatus: async (id, newStatus) => {
+  changePurchaseStatus: async (id, newStatus, motivo) => {
     try {
-      await api.patch(`${PURCHASES_ENDPOINT}/state/${id}`, {
-        estado: newStatus
-      });
+      const payload = { estado: newStatus, ...(motivo ? { motivo } : {}) };
+      // Intento 1: PATCH /purchases/state/:id (documentado)
+      try {
+        await api.patch(`${PURCHASES_ENDPOINT}/state/${id}`, payload);
+        return;
+      } catch (err1) {
+        const status1 = err1?.response?.status;
+        // Intento 2: PATCH /purchases/:id/state (patrón usado en otros módulos)
+        if (status1 === 404 || status1 === 400 || status1 === 405) {
+          try {
+            await api.patch(`${PURCHASES_ENDPOINT}/${id}/state`, payload);
+            return;
+          } catch (err2) {
+            const status2 = err2?.response?.status;
+            // Intento 3: PUT /purchases/:id con sólo { estado }
+            if (status2 === 404 || status2 === 400 || status2 === 405) {
+              await api.put(`${PURCHASES_ENDPOINT}/${id}`, payload);
+              return;
+            }
+            throw err2;
+          }
+        }
+        throw err1;
+      }
     } catch (error) {
       console.error('Error al cambiar estado de la compra:', error);
       throw error;
