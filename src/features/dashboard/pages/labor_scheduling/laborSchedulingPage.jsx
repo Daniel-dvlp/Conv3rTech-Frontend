@@ -15,7 +15,6 @@ const LaborSchedulingPage = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('');
-  const [selectedUsers, setSelectedUsers] = useState([]); // Vacía al inicio
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState('create');
   const [modalData, setModalData] = useState(null);
@@ -27,6 +26,7 @@ const LaborSchedulingPage = () => {
   const [showEventContextMenu, setShowEventContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [selectedEventForMenu, setSelectedEventForMenu] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null); // Changed from selectedUsers array to single selectedUser
   const [dateRange, setDateRange] = useState({
     start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(),
     end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
@@ -54,13 +54,16 @@ const LaborSchedulingPage = () => {
         }
       }
 
-      // Poblar lista de usuarios (todos los usuarios)
-      const allUsersList = allUsers.map(user => ({
-        id: user.id_usuario,
-        name: `${user.nombre} ${user.apellido}`,
-        documento: user.documento,
-      }));
-      setUserList(allUsersList);
+      // Poblar lista de usuarios (solo usuarios con programaciones)
+      const usersWithSchedules = new Set(allEvents.map(event => event.extendedProps?.userId).filter(Boolean));
+      const usersWithSchedulesList = allUsers
+        .filter(user => usersWithSchedules.has(user.id_usuario))
+        .map(user => ({
+          id: user.id_usuario,
+          name: `${user.nombre} ${user.apellido}`,
+          documento: user.documento,
+        }));
+      setUserList(usersWithSchedulesList);
     } catch (error) {
       console.error('Error cargando eventos:', error);
       // Si el backend no está disponible, no mostrar error al usuario en desarrollo
@@ -79,13 +82,11 @@ const LaborSchedulingPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange.start, dateRange.end]);
 
-  // Si no hay usuarios seleccionados (lista vacía), mostrar todos los eventos
-  // Si hay usuarios seleccionados, filtrar por esos usuarios
-  const filteredEvents = selectedUsers.length === 0
-    ? events // Mostrar todos los eventos cuando no hay usuarios seleccionados
-    : events.filter(ev =>
-        ev.extendedProps?.userId && selectedUsers.includes(ev.extendedProps.userId)
-      );
+  // Si no hay usuario seleccionado, mostrar todos los eventos
+  // Si hay usuario seleccionado, mostrar solo sus eventos
+  const filteredEvents = selectedUser
+    ? events.filter(ev => ev.extendedProps?.userId === selectedUser)
+    : events;
 
   // Abrir modal para crear
   const handleCreate = (dateInfo) => {
@@ -279,8 +280,8 @@ const LaborSchedulingPage = () => {
             users={userList}
             filter={filter}
             setFilter={setFilter}
-            selected={selectedUsers}
-            setSelected={setSelectedUsers}
+            selectedUser={selectedUser}
+            setSelectedUser={setSelectedUser}
             onCreate={handleCreate}
           />
         </div>
