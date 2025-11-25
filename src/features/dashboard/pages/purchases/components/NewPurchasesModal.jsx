@@ -1,6 +1,6 @@
 // src/features/dashboard/pages/purchases/NewPurchasesModal.jsx
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from 'react-router-dom';
 import { FaTimes, FaPlus, FaTrash, FaEdit, FaBarcode } from "react-icons/fa";
 import { toast } from 'react-hot-toast';
@@ -26,13 +26,12 @@ const NewPurchasesModal = ({
   proveedores: proveedoresProp = [],
   productos: productosProp = [],
 }) => {
-  const proveedores = proveedoresProp || [];
-  const productos = productosProp || [];
+  const proveedores = useMemo(() => proveedoresProp || [], [proveedoresProp]);
+  const productos = useMemo(() => productosProp || [], [productosProp]);
 
-  console.log("Productos recibidos en modal:", productos); // Debug
-  console.log("Proveedores recibidos en modal:", proveedores); // Debug
   const modalContentRef = useRef();
   const navigate = useNavigate();
+  const formRef = useRef();
   const proveedorSelectRef = useRef();
   const fechaRegistroRef = useRef();
   const numeroReciboRef = useRef();
@@ -98,15 +97,13 @@ const NewPurchasesModal = ({
       setEditingProductIndex(null);
       setIsClosingIntentionally(false);
     }
-  }, [isOpen, isClosingIntentionally, touchedFields.idProveedor, touchedFields.fechaRegistro, purchaseData.productosComprados.length]);
+  }, [isOpen, isClosingIntentionally, touchedFields.idProveedor, touchedFields.fechaRegistro, purchaseData.productosComprados.length]); // eslint-disable-line react-hooks/exhaustive-deps
 
 
   useEffect(() => {
     if (nuevoProductoSeleccionado.idProducto && productos.length > 0) {
       const productoInfo = productos.find(p => p.id_producto === parseInt(nuevoProductoSeleccionado.idProducto));
       if (productoInfo) {
-        console.log("Producto seleccionado:", productoInfo); // Debug
-        console.log("Propiedades del producto:", Object.keys(productoInfo)); // Ver qué propiedades tiene
         
         // Usar las propiedades correctas del módulo de productos
         const precio = productoInfo.precio || 0;
@@ -266,9 +263,6 @@ const NewPurchasesModal = ({
       return;
     }
 
-    // Debug: Verificar las propiedades del producto
-    console.log("Producto a agregar:", productoInfo);
-    console.log("Propiedades del producto:", Object.keys(productoInfo));
 
     const newProduct = {
       idProducto: parseInt(idProducto),
@@ -391,6 +385,13 @@ const NewPurchasesModal = ({
     
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
+      // Scroll to first error
+      setTimeout(() => {
+        const firstError = formRef.current?.querySelector('.text-red-500');
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
       return;
     }
     
@@ -479,11 +480,11 @@ const NewPurchasesModal = ({
         </header>
 
         {/* El formulario es la parte desplazable */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300">
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="p-6 space-y-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300">
           <FormSection title="Información General">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <FormLabel htmlFor="numeroRecibo">Número de Recibo <span className="text-red-500">*</span></FormLabel>
+                <FormLabel htmlFor="numeroRecibo"><span className="text-red-500">*</span> Número de Recibo</FormLabel>
                 <input
                   id="numeroRecibo"
                   type="text"
@@ -491,19 +492,25 @@ const NewPurchasesModal = ({
                   value={purchaseData.numeroRecibo}
                   onChange={handleChange}
                   onBlur={() => handleBlur('numeroRecibo')}
+                  onKeyPress={(e) => {
+                    const charCode = e.charCode;
+                    if ((charCode < 48 || charCode > 57) && (charCode < 65 || charCode > 90) && (charCode < 97 || charCode > 122)) {
+                      e.preventDefault();
+                    }
+                  }}
                   className={`${inputBaseStyle} ${
                     errors.numeroRecibo ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Ej: REC-2024001"
                   required
                   ref={numeroReciboRef}
+                  maxLength="50"
                 />
                 {errors.numeroRecibo && (
                   <p className="text-red-500 text-sm mt-1">{errors.numeroRecibo}</p>
                 )}
               </div>
               <div>
-                <FormLabel htmlFor="fechaRegistro">Fecha de Registro <span className="text-red-500">*</span></FormLabel>
+                <FormLabel htmlFor="fechaRegistro"><span className="text-red-500">*</span> Fecha de Registro</FormLabel>
                 <input
                   id="fechaRegistro"
                   type="date"
@@ -526,48 +533,62 @@ const NewPurchasesModal = ({
 
           <FormSection title="Proveedor">
             <div>
-              <FormLabel htmlFor="idProveedor">Proveedor <span className="text-red-500">*</span></FormLabel>
-              <select
-                id="idProveedor"
-                name="idProveedor"
-                value={purchaseData.idProveedor}
-                onChange={handleChange}
-                onBlur={() => handleBlur('idProveedor')}
-                className={`${inputBaseStyle} appearance-none ${
-                  errors.idProveedor ? "border-red-500" : "border-gray-300"
-                }`}
-                required
-                ref={proveedorSelectRef}
-              >
-                <option value="">Seleccione un proveedor</option>
-                {proveedores && proveedores.length > 0 ? proveedores.map((prov) => (
-                  <option key={prov.id} value={prov.id}>
-                    {prov.nombre} - NIT: {prov.nit}
-                  </option>
-                )) : (
-                  <option value="" disabled>No hay proveedores disponibles</option>
-                )}
-              </select>
-              {errors.idProveedor && (
-                <p className="text-red-500 text-sm mt-1">{errors.idProveedor}</p>
-              )}
+              <div className="flex items-end gap-2">
+                <div className="flex-grow">
+                  <FormLabel htmlFor="idProveedor"><span className="text-red-500">*</span> Proveedor</FormLabel>
+                  <select
+                    id="idProveedor"
+                    name="idProveedor"
+                    value={purchaseData.idProveedor}
+                    onChange={handleChange}
+                    onBlur={() => handleBlur('idProveedor')}
+                    className={`${inputBaseStyle} appearance-none ${
+                      errors.idProveedor ? "border-red-500" : "border-gray-300"
+                    }`}
+                    required
+                    ref={proveedorSelectRef}
+                  >
+                    <option value="">Seleccione un proveedor</option>
+                    {proveedores && proveedores.length > 0 ? proveedores.map((prov) => (
+                      <option key={prov.id} value={prov.id}>
+                        {prov.nombre} - NIT: {prov.nit}
+                      </option>
+                    )) : (
+                      <option value="" disabled>No hay proveedores disponibles</option>
+                    )}
+                  </select>
+                  {errors.idProveedor && (
+                    <p className="text-red-500 text-sm mt-1">{errors.idProveedor}</p>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/dashboard/proveedores')}
+                  className="inline-flex items-center justify-center p-2 rounded-lg text-white bg-conv3r-dark hover:bg-conv3r-dark-700 transition-colors h-[42px] mt-auto"
+                  title="Registrar nuevo proveedor"
+                >
+                  <FaPlus size={16} />
+                </button>
+              </div>
             </div>
           </FormSection>
 
-          <FormSection title="Productos de la Compra">
+          <FormSection title="Información de los Productos">
             {errors.productosComprados && (
               <p className="text-red-500 text-sm mb-2">{errors.productosComprados}</p>
             )}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3" ref={productoSectionRef}>
+              {errors.nuevoProducto && errors.nuevoProducto.includes("Cantidad") && (
+                <div className="md:col-span-4">
+                  <p className="text-red-500 text-sm mb-1">{errors.nuevoProducto}</p>
+                </div>
+              )}
               <div className="md:col-span-2 flex items-end gap-2">
                 <div className="flex-grow">
-                  <FormLabel>Producto <span className="text-red-500">*</span></FormLabel>
+                  <FormLabel><span className="text-red-500">*</span> Producto</FormLabel>
                   <select
                     value={nuevoProductoSeleccionado.idProducto}
-                    onChange={(e) => {
-                      console.log("Producto seleccionado ID:", e.target.value); // Debug
-                      handleNuevoProductoChange(e);
-                    }}
+                    onChange={handleNuevoProductoChange}
                     name="idProducto"
                     className={`${inputBaseStyle} ${
                       errors.nuevoProducto && errors.nuevoProducto.includes("Seleccione") ? "border-red-500" : "border-gray-300"
@@ -608,36 +629,43 @@ const NewPurchasesModal = ({
                 />
               </div>
               <div>
-                <FormLabel>Cantidad <span className="text-red-500">*</span></FormLabel>
+                <FormLabel><span className="text-red-500">*</span> Cantidad</FormLabel>
                 <input
-                  type="number"
+                  type="text"
                   name="cantidad"
-                  min="1"
                   value={nuevoProductoSeleccionado.cantidad}
                   onChange={handleNuevoProductoChange}
+                  onKeyPress={(e) => {
+                    const charCode = e.charCode;
+                    if ((charCode < 48 || charCode > 57) && charCode !== 46 && charCode !== 44) {
+                      e.preventDefault();
+                    }
+                  }}
                   className={`${inputBaseStyle} ${
                     errors.nuevoProducto && errors.nuevoProducto.includes("Cantidad") ? "border-red-500" : "border-gray-300"
                   }`}
                   ref={nuevoProductoCantidadRef}
+                  maxLength="10"
                 />
-                {errors.nuevoProducto && errors.nuevoProducto.includes("Cantidad") && (
-                  <p className="text-red-500 text-sm mt-1">{errors.nuevoProducto}</p>
-                )}
               </div>
               <div className="md:col-span-2">
-                <FormLabel>Precio Unitario de Compra <span className="text-red-500">*</span></FormLabel>
+                <FormLabel><span className="text-red-500">*</span> Precio Unitario de Compra</FormLabel>
                 <input
-                  type="number"
+                  type="text"
                   name="precioUnitarioCompra"
-                  min="0"
-                  step="0.01"
                   value={nuevoProductoSeleccionado.precioUnitarioCompra}
                   onChange={handleNuevoProductoChange}
+                  onKeyPress={(e) => {
+                    const charCode = e.charCode;
+                    if ((charCode < 48 || charCode > 57) && charCode !== 46 && charCode !== 44) {
+                      e.preventDefault();
+                    }
+                  }}
                   className={`${inputBaseStyle} ${
                     errors.nuevoProducto && errors.nuevoProducto.includes("precio unitario") ? "border-red-500" : "border-gray-300"
                   }`}
-                  placeholder="Ej: 15000.00"
                   ref={nuevoProductoPrecioRef}
+                  maxLength="20"
                 />
                 {errors.nuevoProducto && errors.nuevoProducto.includes("precio unitario") && (
                   <p className="text-red-500 text-sm mt-1">{errors.nuevoProducto}</p>
@@ -733,9 +761,7 @@ const NewPurchasesModal = ({
                 </div>
               </div>
             )}
-          </FormSection>
 
-          <FormSection title="Resumen Financiero">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
               <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
                 <h4 className="font-medium text-gray-700 mb-2">Detalles</h4>
@@ -764,7 +790,7 @@ const NewPurchasesModal = ({
               onChange={handleChange}
               rows={3}
               className={inputBaseStyle}
-              placeholder="Añade cualquier nota o detalle relevante sobre la compra..."
+              maxLength="500"
             ></textarea>
           </FormSection>
 
