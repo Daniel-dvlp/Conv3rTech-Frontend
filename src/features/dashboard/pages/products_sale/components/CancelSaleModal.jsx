@@ -78,11 +78,11 @@ const CancelSaleModal = ({ isOpen, onClose, onConfirm, sale }) => {
             {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800">
+          <div className="bg-blue-50 border border-conv3r-dark rounded-lg p-3">
+            <p className="text-sm text-conv3r-dark">
               <strong>Venta:</strong> {sale.numero_venta || `#${sale.id_venta}`}
             </p>
-            <p className="text-sm text-yellow-800 mt-1">
+            <p className="text-sm text-conv3r-dark mt-1">
               Esta acción cambiará el estado a "Anulada" y no se podrá revertir desde esta pantalla.
             </p>
           </div>
