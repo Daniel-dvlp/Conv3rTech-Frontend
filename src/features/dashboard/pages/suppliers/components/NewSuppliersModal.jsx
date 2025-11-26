@@ -36,10 +36,6 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const formRef = useRef(null);
 
-  // Eliminamos useRef para modalContentRef y mouseDownTarget ya que no se usarán para cerrar el modal al hacer clic fuera
-  // const modalContentRef = useRef(null);
-  // const mouseDownTarget = useRef(null);
-
   // Resetear el formulario cuando se abre/cierra
   useEffect(() => {
     if (isOpen) {
@@ -47,7 +43,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
       setErrors({});
       setFormSubmitted(false);
     }
-  }, [isOpen]); // Dependencia solo en isOpen para resetear al abrir
+  }, [isOpen]);
 
   // Validaciones
   const validateField = (name, value) => {
@@ -105,9 +101,9 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     const { name, value } = e.target;
     setProviderData((prev) => ({ ...prev, [name]: value }));
     if (formSubmitted) {
-        validateField(name, value);
+      validateField(name, value);
     } else {
-        setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -173,19 +169,23 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
       return;
     }
 
+    // Función auxiliar para convertir cadenas vacías a null
+    const sanitize = (value) => (value && value.trim() !== "" ? value : null);
+
     const newProvider = {
-      nit: providerData.nit,
-      empresa: providerData.empresa,
-      encargado: providerData.encargado,
-      telefono_entidad: providerData.telefono_entidad,
-      telefono_encargado: providerData.telefono_encargado,
+      nit: sanitize(providerData.nit),
+      empresa: providerData.empresa, // Changed to match useSuppliers expectation
+      encargado: providerData.encargado, // Changed to match useSuppliers expectation
+      telefono_entidad: sanitize(providerData.telefono_entidad),
+      telefono_encargado: sanitize(providerData.telefono_encargado),
       correo_principal: providerData.correo_principal,
-      correo_secundario: providerData.correo_secundario,
-      direccion: providerData.direccion,
+      correo_secundario: sanitize(providerData.correo_secundario),
+      direccion: sanitize(providerData.direccion),
+      observaciones: sanitize(providerData.observaciones),
       estado: "Activo", // Los nuevos proveedores inician como Activos
-      observaciones: providerData.observaciones,
     };
 
+    console.log("Enviando nuevo proveedor:", newProvider);
     onSave(newProvider);
     // El hook manejará el toast de éxito
     setProviderData(initialState);
@@ -194,20 +194,11 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     onClose();
   };
 
-  // Eliminamos handleMouseDown y handleMouseUp ya que no queremos cerrar al hacer clic fuera
-  // y por lo tanto tampoco necesitamos las referencias 'modalContentRef' y 'mouseDownTarget'.
-
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12"
-      // Eliminamos onMouseDown y onMouseUp de aquí
-    >
-      <div
-        // Eliminamos ref={modalContentRef} de aquí
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-      >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Encabezado fijo */}
         <header className="flex justify-between items-center p-4 border-b">
           <h2 className="text-2xl font-bold text-gray-800">Registrar Nuevo Proveedor</h2>
@@ -221,7 +212,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           ref={formRef}
           onSubmit={handleSubmit}
           noValidate
-          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow" // Añadimos flex-grow
+          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow"
         >
           <FormSection title="Información Entidad">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
@@ -273,7 +264,6 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                   onBlur={handleBlur}
                   onKeyPress={handleKeyPressPhone}
                   className={`${inputBaseStyle} ${errors.telefono_entidad ? 'border-red-500' : ''}`}
-                  required
                   title="Ingrese un número de teléfono válido (solo números, espacios, +, - , ( , ) )"
                   maxLength="20"
                 />
@@ -396,7 +386,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
             </div>
           </FormSection>
 
-        <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button
               type="button"
               onClick={onClose}
