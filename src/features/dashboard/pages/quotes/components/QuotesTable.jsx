@@ -9,8 +9,10 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
     return isNaN(parsedNum) ? '$0' : new Intl.NumberFormat('es-ES').format(parsedNum);
   };
 
+  const isLocked = (estado) => estado === 'Rechazada' || estado === 'Anulada' || estado === 'Aceptada';
+
   const handleDisabledAction = () => {
-    showError('No se puede realizar esta acción porque la cotización ya está rechazada/anulada.');
+    showError('No se puede realizar esta acción porque la cotización ya está aceptada o anulada.');
   };
 
   return (
@@ -75,10 +77,10 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                 </button>
 
                 <button
-                  onClick={() => (quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? handleDisabledAction() : onEdit(quote)}
+                  onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onEdit(quote)}
                   title="Editar"
-                  disabled={quote.estado === 'Rechazada' || quote.estado === 'Anulada'}
-                  className={(quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:text-yellow-600'}
+                  disabled={isLocked(quote.estado)}
+                  className={isLocked(quote.estado) ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:text-yellow-600'}
                 >
                   <FaEdit />
                 </button>
@@ -92,10 +94,10 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                 </button>
 
                 <button
-                  onClick={() => (quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? handleDisabledAction() : onCancel(quote)}
+                  onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onCancel(quote)}
                   title="Anular"
-                  disabled={quote.estado === 'Rechazada' || quote.estado === 'Anulada'}
-                  className={(quote.estado === 'Rechazada' || quote.estado === 'Anulada') ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-gray-900'}
+                  disabled={isLocked(quote.estado)}
+                  className={isLocked(quote.estado) ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-gray-900'}
                 >
                   <FaMinusCircle />
                 </button>
