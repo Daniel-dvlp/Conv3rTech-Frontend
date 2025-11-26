@@ -29,10 +29,14 @@ export const suppliersApi = {
   // Crear un nuevo proveedor
   createSupplier: async (supplierData) => {
     try {
+      console.log("API createSupplier payload:", supplierData);
       const response = await api.post(SUPPLIERS_ENDPOINT, supplierData);
       return response.data;
     } catch (error) {
       console.error('Error al crear proveedor:', error);
+      if (error.response) {
+        console.error('Detalles del error (Backend):', JSON.stringify(error.response.data, null, 2));
+      }
       throw error;
     }
   },
