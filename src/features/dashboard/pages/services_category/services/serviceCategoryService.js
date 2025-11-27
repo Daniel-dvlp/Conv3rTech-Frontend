@@ -18,22 +18,22 @@ export const serviceCategoryService = {
 
     // 🔹 VALIDACIONES DEL NOMBRE
     if (!nombre) throw new Error('El nombre no puede estar vacío.');
-    if (nombre.length < 20 || nombre.length > 50) {
-      throw new Error('El nombre debe tener entre 20 y 50 caracteres.');
+    if (nombre.length < 3 || nombre.length > 50) {
+      throw new Error('El nombre debe tener entre 3 y 50 caracteres.');
     }
-    if (/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ]/.test(nombre)) {
-      throw new Error('El nombre no puede contener caracteres especiales.');
+    if (/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ()&-]/.test(nombre)) {
+      throw new Error('El nombre contiene caracteres no permitidos.');
     }
 
     // 🔹 VALIDACIONES DE LA DESCRIPCIÓN
     if (!descripcion) throw new Error('La descripción no puede estar vacía.');
-    if (descripcion.length < 20) {
-      throw new Error('La descripción debe tener al menos 20 caracteres.');
+    if (descripcion.length < 10) {
+      throw new Error('La descripción debe tener al menos 10 caracteres.');
     }
-    if (descripcion.length < 100 || descripcion.length > 300) {
-      throw new Error('La descripción debe tener entre 100 y 300 caracteres.');
+    if (descripcion.length > 300) {
+      throw new Error('La descripción no puede superar los 300 caracteres.');
     }
-    if (/[^a-zA-Z0-9\s.,;:!?áéíóúÁÉÍÓÚñÑ]/.test(descripcion)) {
+    if (/[^a-zA-Z0-9\s.,;:!?¿¡áéíóúÁÉÍÓÚñÑ()&-]/.test(descripcion)) {
       throw new Error('La descripción contiene caracteres no permitidos.');
     }
 
@@ -56,22 +56,22 @@ export const serviceCategoryService = {
 
     // 🔹 VALIDACIONES DEL NOMBRE
     if (!nombre) throw new Error('El nombre no puede estar vacío.');
-    if (nombre.length < 20 || nombre.length > 50) {
-      throw new Error('El nombre debe tener entre 20 y 50 caracteres.');
+    if (nombre.length < 3 || nombre.length > 50) {
+      throw new Error('El nombre debe tener entre 3 y 50 caracteres.');
     }
-    if (/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ]/.test(nombre)) {
-      throw new Error('El nombre no puede contener caracteres especiales.');
+    if (/[^a-zA-Z0-9\sáéíóúÁÉÍÓÚñÑ()&-]/.test(nombre)) {
+      throw new Error('El nombre contiene caracteres no permitidos.');
     }
 
     // 🔹 VALIDACIONES DE LA DESCRIPCIÓN
     if (!descripcion) throw new Error('La descripción no puede estar vacía.');
-    if (descripcion.length < 20) {
-      throw new Error('La descripción debe tener al menos 20 caracteres.');
+    if (descripcion.length < 10) {
+      throw new Error('La descripción debe tener al menos 10 caracteres.');
     }
-    if (descripcion.length < 100 || descripcion.length > 300) {
-      throw new Error('La descripción debe tener entre 100 y 300 caracteres.');
+    if (descripcion.length > 300) {
+      throw new Error('La descripción no puede superar los 300 caracteres.');
     }
-    if (/[^a-zA-Z0-9\s.,;:!?áéíóúÁÉÍÓÚñÑ]/.test(descripcion)) {
+    if (/[^a-zA-Z0-9\s.,;:!?¿¡áéíóúÁÉÍÓÚñÑ()&-]/.test(descripcion)) {
       throw new Error('La descripción contiene caracteres no permitidos.');
     }
 

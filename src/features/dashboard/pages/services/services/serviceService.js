@@ -12,6 +12,17 @@ export const serviceService = {
   },
 
   createService: async (serviceData) => {
+    // 🟩 VALIDACIÓN: Nombre (no vacío)
+    if (!serviceData.nombre || serviceData.nombre.trim() === '') {
+      throw new Error('El nombre del servicio no puede estar vacío.');
+    }
+    if (serviceData.nombre.trim().length < 3) {
+      throw new Error('El nombre debe tener al menos 3 caracteres.');
+    }
+    if (serviceData.nombre.trim().length > 100) {
+      throw new Error('El nombre no puede superar los 100 caracteres.');
+    }
+
     // 🟩 VALIDACIÓN: Descripción
     if (!serviceData.descripcion || serviceData.descripcion.trim().length < 10) {
       throw new Error('La descripción debe tener al menos 10 caracteres.');
@@ -20,24 +31,10 @@ export const serviceService = {
       throw new Error('La descripción no puede superar los 300 caracteres.');
     }
 
-    // ✅ No se permiten caracteres especiales en la descripción
-    const regexDescripcion = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,\s-]+$/;
+    // ✅ Permitir caracteres especiales comunes en la descripción
+    const regexDescripcion = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ.,;:!?¿¡\s()&-]+$/;
     if (!regexDescripcion.test(serviceData.descripcion.trim())) {
       throw new Error('La descripción contiene caracteres no válidos.');
-    }
-
-    // 🟩 VALIDACIÓN: Nombre (no vacío)
-    if (!serviceData.nombre || serviceData.nombre.trim() === '') {
-      throw new Error('El nombre del servicio no puede estar vacío.');
-    }
-
-    // 🟩 VALIDACIÓN: Nombre único
-    const existingServices = await api.get('/services');
-    const nombreExistente = existingServices.data.some(
-      (s) => s.nombre.toLowerCase() === serviceData.nombre.trim().toLowerCase()
-    );
-    if (nombreExistente) {
-      throw new Error('Ya existe un servicio con este nombre.');
     }
 
     // 🟩 VALIDACIÓN: Precio
@@ -66,18 +63,12 @@ export const serviceService = {
     }
 
     // 🟩 VALIDACIÓN: Duración
-    if (serviceData.duracion !== undefined) {
+    if (serviceData.duracion !== undefined && serviceData.duracion !== '') {
       if (typeof serviceData.duracion !== 'string') {
-        throw new Error('La duración debe ser texto (por ejemplo: "30 minutos").');
-      }
-      if (serviceData.duracion.trim().length === 0) {
-        throw new Error('La duración no puede estar vacía.');
+        throw new Error('La duración debe ser texto (por ejemplo: "1h 30m").');
       }
       if (serviceData.duracion.trim().length > 50) {
         throw new Error('La duración no puede superar los 50 caracteres.');
-      }
-      if (serviceData.duracion.trim().match(/^0+$/)) {
-        throw new Error('La duración no puede ser cero.');
       }
     }
 

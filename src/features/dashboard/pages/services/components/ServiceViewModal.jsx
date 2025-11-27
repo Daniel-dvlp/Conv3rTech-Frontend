@@ -4,8 +4,8 @@ const ServiceViewModal = ({ isOpen, onClose, servicio }) => {
   if (!isOpen || !servicio) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto p-6 relative">
         <h2 className="text-xl font-bold text-center mb-4">Detalle del Servicio</h2>
 
       {servicio.imagen && (

@@ -1,16 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { showSuccess } from '../../../../../shared/utils/alerts';
+import cloudinaryService from '../../../../../services/cloudinaryService';
+import { toast } from 'react-hot-toast';
 
 const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) => {
   const [formData, setFormData] = useState({
     id: null,
     nombre: '',
     descripcion: '',
-    imagen: null,
-    estado: 'Activo', // Nuevo campo agregado
+    url_imagen: '',
+    estado: 'Activo',
   });
 
   const [previewImage, setPreviewImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef();
   const descripcionRef = useRef(null);
 
@@ -21,23 +24,19 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
         id: categoria.id,
         nombre: categoria.nombre,
         descripcion: categoria.descripcion,
-        imagen: categoria.imagen || null,
+        url_imagen: categoria.url_imagen || '',
         estado: categoria.estado || 'Activo',
       });
 
-      if (categoria.imagen instanceof File) {
-        setPreviewImage(URL.createObjectURL(categoria.imagen));
-      } else if (typeof categoria.imagen === 'string') {
-        setPreviewImage(categoria.imagen);
-      } else {
-        setPreviewImage(null);
+      if (categoria.url_imagen) {
+        setPreviewImage(categoria.url_imagen);
       }
     } else {
       setFormData({
         id: null,
         nombre: '',
         descripcion: '',
-        imagen: null,
+        url_imagen: '',
         estado: 'Activo',
       });
       setPreviewImage(null);
@@ -63,11 +62,22 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
     }
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({ ...prev, imagen: file }));
-      setPreviewImage(URL.createObjectURL(file));
+      try {
+        setUploading(true);
+        // Subir a Cloudinary
+        const cloudinaryUrl = await cloudinaryService.uploadImage(file, 'service-categories');
+        setFormData((prev) => ({ ...prev, url_imagen: cloudinaryUrl }));
+        setPreviewImage(cloudinaryUrl);
+        toast.success('Imagen subida exitosamente');
+      } catch (error) {
+        toast.error(error.message || 'Error al subir la imagen');
+        console.error('Error uploading image:', error);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -77,9 +87,10 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
     if (!formData.descripcion || formData.descripcion.trim().length < 10) return;
     try {
       await onSubmit(formData);
-      setFormData({ id: null, nombre: '', descripcion: '', imagen: null, estado: 'Activo' });
+      // Limpiar el formulario después de enviar exitosamente
+      setFormData({ id: null, nombre: '', descripcion: '', url_imagen: '', estado: 'Activo' });
       setPreviewImage(null);
-      onClose();
+      // NO cerrar aquí - dejar que el padre lo maneje
     } catch (error) {
       // El componente padre maneja los mensajes de error
     }
@@ -88,8 +99,8 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto p-6 relative">
         <h2 className="text-xl font-bold mb-4 text-center">
           {esEdicion ? 'Editar categoría' : 'Agregar nueva categoría'}
         </h2>
@@ -105,16 +116,22 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
               ref={fileInputRef}
               onChange={handleImageChange}
               className="hidden"
+              disabled={uploading}
             />
             <button
               type="button"
               onClick={() => fileInputRef.current.click()}
-              className="mb-2 px-4 py-2 bg-[#FFF2CC] text-[#8A6D00] font-semibold rounded hover:bg-[#FFE28C] transition"
+              disabled={uploading}
+              className={`mb-2 px-4 py-2 font-semibold rounded transition ${
+                uploading 
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
+                  : 'bg-[#FFF2CC] text-[#8A6D00] hover:bg-[#FFE28C]'
+              }`}
             >
-              📁 Elegir imagen
+              {uploading ? '⏳ Subiendo...' : '📁 Elegir imagen'}
             </button>
-            {formData.imagen && typeof formData.imagen === 'object' && (
-              <p className="text-sm text-gray-600 mb-2">{formData.imagen.name}</p>
+            {uploading && (
+              <p className="text-sm text-blue-600 mb-2">Subiendo imagen a Cloudinary...</p>
             )}
             {previewImage && (
               <img
@@ -126,6 +143,9 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
           </div>
 
           {/* Nombre */}
+            <label className="block text-sm font-semibold text-gray-800 mb-1">
+              Nombre de la categoría
+            </label>
           <input
             type="text"
             name="nombre"
@@ -139,10 +159,10 @@ const CategoryFormModal = ({ isOpen, onClose, onSubmit, categoria, esEdicion }) 
           {/* En el futuro se subirá a Cloudinary; por ahora es opcional */}
 
           {/* Descripción */}
-          <div className="border border-gray-200 rounded-xl p-3 shadow-sm">
             <label className="block text-sm font-semibold text-gray-800 mb-1">
-              * Descripción:
+              Descripción
             </label>
+          <div className="border border-gray-200 rounded-xl p-3 shadow-sm">
             <textarea
               ref={descripcionRef}
               name="descripcion"

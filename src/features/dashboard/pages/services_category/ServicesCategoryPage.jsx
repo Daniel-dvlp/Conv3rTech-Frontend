@@ -35,6 +35,14 @@ const ServiceCategoryPage = () => {
     loadCategories();
   }, []);
 
+  // Limpiar estado cuando el modal se cierra
+  useEffect(() => {
+    if (!modalOpen) {
+      setSelectedCategoria(null);
+      setEsEdicion(false);
+    }
+  }, [modalOpen]);
+
   const loadCategories = async () => {
     try {
       setLoading(true);
@@ -76,45 +84,70 @@ const ServiceCategoryPage = () => {
 
   const handleAgregarCategoria = async (nuevaCategoria) => {
     try {
-      const response = await serviceCategoryService.createCategory(
-        nuevaCategoria
-      );
-      const creada = response?.data || response;
-      setCategorias((prev) => [...prev, creada]);
-      showSuccess("Categoría creada correctamente");
+      console.log('📤 Enviando nueva categoría:', nuevaCategoria);
+      const response = await serviceCategoryService.createCategory(nuevaCategoria);
+      console.log('📥 Respuesta completa del servidor:', response);
+      
+      // Extraer la categoría creada de la respuesta
+      const creada = response?.data?.category || response?.data || response?.category || response;
+      console.log('✅ Categoría extraída:', creada);
+      
+      // Actualizar el estado con la nueva categoría
+      setCategorias((prev) => {
+        const nuevaLista = [...prev, creada];
+        console.log('📋 Lista actualizada (antes):', prev.length, '→ (después):', nuevaLista.length);
+        return nuevaLista;
+      });
+      
+      // Cerrar el modal y limpiar estado
+      setModalOpen(false);
+      setSelectedCategoria(null);
+      setEsEdicion(false);
+      
+      // Solo una notificación
       toast.success("Categoría creada exitosamente");
     } catch (error) {
-      toast.error("Error al crear la categoría");
+      console.error('❌ Error al crear categoría:', error);
+      toast.error(error?.message || "Error al crear la categoría");
     }
   };
 
   const handleActualizarCategoria = async (categoriaEditada) => {
     try {
+      console.log('📤 Actualizando categoría:', categoriaEditada);
       const response = await serviceCategoryService.updateCategory(
         categoriaEditada.id,
         categoriaEditada
       );
-      const actualizada = response?.data || response;
-      setCategorias((prev) =>
-        prev.map((c) => (c.id === actualizada.id ? actualizada : c))
-      );
+      console.log('📥 Respuesta de actualización:', response);
+      
+      const actualizada = response?.data?.category || response?.data || response?.category || response;
+      console.log('✅ Categoría actualizada:', actualizada);
+      
+      setCategorias((prev) => {
+        const nuevaLista = prev.map((c) => (c.id === actualizada.id ? actualizada : c));
+        console.log('📋 Lista después de actualizar');
+        return nuevaLista;
+      });
+      
       setModalOpen(false);
       setSelectedCategoria(null);
       setEsEdicion(false);
-      showSuccess("Categoría actualizada correctamente");
+      
+      // Solo una notificación
       toast.success("Categoría actualizada exitosamente");
     } catch (error) {
-      toast.error("Error al actualizar la categoría");
+      console.error('❌ Error al actualizar categoría:', error);
+      toast.error(error?.message || "Error al actualizar la categoría");
     }
   };
 
-  // Búsqueda y filtro
+  // Búsqueda
   const categoriasFiltradas = categorias.filter((c) => {
-    const coincideTipo = filtro === "todas" || c.tipo === filtro;
     const coincideBusqueda =
       (c.nombre?.toLowerCase() || "").includes(busqueda) ||
       (c.descripcion?.toLowerCase() || "").includes(busqueda);
-    return coincideTipo && coincideBusqueda;
+    return coincideBusqueda;
   });
 
   // Paginación
@@ -162,27 +195,6 @@ const ServiceCategoryPage = () => {
             Crear Categoría
           </button>
         </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex justify-center gap-3 mb-8">
-        {["todas", "seguridad", "tecnologia"].map((tipo) => (
-          <button
-            key={tipo}
-            onClick={() => {
-              setFiltro(tipo);
-              setPaginaActual(1);
-            }}
-            className={`px-5 py-1.5 rounded-full text-sm font-semibold transition border shadow-sm
-              ${
-                filtro === tipo
-                  ? "bg-[#000435] text-white border-[#000435]"
-                  : "bg-white text-gray-600 border-gray-300 hover:bg-[#e0e7ff] hover:text-[#000435] hover:border-[#cbd5e1]"
-              }`}
-          >
-            {tipo.charAt(0).toUpperCase() + tipo.slice(1)}
-          </button>
-        ))}
       </div>
 
       {/* Tabla */}

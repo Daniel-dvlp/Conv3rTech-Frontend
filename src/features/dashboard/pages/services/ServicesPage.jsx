@@ -20,7 +20,6 @@ const ServiciosLoading = () => (
 const ServicesPage = () => {
   const [loading, setLoading] = useState(true);
   const [servicios, setServicios] = useState([]);
-  const [filtro, setFiltro] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -134,22 +133,10 @@ const ServicesPage = () => {
     }
   };
 
-  const serviciosFiltrados = servicios
-    .filter((s) => {
-      if (filtro === 'todos') return true;
-      const categoriaNombre = s.categoria?.nombre || s.categoria || '';
-      if (filtro === 'mantenimiento') {
-        return categoriaNombre.toLowerCase().includes('mantenimiento');
-      }
-      if (filtro === 'instalacion') {
-        return categoriaNombre.toLowerCase().includes('instalacion');
-      }
-      return false;
-    })
-    .filter((s) =>
-      (s.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-      (s.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
-    );
+  const serviciosFiltrados = servicios.filter((s) =>
+    (s.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+    (s.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
+  );
 
   const indexInicio = (currentPage - 1) * serviciosPorPagina;
   const indexFin = indexInicio + serviciosPorPagina;
@@ -194,34 +181,9 @@ const ServicesPage = () => {
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
           >
           <FaPlus />
-            
              Nuevo Servicio
           </button>
         </div>
-      </div>
-
-      {/* Filtros */}
-      <div className="flex flex-wrap justify-center gap-3 mb-6">
-        {[
-          { tipo: 'todos', label: 'Todos' },
-          { tipo: 'instalacion', label: 'Instalación' },
-          { tipo: 'mantenimiento', label: 'Mantenimiento' },
-        ].map(({ tipo, label }) => (
-          <button
-            key={tipo}
-            onClick={() => {
-              setFiltro(tipo);
-              setCurrentPage(1);
-            }}
-            className={`px-5 py-1.5 rounded-full text-sm font-semibold transition border shadow-sm
-              ${filtro === tipo
-                ? 'bg-[#000435] text-white border-[#000435]'
-                : 'bg-white text-gray-600 border-gray-300 hover:bg-[#e0e7ff] hover:text-[#000435] hover:border-[#cbd5e1]'
-              }`}
-          >
-            {label}
-          </button>
-        ))}
       </div>
 
       {/* Tabla */}
