@@ -1,12 +1,12 @@
 // src/features/dashboard/pages/project/ProjectPage.jsx
 
 import React, { useState, useEffect, useMemo } from "react";
-import { FaPlus, FaSearch, FaFileExcel } from "react-icons/fa";
+import { FaSearch, FaFileExcel } from "react-icons/fa";
 import ProjectsTable from "./components/ProjectsTable";
 import TableSkeleton from "../../../../shared/components/TableSkeleton";
 import Pagination from "../../../../shared/components/Pagination";
 import ProjectDetailModal from "./components/ProjectDetailModal";
-import NewProjectModal from "./components/NewProjectModal";
+// Eliminado: creación manual de proyectos
 import EditProjectModal from "./components/EditProjectModal";
 import SalidaMaterialModal from "./components/SalidaMaterialModal";
 import * as XLSX from "xlsx";
@@ -27,7 +27,6 @@ const ProjectPage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedProject, setSelectedProject] = useState(null);
-  const [showNewModal, setShowNewModal] = useState(false);
   const [editingProject, setEditingProject] = useState(null);
   const [showSalidaModal, setShowSalidaModal] = useState(false);
   const [selectedProjectForSalida, setSelectedProjectForSalida] =
@@ -98,22 +97,7 @@ const ProjectPage = () => {
     XLSX.writeFile(workbook, "ReporteDeProyectos.xlsx");
   };
 
-  // --- AQUÍ SE MANTIENE LA FUNCIÓN PARA AÑADIR NUEVOS PROYECTOS ---
-  const handleAddProject = async (newProject) => {
-    try {
-      const response = await projectsService.createProject(newProject);
-      if (response.success) {
-        loadProjects(); // Recargar la lista completa
-        setShowNewModal(false);
-        showToast("Proyecto creado exitosamente", "success");
-      } else {
-        showToast(response.message || "Error al crear el proyecto", "error");
-      }
-    } catch (error) {
-      console.error("Error creating project:", error);
-      showToast("Error de conexión al crear proyecto", "error");
-    }
-  };
+  // Eliminado: creación manual de proyectos (solo se crean desde cotización aprobada)
 
   // Editar proyecto
   const handleUpdateProject = async (updatedProject) => {
@@ -263,15 +247,7 @@ const ProjectPage = () => {
               Exportar
             </button>
           )}
-          {hasPrivilege('proyectos_servicios', 'Crear') && (
-            <button
-              onClick={() => setShowNewModal(true)}
-              className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors text-sm"
-            >
-              <FaPlus />
-              Nuevo Proyecto
-            </button>
-          )}
+          {/* Eliminado botón de "Nuevo Proyecto" por política de creación desde cotizaciones */}
         </div>
       </div>
 
@@ -288,6 +264,10 @@ const ProjectPage = () => {
           onEditProject={(project) => setEditingProject(project)}
           onDeleteProject={handleDeleteProject}
           onCreateSalida={handleOpenSalidaModal}
+          canView={hasPermission('proyectos_servicios')}
+          canEdit={hasPrivilege('proyectos_servicios', 'Editar')}
+          canDelete={hasPrivilege('proyectos_servicios', 'Eliminar')}
+          canSalida={checkManage('salida_material')}
         />
       )}
 
@@ -310,13 +290,7 @@ const ProjectPage = () => {
         />
       )}
 
-      {showNewModal && (
-        <NewProjectModal
-          isOpen={showNewModal}
-          onClose={() => setShowNewModal(false)}
-          onSave={handleAddProject}
-        />
-      )}
+      {/* Eliminado modal de creación manual de proyectos */}
 
       {editingProject && (
         <EditProjectModal

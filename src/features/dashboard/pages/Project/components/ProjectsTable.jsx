@@ -3,8 +3,6 @@
 import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye, FaTruck } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { usePermissions } from '../../../../../shared/hooks/usePermissions';
-import { useAuth } from '../../../../../shared/contexts/AuthContext';
 
 // Pequeño componente interno para la barra de progreso
 const ProgressBar = ({ progress }) => (
@@ -16,9 +14,7 @@ const ProgressBar = ({ progress }) => (
   </div>
 );
 
-const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject, onCreateSalida }) => {
-  const { checkManage } = usePermissions();
-  const { hasPermission, hasPrivilege } = useAuth();
+const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject, onCreateSalida, canView, canEdit, canDelete, canSalida }) => {
 
   // Función para determinar el color del estado
   const getStatusClass = (status) => {
@@ -105,17 +101,17 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
               </td>
               <td className="px-6 py-4">
                 <div className="flex items-center justify-end gap-2">
-                   {hasPermission('proyectos_servicios') && (
+                   {canView && (
                      <button onClick={() => onViewDetails(project)} className="text-blue-400 hover:text-blue-600 text-sm p-1 rounded hover:bg-blue-50" title="Ver Detalles">
                       <FaEye size={16} />
                     </button>
                    )}
-                   {hasPrivilege('proyectos_servicios', 'Editar') && (
+                   {canEdit && (
                      <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-sm p-1 rounded hover:bg-yellow-50" title="Editar">
                       <FaEdit size={16} />
                     </button>
                    )}
-                   {checkManage('salida_material') && (
+                   {canSalida && (
                      <button 
                        onClick={() => onCreateSalida(project)} 
                        className="text-green-400 hover:text-green-600 text-sm p-1 rounded hover:bg-green-50" 
@@ -124,7 +120,7 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                        <FaTruck size={16} />
                      </button>
                    )}
-                   {hasPrivilege('proyectos_servicios', 'Eliminar') && (
+                   {canDelete && (
                      <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-sm p-1 rounded hover:bg-red-50" title="Eliminar">
                       <FaTrashAlt size={16} />
                     </button>
