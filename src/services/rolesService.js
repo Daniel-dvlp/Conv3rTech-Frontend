@@ -139,6 +139,24 @@ class RolesService {
     }
   }
 
+  // Obtener permisos asignados de un rol específico
+  async getRolePermissions(roleId) {
+    try {
+      const response = await api.get(`/roles/${roleId}/permissions`);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error fetching role permissions:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message || "Error al obtener permisos del rol",
+      };
+    }
+  }
+
   // Obtener usuarios con un rol específico
   async getUsersByRole(roleId) {
     try {

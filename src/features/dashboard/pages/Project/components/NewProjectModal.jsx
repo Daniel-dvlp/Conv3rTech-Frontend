@@ -7,7 +7,7 @@ import { showToast } from "../../../../../shared/utils/alertas";
 import { mockProducts } from "../../products/data/Products_data";
 import MockServices from "../../services/data/Services_data";
 import { mockClientes } from "../../clients/data/Clientes_data";
-import { usersService } from "../../../../../services";
+import { usersService, clientsService } from "../../../../../services";
 
 // Componente reutilizable para las secciones del formulario
 const FormSection = ({ title, children }) => (
@@ -66,6 +66,8 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   });
   const [usuarios, setUsuarios] = useState([]);
   const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+  const [clientes, setClientes] = useState([]);
+  const [loadingClientes, setLoadingClientes] = useState(false);
 
   // Cargar usuarios desde la API cuando se abra el modal
   React.useEffect(() => {
@@ -1523,7 +1525,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
                   </div>
                 ) : (
                   usuarios
-                    .filter((u) => u.status === "Activo")
+                    .filter((u) => u.status === "Activo" && u.rol?.nombre_rol === "Tecnico")
                     .filter((u) =>
                       `${u.nombre} ${u.apellido}`
                         .toLowerCase()
@@ -1537,7 +1539,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
                     )
                     .map((u) => (
                       <div
-                        key={u.id}
+                        key={u.id_usuario}
                         className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                         onClick={() =>
                           setProjectData((prev) => ({
@@ -1549,7 +1551,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
                           }))
                         }
                       >
-                        {u.nombre} {u.apellido} ({u.rol})
+                        {u.nombre} {u.apellido} ({u.rol?.nombre_rol})
                       </div>
                     ))
                 )}

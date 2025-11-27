@@ -30,25 +30,47 @@ const RoleDetailsModal = ({ role, isOpen, onClose, onEdit, onDelete }) => {
 
   const statusInfo = getStatusInfo(role.estado);
 
-  const formatPermissions = (permisos) => {
-    if (!permisos || permisos.length === 0) return [];
+  const buildPermissionsList = (role) => {
+    // 1) Si viene del backend: role.permisos es un array de objetos Permission
+    //    con campos: nombre_permiso y privilegios (array con nombre_privilegio)
+    if (Array.isArray(role?.permisos) && role.permisos.length > 0) {
+      return role.permisos.map((permiso) => {
+        const moduleName =
+          permiso?.nombre_permiso || permiso?.modulo || permiso?.module || "Sin módulo";
+        const actions = Array.isArray(permiso?.privilegios)
+          ? permiso.privilegios
+              .map((p) => p?.nombre_privilegio || p?.nombre || null)
+              .filter(Boolean)
+          : Array.isArray(permiso?.acciones)
+          ? permiso.acciones
+          : Array.isArray(permiso?.actions)
+          ? permiso.actions
+          : [];
+        return { module: moduleName, actions };
+      });
+    }
 
-    // Si los permisos son objetos con estructura compleja
-    if (typeof permisos[0] === "object") {
-      return permisos.map((permiso) => ({
-        module: permiso.modulo || permiso.module || "Sin módulo",
-        actions: permiso.acciones || permiso.actions || [],
+    // 2) Si viene del frontend mock: role.permissions es un objeto
+    //    con claves "Modulo" o "Modulo.Submodulo" y arrays de acciones
+    if (role && role.permissions && typeof role.permissions === "object") {
+      return Object.entries(role.permissions).map(([key, actions]) => ({
+        module: key,
+        actions: Array.isArray(actions) ? actions : [],
       }));
     }
 
-    // Si los permisos son strings simples
-    return permisos.map((permiso) => ({
-      module: permiso,
-      actions: ["Ver"], // Acción por defecto
-    }));
+    // 3) Si los permisos son strings simples
+    if (Array.isArray(role?.permisos)) {
+      return role.permisos.map((permiso) => ({
+        module: typeof permiso === "string" ? permiso : "Sin módulo",
+        actions: ["Ver"],
+      }));
+    }
+
+    return [];
   };
 
-  const permissions = formatPermissions(role.permisos);
+  const permissions = buildPermissionsList(role);
 
   const { checkManage } = usePermissions();
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaTimes, FaShieldAlt, FaSave } from "react-icons/fa";
 import { showToast } from "../../../../../shared/utils/alertas";
+import rolesService from "../../../../../services/rolesService";
 
 // Configuración de módulos (misma que en NewRoleModal)
 const MODULES_CONFIG = [
@@ -97,28 +98,162 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
 
   // Cargar datos del rol cuando se abre el modal
   useEffect(() => {
-    if (isOpen && role) {
+    const loadRoleForEdit = async () => {
+      if (!isOpen || !role) return;
       setRoleName(role.nombre_rol || role.name || "");
       setDescription(role.descripcion || role.description || "");
 
+      // Helper: encontrar la clave del modal para un permiso por nombre
+      const normalize = (str) =>
+        String(str || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .trim();
+
+      // Alias conocidos desde backend → UI keys del modal
+      const NAME_ALIASES = {
+        // Ventas
+        [normalize("Proyectos")]: "Ventas.Proyectos de Servicio",
+        [normalize("Ordenes de Servicios")]: "Ventas.Órdenes de Servicios",
+        [normalize("Pagos y abonos")]: "Ventas.Pagos y Abonos",
+        [normalize("Venta de Productos")]: "Ventas.Venta de Productos",
+        [normalize("Clientes")]: "Ventas.Clientes",
+        [normalize("Citas")]: "Ventas.Citas",
+        [normalize("Cotizaciones")]: "Ventas.Cotizaciones",
+
+        // Servicios
+        [normalize("Ordenes de Servicio")]: "Servicios.Órdenes de Servicio",
+        [normalize("Categoria de Servicios")]: "Servicios.Categoría de Servicios",
+        [normalize("Programacion laboral")]: "Servicios.Programación laboral",
+
+        // Compras
+        [normalize("Proveedores")]: "Compras.Proveedores",
+        [normalize("Categorias de Productos")]: "Compras.Categorías de Productos",
+        [normalize("Productos")]: "Compras.Productos",
+        [normalize("Compras")]: "Compras.Compras",
+
+        // Configuración
+        [normalize("Gestion de Roles")]: "Configuración.Gestión de Roles",
+        [normalize("Editar mi Perfil")]: "Configuración.Editar mi Perfil",
+
+        // Usuarios/Dashboard
+        [normalize("Usuarios")]: "Usuarios",
+        [normalize("Dashboard")]: "Dashboard",
+      };
+
+      const findPermissionKeyByName = (name) => {
+        if (!name) return null;
+        const n = normalize(name);
+
+        // Intento 1: alias directos
+        if (NAME_ALIASES[n]) return NAME_ALIASES[n];
+
+        // Intento 2: coincidencia exacta por nombre
+        for (const mod of MODULES_CONFIG) {
+          if (normalize(mod.name) === n) return mod.name;
+          if (Array.isArray(mod.submodules)) {
+            for (const sub of mod.submodules) {
+              if (normalize(sub.name) === n) return `${mod.name}.${sub.name}`;
+            }
+          }
+        }
+
+        // Intento 3: coincidencia laxa dentro de submódulos (incluye singular/plural)
+        for (const mod of MODULES_CONFIG) {
+          if (Array.isArray(mod.submodules)) {
+            for (const sub of mod.submodules) {
+              const sn = normalize(sub.name).replace(/s$/,"");
+              const nn = n.replace(/s$/,"");
+              if (sn === nn) return `${mod.name}.${sub.name}`;
+            }
+          }
+        }
+
+        // Fallback: usar el nombre tal cual
+        return name;
+      };
+
+      // Traer permisos del backend si no están presentes
+      let sourceRole = role;
+      try {
+        const id = role.id_rol || role.id;
+        const missing = !Array.isArray(role.permisos) || role.permisos.length === 0;
+        if (id && missing) {
+          const resp = await rolesService.getRolePermissions(id);
+          if (resp.success) {
+            // Estructuras posibles: data.data (array), data.permisos (array), o data (array)
+            const apiData = resp.data;
+            const permisosFromApi = Array.isArray(apiData?.data)
+              ? apiData.data
+              : Array.isArray(apiData?.permisos)
+              ? apiData.permisos
+              : Array.isArray(apiData)
+              ? apiData
+              : [];
+            sourceRole = { ...role, permisos: permisosFromApi };
+          }
+        }
+      } catch (e) {
+        console.warn("No se pudieron cargar permisos del rol:", e);
+      }
+
       // Convertir permisos del rol a formato del modal
       const rolePermissions = {};
-      if (role.permisos && Array.isArray(role.permisos)) {
-        role.permisos.forEach((permiso) => {
-          if (typeof permiso === "object" && permiso.modulo) {
-            // Formato: {modulo: "Dashboard", acciones: ["Ver"]}
-            rolePermissions[permiso.modulo] = {};
-            permiso.acciones.forEach((accion) => {
-              rolePermissions[permiso.modulo][accion] = true;
+
+      // Caso A: datos del backend → role.permisos = [{ nombre_permiso, privilegios: [{ nombre_privilegio }] }]
+      if (Array.isArray(sourceRole.permisos) && sourceRole.permisos.length > 0) {
+        sourceRole.permisos.forEach((permiso) => {
+          const moduleName =
+            permiso?.nombre_permiso || permiso?.modulo || permiso?.module;
+          const key = findPermissionKeyByName(moduleName);
+          if (!key) return;
+          if (!rolePermissions[key]) rolePermissions[key] = {};
+          if (Array.isArray(permiso?.privilegios)) {
+            permiso.privilegios.forEach((priv) => {
+              const action = priv?.nombre_privilegio || priv?.nombre;
+              if (action) rolePermissions[key][action] = true;
             });
-          } else if (typeof permiso === "string") {
-            // Formato simple: ["Dashboard", "Usuarios"]
-            rolePermissions[permiso] = { Ver: true };
+          } else if (Array.isArray(permiso?.acciones)) {
+            permiso.acciones.forEach((accion) => {
+              rolePermissions[key][accion] = true;
+            });
+          } else if (Array.isArray(permiso?.actions)) {
+            permiso.actions.forEach((accion) => {
+              rolePermissions[key][accion] = true;
+            });
+          } else {
+            // Si no hay detalle de privilegios, marcar "Ver" por defecto
+            rolePermissions[key]["Ver"] = true;
           }
         });
       }
+
+      // Caso B: datos mock del frontend → role.permissions = { "Modulo" o "Modulo.Submodulo": [acciones] }
+      if (sourceRole && sourceRole.permissions && typeof sourceRole.permissions === "object") {
+        Object.entries(sourceRole.permissions).forEach(([key, actions]) => {
+          if (!rolePermissions[key]) rolePermissions[key] = {};
+          (Array.isArray(actions) ? actions : []).forEach((accion) => {
+            rolePermissions[key][accion] = true;
+          });
+        });
+      }
+
+      // Caso C: permisos simples como strings
+      if (Array.isArray(sourceRole.permisos)) {
+        sourceRole.permisos.forEach((permiso) => {
+          if (typeof permiso === "string") {
+            const key = findPermissionKeyByName(permiso);
+            if (!rolePermissions[key]) rolePermissions[key] = {};
+            rolePermissions[key]["Ver"] = true;
+          }
+        });
+      }
+
       setPermissions(rolePermissions);
-    }
+    };
+
+    loadRoleForEdit();
   }, [isOpen, role]);
 
   const handlePermissionChange = (moduleName, submoduleName, privilege) => {

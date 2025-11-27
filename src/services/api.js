@@ -1,11 +1,13 @@
 // src/services/api.js
 import api from "../shared/config/api";
 
-// Interceptor para agregar el token a todas las peticiones
+// Interceptor para agregar el token a todas las peticiones (evita endpoints públicos)
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
-    if (token) {
+    const url = config.url || "";
+    const isPublicAuthEndpoint = url.startsWith("/auth/login") || url.startsWith("/auth/password");
+    if (token && !isPublicAuthEndpoint) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
