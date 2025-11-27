@@ -111,3 +111,5 @@ export const featuresService = {
     }
   }
 };
+
+export default productsService;

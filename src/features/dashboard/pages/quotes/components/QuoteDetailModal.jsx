@@ -1,7 +1,7 @@
   import React, { useEffect, useMemo, useState } from 'react';
   import { FaTimes, FaInfoCircle } from 'react-icons/fa';
-  import { quotesService } from '../services/quotesService';
-  import productsService from '../../../../../services/productsService';
+import { quotesService } from '../services/quotesService';
+import { productsService } from '../../../../../services/productsService';
   import servicesService from '../../../../../services/servicesService';
 
   const DetailCard = ({ title, icon, children }) => (
