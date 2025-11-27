@@ -1,153 +1,115 @@
 import api from "./api";
 
-class ProductsService {
+// Servicios para productos
+export const productsService = {
   // Obtener todos los productos
-  async getAllProducts() {
+  getAllProducts: async () => {
     try {
-      const response = await api.get("/products/products");
+      const response = await api.get('/products/products');
       return response.data;
     } catch (error) {
+      console.error('Error al obtener productos:', error);
       throw error;
     }
-  }
+  },
 
-  // Obtener producto por ID
-  async getProductById(id) {
+  // Obtener un producto por ID
+  getProductById: async (id) => {
     try {
       const response = await api.get(`/products/products/${id}`);
       return response.data;
     } catch (error) {
+      console.error('Error al obtener producto:', error);
       throw error;
     }
-  }
+  },
 
-  // Crear nuevo producto
-  async createProduct(productData) {
+  // Crear un nuevo producto
+  createProduct: async (productData) => {
     try {
-      const response = await api.post("/products/products", productData);
-      return response.data;
+      console.log('📤 Enviando producto al backend:', productData);
+      const response = await api.post('/products/products', productData, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      console.log('✅ Respuesta del servidor:', response.data);
+      return response.data?.data ?? response.data;
     } catch (error) {
+      console.error('❌ Error al crear producto:', error);
       throw error;
     }
-  }
+  },
 
-  // Actualizar producto
-  async updateProduct(id, productData) {
+  // Actualizar un producto
+  updateProduct: async (id, productData) => {
     try {
-      const response = await api.put(`/products/products/${id}`, productData);
-      return response.data;
+      console.log('📤 Actualizando producto:', id, productData);
+      
+      // Enviar como JSON normal (las fotos ya están como URLs de Cloudinary)
+      const response = await api.put(`/products/products/${id}`, productData, {
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('✅ Producto actualizado:', response.data);
+      return response.data?.data ?? response.data;
     } catch (error) {
+      console.error('❌ Error al actualizar producto:', error);
       throw error;
     }
-  }
+  },
 
-  // Eliminar producto
-  async deleteProduct(id) {
+  // Eliminar un producto
+  deleteProduct: async (id) => {
     try {
       const response = await api.delete(`/products/products/${id}`);
       return response.data;
     } catch (error) {
+      console.error('Error al eliminar producto:', error);
       throw error;
     }
   }
+};
 
-  // Cambiar estado del producto
-  async changeProductState(id, stateData) {
+// Servicios para categorías de productos
+export const categoriesService = {
+  // Obtener todas las categorías
+  getAllCategories: async () => {
     try {
-      const response = await api.patch(
-        `/products/products/${id}/estado`,
-        stateData
-      );
+      const response = await api.get('/productsCategory');
       return response.data;
     } catch (error) {
+      console.error('Error al obtener categorías:', error);
       throw error;
     }
   }
+};
 
-  // Obtener características del producto
-  async getProductFeatures(productId) {
+// Servicios para características técnicas
+export const featuresService = {
+  // Obtener todas las características
+  getAllFeatures: async () => {
     try {
-      const response = await api.get(`/products/features/product/${productId}`);
+      const response = await api.get('/products/features');
       return response.data;
     } catch (error) {
+      console.error('Error al obtener características:', error);
       throw error;
     }
-  }
+  },
 
-  // Crear característica del producto
-  async createProductFeature(featureData) {
+  // Crear una nueva característica
+  createFeature: async (featureData) => {
     try {
-      const response = await api.post("/products/features", featureData);
-      return response.data;
+      const response = await api.post('/products/features', featureData);
+      return response.data?.data ?? response.data;
     } catch (error) {
+      console.error('Error al crear característica:', error);
       throw error;
     }
   }
+};
 
-  // Actualizar característica del producto
-  async updateProductFeature(id, featureData) {
-    try {
-      const response = await api.put(`/products/features/${id}`, featureData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Eliminar característica del producto
-  async deleteProductFeature(id) {
-    try {
-      const response = await api.delete(`/products/features/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Obtener datasheets del producto
-  async getProductDatasheets(productId) {
-    try {
-      const response = await api.get(
-        `/products/datasheets/product/${productId}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Crear datasheet del producto
-  async createProductDatasheet(datasheetData) {
-    try {
-      const response = await api.post("/products/datasheets", datasheetData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Actualizar datasheet del producto
-  async updateProductDatasheet(id, datasheetData) {
-    try {
-      const response = await api.put(
-        `/products/datasheets/${id}`,
-        datasheetData
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Eliminar datasheet del producto
-  async deleteProductDatasheet(id) {
-    try {
-      const response = await api.delete(`/products/datasheets/${id}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-}
-
-export default new ProductsService();
+export default productsService;

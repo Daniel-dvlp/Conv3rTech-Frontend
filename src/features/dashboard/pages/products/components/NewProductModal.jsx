@@ -194,11 +194,21 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         
         if (files.length === 0) return;
 
+        // Validar archivos
+        const validation = cloudinaryService.validateImages(files);
+        if (!validation.valid) {
+            setErrors(prev => ({
+                ...prev,
+                imageUpload: validation.errors.join('. ')
+            }));
+            return;
+        }
+
         setUploadingImages(true);
         setUploadProgress(0);
 
         try {
-            // Subir imágenes a Cloudinary
+            // Subir imágenes a Cloudinary a través del backend
             const uploadedUrls = await cloudinaryService.uploadMultipleImages(files, 'products');
             
             setProductData((prev) => ({
@@ -207,11 +217,18 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             }));
 
             setUploadProgress(100);
+            
+            // Limpiar error si existe
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.imageUpload;
+                return newErrors;
+            });
         } catch (error) {
             console.error('Error al subir imágenes:', error);
             setErrors(prev => ({
                 ...prev,
-                imageUpload: 'Error al subir las imágenes. Inténtalo de nuevo.'
+                imageUpload: error.message || 'Error al subir las imágenes. Inténtalo de nuevo.'
             }));
         } finally {
             setUploadingImages(false);
