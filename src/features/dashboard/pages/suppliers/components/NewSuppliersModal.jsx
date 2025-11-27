@@ -19,8 +19,8 @@ const FormLabel = ({ htmlFor, children }) => (
 
 const initialState = {
   nit: "",
-  nombre_empresa: "",
-  nombre_encargado: "",
+  empresa: "",
+  encargado: "",
   telefono_entidad: "",
   telefono_encargado: "",
   correo_principal: "",
@@ -36,10 +36,6 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const formRef = useRef(null);
 
-  // Eliminamos useRef para modalContentRef y mouseDownTarget ya que no se usarán para cerrar el modal al hacer clic fuera
-  // const modalContentRef = useRef(null);
-  // const mouseDownTarget = useRef(null);
-
   // Resetear el formulario cuando se abre/cierra
   useEffect(() => {
     if (isOpen) {
@@ -47,7 +43,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
       setErrors({});
       setFormSubmitted(false);
     }
-  }, [isOpen]); // Dependencia solo en isOpen para resetear al abrir
+  }, [isOpen]);
 
   // Validaciones
   const validateField = (name, value) => {
@@ -60,18 +56,20 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           error = "Este NIT ya está registrado.";
         }
         break;
-      case "nombre_empresa":
+      case "empresa":
         if (!value.trim()) {
           error = "El nombre de la entidad es obligatorio.";
         }
         break;
-      case "nombre_encargado":
+      case "encargado":
         if (!value.trim()) {
           error = "El nombre del encargado es obligatorio.";
         }
         break;
       case "telefono_entidad":
-        if (value.trim() && !/^[0-9+\-\s()]+$/.test(value)) {
+        if (!value.trim()) {
+          error = "El teléfono de la entidad es obligatorio.";
+        } else if (!/^[0-9+\-\s()]+$/.test(value)) {
           error = "El teléfono de la entidad contiene caracteres no válidos.";
         }
         break;
@@ -103,9 +101,9 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     const { name, value } = e.target;
     setProviderData((prev) => ({ ...prev, [name]: value }));
     if (formSubmitted) {
-        validateField(name, value);
+      validateField(name, value);
     } else {
-        setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -136,11 +134,25 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     let formIsValid = true;
     const newErrors = {};
 
-    Object.keys(providerData).forEach(name => {
-      const error = validateField(name, providerData[name]);
+    // Validate required fields
+    const requiredFields = ['empresa', 'encargado', 'correo_principal'];
+    requiredFields.forEach(field => {
+      const error = validateField(field, providerData[field]);
       if (error) {
-        newErrors[name] = error;
+        newErrors[field] = error;
         formIsValid = false;
+      }
+    });
+
+    // Validate optional fields
+    const optionalFields = ['nit', 'telefono_entidad', 'telefono_encargado', 'correo_secundario'];
+    optionalFields.forEach(field => {
+      if (providerData[field].trim()) {
+        const error = validateField(field, providerData[field]);
+        if (error) {
+          newErrors[field] = error;
+          formIsValid = false;
+        }
       }
     });
 
@@ -157,19 +169,23 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
       return;
     }
 
+    // Función auxiliar para convertir cadenas vacías a null
+    const sanitize = (value) => (value && value.trim() !== "" ? value : null);
+
     const newProvider = {
-      nit: providerData.nit,
-      nombre_empresa: providerData.nombre_empresa,
-      nombre_encargado: providerData.nombre_encargado,
-      telefono_entidad: providerData.telefono_entidad,
-      telefono_encargado: providerData.telefono_encargado,
+      nit: sanitize(providerData.nit),
+      empresa: providerData.empresa, // Changed to match useSuppliers expectation
+      encargado: providerData.encargado, // Changed to match useSuppliers expectation
+      telefono_entidad: sanitize(providerData.telefono_entidad),
+      telefono_encargado: sanitize(providerData.telefono_encargado),
       correo_principal: providerData.correo_principal,
-      correo_secundario: providerData.correo_secundario,
-      direccion: providerData.direccion,
+      correo_secundario: sanitize(providerData.correo_secundario),
+      direccion: sanitize(providerData.direccion),
+      observaciones: sanitize(providerData.observaciones),
       estado: "Activo", // Los nuevos proveedores inician como Activos
-      observaciones: providerData.observaciones,
     };
 
+    console.log("Enviando nuevo proveedor:", newProvider);
     onSave(newProvider);
     // El hook manejará el toast de éxito
     setProviderData(initialState);
@@ -178,20 +194,11 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     onClose();
   };
 
-  // Eliminamos handleMouseDown y handleMouseUp ya que no queremos cerrar al hacer clic fuera
-  // y por lo tanto tampoco necesitamos las referencias 'modalContentRef' y 'mouseDownTarget'.
-
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12"
-      // Eliminamos onMouseDown y onMouseUp de aquí
-    >
-      <div
-        // Eliminamos ref={modalContentRef} de aquí
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-      >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Encabezado fijo */}
         <header className="flex justify-between items-center p-4 border-b">
           <h2 className="text-2xl font-bold text-gray-800">Registrar Nuevo Proveedor</h2>
@@ -205,26 +212,26 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           ref={formRef}
           onSubmit={handleSubmit}
           noValidate
-          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow" // Añadimos flex-grow
+          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow"
         >
           <FormSection title="Información Entidad">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
-                <FormLabel htmlFor="nombre_empresa">
+                <FormLabel htmlFor="empresa">
                   <span className="text-red-500">*</span> Nombre Entidad
                 </FormLabel>
                 <input
-                  id="nombre_empresa"
+                  id="empresa"
                   type="text"
-                  name="nombre_empresa"
-                  value={providerData.nombre_empresa}
+                  name="empresa"
+                  value={providerData.empresa}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`${inputBaseStyle} ${errors.nombre_empresa ? 'border-red-500' : ''}`}
+                  className={`${inputBaseStyle} ${errors.empresa ? 'border-red-500' : ''}`}
                   required
                   maxLength="150"
                 />
-                {errors.nombre_empresa && <p className="text-red-500 text-xs mt-1">{errors.nombre_empresa}</p>}
+                {errors.empresa && <p className="text-red-500 text-xs mt-1">{errors.empresa}</p>}
               </div>
 
               <div>
@@ -257,7 +264,6 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
                   onBlur={handleBlur}
                   onKeyPress={handleKeyPressPhone}
                   className={`${inputBaseStyle} ${errors.telefono_entidad ? 'border-red-500' : ''}`}
-                  required
                   title="Ingrese un número de teléfono válido (solo números, espacios, +, - , ( , ) )"
                   maxLength="20"
                 />
@@ -269,21 +275,21 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           <FormSection title="Información Encargado">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
-                <FormLabel htmlFor="nombre_encargado">
+                <FormLabel htmlFor="encargado">
                   <span className="text-red-500">*</span> Nombre Encargado
                 </FormLabel>
                 <input
-                  id="nombre_encargado"
+                  id="encargado"
                   type="text"
-                  name="nombre_encargado"
-                  value={providerData.nombre_encargado}
+                  name="encargado"
+                  value={providerData.encargado}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={`${inputBaseStyle} ${errors.nombre_encargado ? 'border-red-500' : ''}`}
+                  className={`${inputBaseStyle} ${errors.encargado ? 'border-red-500' : ''}`}
                   required
                   maxLength="150"
                 />
-                {errors.nombre_encargado && <p className="text-red-500 text-xs mt-1">{errors.nombre_encargado}</p>}
+                {errors.encargado && <p className="text-red-500 text-xs mt-1">{errors.encargado}</p>}
               </div>
 
               <div>
@@ -380,7 +386,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
             </div>
           </FormSection>
 
-        <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button
               type="button"
               onClick={onClose}

@@ -67,11 +67,11 @@ const CancelQuoteModal = ({ isOpen, onClose, onConfirm, quote }) => {
                         {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
                     </div>
 
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                        <p className="text-sm text-yellow-800">
+                    <div className="bg-blue-50 border border-conv3r-dark rounded-lg p-3">
+                        <p className="text-sm text-conv3r-dark">
                             <strong>Cotización:</strong> {quote.nombre_cotizacion || quote.ordenServicio || 'N/A'}
                         </p>
-                        <p className="text-sm text-yellow-800 mt-1">
+                        <p className="text-sm text-conv3r-dark mt-1">
                             Esta acción cambiará el estado a "Rechazada" y no podrá ser editada posteriormente.
                         </p>
                     </div>

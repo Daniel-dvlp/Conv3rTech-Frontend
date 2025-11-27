@@ -5,8 +5,8 @@ const LaborSchedulingSidebar = ({
   users,
   filter,
   setFilter,
-  selected,
-  setSelected,
+  selectedUser,
+  setSelectedUser,
   onCreate
 }) => {
   const [search, setSearch] = useState(filter);
@@ -16,15 +16,12 @@ const LaborSchedulingSidebar = ({
     user.documento?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleToggle = (id) => {
-    setSelected(selected.includes(id)
-      ? selected.filter(eid => eid !== id)
-      : [...selected, id]);
+  const handleUserClick = (id) => {
+    setSelectedUser(selectedUser === id ? null : id);
   };
 
-  const handleToggleAll = () => {
-    if (selected.length === users.length) setSelected([]);
-    else setSelected(users.map(u => u.id));
+  const handleShowAll = () => {
+    setSelectedUser(null);
   };
 
   const handleCreateClick = () => {
@@ -64,13 +61,13 @@ const LaborSchedulingSidebar = ({
         </div>
       </div>
       <div className="p-3 border-b border-yellow-100 bg-white/30 flex items-center justify-between">
-        <span className="text-xs font-medium text-gray-700">Mostrar/Ocultar todos</span>
+        <span className="text-xs font-medium text-gray-700">Vista general</span>
         <button
-          onClick={handleToggleAll}
+          onClick={handleShowAll}
           className="inline-flex justify-center py-1 px-3 border border-transparent shadow-sm text-xs font-medium rounded-md text-conv3r-dark bg-conv3r-gold hover:brightness-95 transition-transform hover:scale-105 flex items-center gap-1"
         >
-          {selected.length === users.length ? <FaEyeSlash className="text-xs" /> : <FaEye className="text-xs" />}
-          {selected.length === users.length ? 'Ocultar' : 'Mostrar'}
+          <FaEye className="text-xs" />
+          Ver todos
         </button>
       </div>
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
@@ -83,15 +80,12 @@ const LaborSchedulingSidebar = ({
           filteredUsers.map(user => (
             <div
               key={user.id}
-              className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all border ${selected.includes(user.id) ? 'bg-yellow-100 border-yellow-300' : 'bg-white/70 border-yellow-200 hover:bg-yellow-50'} shadow-sm`}
-              onClick={() => handleToggle(user.id)}
+              className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-all border ${selectedUser === user.id ? 'bg-yellow-100 border-yellow-300' : 'bg-white/70 border-yellow-200 hover:bg-yellow-50'} shadow-sm`}
+              onClick={() => handleUserClick(user.id)}
             >
-              <input
-                type="checkbox"
-                checked={selected.includes(user.id)}
-                onChange={() => handleToggle(user.id)}
-                className="accent-yellow-500 mr-2"
-              />
+              <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${selectedUser === user.id ? 'bg-yellow-500 border-yellow-500' : 'border-gray-300'}`}>
+                {selectedUser === user.id && <div className="w-2 h-2 bg-white rounded-full"></div>}
+              </div>
               <span className="font-medium text-gray-800 text-sm truncate flex-1">{user.name}</span>
               <span className="text-xs text-gray-500 font-mono">{user.documento}</span>
             </div>
@@ -99,8 +93,8 @@ const LaborSchedulingSidebar = ({
         )}
       </div>
       <div className="p-3 border-t border-yellow-100 bg-white/60 text-xs text-gray-600 flex items-center justify-between">
-        <span>Usuarios activos</span>
-        <span className="font-bold text-orange-600">{selected.length}</span>
+        <span>Usuario seleccionado</span>
+        <span className="font-bold text-orange-600">{selectedUser ? '1' : 'Todos'}</span>
       </div>
     </aside>
   );
