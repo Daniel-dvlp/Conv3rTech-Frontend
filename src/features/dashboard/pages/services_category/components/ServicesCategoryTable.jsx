@@ -1,74 +1,52 @@
 import React from 'react';
-import { FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 
-const ServiceCategoryTable = ({ categorias, onVer, onEditar, onEliminar }) => {
+const ServicesCategoryTable = ({ categories, onViewDetails, onEditCategory, onDeleteCategory }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {categorias.map((categoria) => (
-        <div
-          key={categoria.id}
-          className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center text-center"
-        >
-          {/* Imagen o placeholder */}
-          <div className="w-28 h-28 bg-gray-200 rounded-md mb-4 flex items-center justify-center">
-            {categoria.url_imagen ? (
-              <img
-                src={categoria.url_imagen}
-                alt={categoria.nombre}
-                className="object-cover w-full h-full rounded-md"
-              />
-            ) : (
-              <span className="text-gray-400 text-sm">Sin imagen</span>
-            )}
-          </div>
-
-          {/* Nombre y descripción */}
-          <h3 className="text-base font-semibold text-gray-800">
-            {categoria.nombre}
-          </h3>
-          <p className="text-sm text-gray-600 mt-1 line-clamp-2">
-            {categoria.descripcion}
-          </p>
-
-          {/* Estado */}
-          <span
-            className={`mt-2 text-sm font-semibold px-3 py-1 rounded-full ${
-              (categoria.estado || '').toLowerCase() === 'activo'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-red-100 text-red-700'
-            }`}
-          >
-            {(categoria.estado || '').toLowerCase() === 'activo' ? 'Activo' : 'Inactivo'}
-          </span>
-
-          {/* Acciones */}
-          <div className="flex gap-4 mt-4 text-gray-600">
-            <button
-              onClick={() => onVer(categoria.id)}
-              className="hover:text-blue-600"
-              title="Ver"
-            >
-              <FaEye size={18} />
-            </button>
-            <button
-              onClick={() => onEditar(categoria.id)}
-              className="hover:text-green-600"
-              title="Editar"
-            >
-              <FaEdit size={18} />
-            </button>
-            <button
-              onClick={() => onEliminar(categoria.id)}
-              className="hover:text-red-600"
-              title="Eliminar"
-            >
-              <FaTrashAlt size={18} />
-            </button>
-          </div>
-        </div>
-      ))}
+    <div className="bg-white rounded-lg shadow-md overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Descripción</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
+            <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+           {(Array.isArray(categories) ? categories : []).map((category) => {
+             const isActive = (category.estado || '').toLowerCase() === 'activo';
+             return (
+               <tr key={category.id} className="hover:bg-gray-50 transition-colors">
+                 <td className="px-4 py-3 text-sm font-medium text-gray-900">{category.nombre}</td>
+                 <td className="px-4 py-3 text-sm text-gray-700">{category.descripcion}</td>
+                 <td className="px-4 py-3">
+                   <span className={`px-3 py-1 inline-flex text-xs font-semibold rounded-full ${
+                     isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                   }`}>
+                     {isActive ? 'Activo' : 'Inactivo'}
+                   </span>
+                 </td>
+                 <td className="px-4 py-3 text-right text-sm font-medium">
+                   <div className="flex justify-end gap-3">
+                     <button className="text-blue-600 hover:text-gray-900" title="Ver" onClick={() => onViewDetails(category)}>
+                       <FaEye size={16} />
+                     </button>
+                     <button className="text-yellow-600 hover:text-yellow-800" title="Editar" onClick={() => onEditCategory(category)}>
+                       <FaEdit size={16} />
+                     </button>
+                     <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDeleteCategory(category.id)}>
+                       <FaTrashAlt size={16} />
+                     </button>
+                   </div>
+                 </td>
+               </tr>
+             );
+           })}
+        </tbody>
+      </table>
     </div>
   );
 };
 
-export default ServiceCategoryTable;
+export default ServicesCategoryTable;

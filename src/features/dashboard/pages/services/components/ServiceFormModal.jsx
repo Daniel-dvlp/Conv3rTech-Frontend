@@ -1,8 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Switch } from '@headlessui/react';
 import { serviceCategoryService } from '../../services_category/services/serviceCategoryService.js';
 import { showSuccess } from '../../../../../shared/utils/alerts';
 import cloudinaryService from '../../../../../services/cloudinaryService';
 import { toast } from 'react-hot-toast';
+
+const ToggleSwitch = ({ checked, onChange }) => (
+  <Switch
+    checked={checked}
+    onChange={onChange}
+    className={`${checked ? 'bg-green-500' : 'bg-gray-300'}
+      relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 focus:outline-none`}
+  >
+    <span
+      className={`${checked ? 'translate-x-5' : 'translate-x-1'}
+        inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300`}
+    />
+  </Switch>
+);
 
 const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) => {
   const [formData, setFormData] = useState({
@@ -313,19 +328,21 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
             ></textarea>
           </div>
 
-          {/* Estado */}
+          {/* Estado con Switch */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
-            <select
-              name="estado"
-              value={formData.estado}
-              onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
-              required
-            >
-              <option value="activo">Activo</option>
-              <option value="inactivo">Inactivo</option>
-            </select>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-gray-700 font-medium">
+                {formData.estado === 'activo' ? 'Activo' : 'Inactivo'}
+              </span>
+              <ToggleSwitch
+                checked={formData.estado === 'activo'}
+                onChange={() => setFormData(prev => ({ 
+                  ...prev, 
+                  estado: prev.estado === 'activo' ? 'inactivo' : 'activo' 
+                }))}
+              />
+            </div>
           </div>
 
           {/* Botones */}
