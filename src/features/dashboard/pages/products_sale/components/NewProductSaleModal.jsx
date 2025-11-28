@@ -186,7 +186,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                             displayKey={(client) => `${client.nombre} ${client.apellido}`}
                             searchKeys={['nombre', 'apellido', 'documento']}
                             error={errores.cliente}
-                            label="Cliente"
+                            label=" Cliente:"
                             required={true}
                         />
                         {cliente && (
@@ -202,7 +202,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                     <FormSection title="Información de la venta">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <FormLabel htmlFor="fechaVenta">Fecha y hora de venta:</FormLabel>
+                                <FormLabel htmlFor="fechaVenta"><span className="text-red-500">*</span> Fecha y hora de venta:</FormLabel>
                                 <input
                                     type="datetime-local"
                                     id="fechaVenta"
@@ -235,7 +235,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                                 {errores.fechaVenta && <p className="text-red-500 text-sm mt-1">{errores.fechaVenta}</p>}
                             </div>
                             <div>
-                                <FormLabel htmlFor="metodoPago">Método de pago:</FormLabel>
+                                <FormLabel htmlFor="metodoPago"><span className="text-red-500">*</span> Método de pago:</FormLabel>
                                 <div className="relative">
                                     <select
                                         id="metodoPago"
@@ -280,7 +280,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                                     displayKey={(product) => `${product.nombre} - ${product.modelo}`}
                                     searchKeys={['nombre', 'modelo', 'codigo_barra']}
                                     error={errores.producto}
-                                    label="Producto"
+                                    label=" Producto:"
                                     required={true}
                                 />
                             </div>
