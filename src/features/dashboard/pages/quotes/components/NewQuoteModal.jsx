@@ -391,7 +391,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
           <FormSection title="Información General">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-1">
-                <FormLabel htmlFor="nombreCotizacion">Nombre de la cotización <span className="text-red-500">*</span></FormLabel>
+                <FormLabel htmlFor="nombreCotizacion"><span className="text-red-500">*</span> Nombre de la cotización:</FormLabel>
                 <input
                   id="nombreCotizacion"
                   type="text"
@@ -407,16 +407,16 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                   options={clients || []}
                   value={clienteSeleccionado}
                   onChange={(value) => { setClienteSeleccionado(value); validateField('clienteSeleccionado', value); }}
-                  placeholder="Buscar cliente por nombre o documento..."
+                  placeholder="Buscar cliente..."
                   displayKey={(client) => `${client.nombre} ${client.apellido}`}
                   searchKeys={[ 'nombre', 'apellido', 'documento' ]}
                   error={errores.cliente}
-                  label="Cliente"
+                  label=" Cliente:"
                   required={true}
                 />
               </div>
               <div className="md:col-span-1">
-                <FormLabel htmlFor="fechaVenc">Fecha de vencimiento <span className="text-red-500">*</span></FormLabel>
+                <FormLabel htmlFor="fechaVenc"><span className="text-red-500">*</span> Fecha de vencimiento:</FormLabel>
                 <input
                   id="fechaVenc"
                   type="date"

@@ -396,7 +396,7 @@ const ProductEditModal = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Nombre */}
               <div>
-                <FormLabel htmlFor="nombre">* Nombre:</FormLabel>
+                <FormLabel htmlFor="nombre"><span className="text-red-500">*</span> Nombre:</FormLabel>
                 <input
                   type="text"
                   id="nombre"
@@ -416,7 +416,7 @@ const ProductEditModal = ({
 
               {/* Modelo */}
               <div>
-                <FormLabel htmlFor="modelo">* Modelo:</FormLabel>
+                <FormLabel htmlFor="modelo"><span className="text-red-500">*</span> Modelo:</FormLabel>
                 <input
                   type="text"
                   id="modelo"
@@ -433,7 +433,7 @@ const ProductEditModal = ({
 
               {/* Categoría */}
               <div>
-                <FormLabel htmlFor="id_categoria">* Categoría:</FormLabel>
+                <FormLabel htmlFor="id_categoria"><span className="text-red-500">*</span> Categoría:</FormLabel>
                 <select
                   id="id_categoria"
                   name="id_categoria"
@@ -455,7 +455,7 @@ const ProductEditModal = ({
 
               {/* Unidad */}
               <div>
-                <FormLabel htmlFor="unidad_medida">* Unidad:</FormLabel>
+                <FormLabel htmlFor="unidad_medida"><span className="text-red-500">*</span> Unidad:</FormLabel>
                 <select
                   id="unidad_medida"
                   name="unidad_medida"
@@ -478,7 +478,7 @@ const ProductEditModal = ({
 
               {/* Precio */}
               <div>
-                <FormLabel htmlFor="precio">* Precio:</FormLabel>
+                <FormLabel htmlFor="precio"><span className="text-red-500">*</span> Precio:</FormLabel>
                 <input
                   type="number"
                   id="precio"
@@ -511,7 +511,7 @@ const ProductEditModal = ({
 
               {/* Garantía */}
               <div>
-                <FormLabel htmlFor="garantia">* Garantía (meses):</FormLabel>
+                <FormLabel htmlFor="garantia"><span className="text-red-500">*</span> Garantía (meses):</FormLabel>
                 <input
                   type="number"
                   id="garantia"
@@ -552,7 +552,7 @@ const ProductEditModal = ({
               >
                 <div>
                   <FormLabel htmlFor={`caracteristica_input_${index}`}>
-                    * Característica:
+                    <span className="text-red-500">*</span> Característica:
                   </FormLabel>
 
                   {ficha.id_caracteristica === 'otro' ? (
@@ -604,7 +604,7 @@ const ProductEditModal = ({
                 </div>
 
                 <div>
-                  <FormLabel htmlFor={`valor_${index}`}>* Valor:</FormLabel>
+                  <FormLabel htmlFor={`valor_${index}`}><span className="text-red-500">*</span> Valor:</FormLabel>
                   <input
                     type="text"
                     id={`valor_${index}`}

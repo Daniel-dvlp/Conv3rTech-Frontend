@@ -366,7 +366,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
               <FormSection title="Información General">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="md:col-span-1">
-                    <FormLabel htmlFor="nombreCotizacion">Nombre de la cotización</FormLabel>
+                    <FormLabel htmlFor="nombreCotizacion"><span className="text-red-500">*</span> Nombre de la cotización</FormLabel>
                     <input
                       id="nombreCotizacion"
                       type="text"
@@ -399,7 +399,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                     />
                   </div>
                   <div className="md:col-span-1">
-                    <FormLabel htmlFor="fechaVenc">Fecha de vencimiento</FormLabel>
+                    <FormLabel htmlFor="fechaVenc"><span className="text-red-500">*</span> Fecha de vencimiento</FormLabel>
                     <input
                       id="fechaVenc"
                       type="date"
