@@ -311,12 +311,18 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
     }
 
     try {
-      // Preparar payload con campos base y detalles
-      const payload = {
+      // 1. Si el estado cambió a 'Aprobada' o 'Rechazada', primero guardamos los cambios (productos/servicios) manteniendo el estado original
+      // para asegurar que la lógica de aprobación (backend) tome los datos actualizados.
+      const originalState = quoteToEdit.estado;
+      const newState = quoteData.estado;
+      const isStateChanging = newState !== originalState;
+
+      const payloadUpdate = {
         nombre_cotizacion: quoteData.nombre_cotizacion,
         id_cliente: clienteSeleccionado ? Number(clienteSeleccionado) : quoteData.id_cliente,
         fecha_vencimiento: quoteData.fecha_vencimiento ? new Date(quoteData.fecha_vencimiento).toISOString() : undefined,
-        estado: quoteData.estado,
+        // Si vamos a cambiar de estado después, mantenemos el original aquí para evitar inconsistencias
+        estado: isStateChanging ? originalState : newState,
         observaciones: observaciones.trim() || undefined,
         detalles: [
           ...productosAgregados.map(p => ({ id_producto: p.id_producto, cantidad: p.cantidad })),
@@ -324,9 +330,21 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
         ],
       };
 
-      // Actualizar cotización con detalles
-      const updatedQuote = await quotesService.updateQuote(quoteData.id_cotizacion, payload);
-      onSave(updatedQuote);
+      // Actualizar cotización (datos básicos + detalles)
+      let resultQuote = await quotesService.updateQuote(quoteData.id_cotizacion, payloadUpdate);
+
+      // 2. Si hubo cambio de estado, llamamos al endpoint específico que maneja la lógica de negocio (stock, proyectos, email)
+      if (isStateChanging) {
+        const statusData = { estado: newState };
+        // Si es rechazada/anulada y tuviera motivo (aunque en este modal no se pide motivo explícito para Aprobar/Rechazar, se asume null)
+        // Si quisieras manejar motivo de rechazo aquí, deberías pedirlo en el UI. Por ahora enviamos solo el estado.
+        
+        const stateChangeResult = await quotesService.changeQuoteState(quoteData.id_cotizacion, newState);
+        // El resultado final debe ser la cotización con el nuevo estado
+        resultQuote = stateChangeResult.data || stateChangeResult; 
+      }
+
+      onSave(resultQuote);
       onClose();
     } catch (error) {
       console.error('Error al actualizar cotización:', error);

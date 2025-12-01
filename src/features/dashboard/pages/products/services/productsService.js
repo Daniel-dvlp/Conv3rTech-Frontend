@@ -5,7 +5,7 @@ export const productsService = {
   // Obtener todos los productos
   getAllProducts: async () => {
     try {
-      const response = await api.get('/products/products');
+      const response = await api.get('/products');
       return response.data;
     } catch (error) {
       console.error('Error al obtener productos:', error);
@@ -16,7 +16,7 @@ export const productsService = {
   // Obtener un producto por ID
   getProductById: async (id) => {
     try {
-      const response = await api.get(`/products/products/${id}`);
+      const response = await api.get(`/products/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener producto:', error);
@@ -27,7 +27,7 @@ export const productsService = {
   // Crear un nuevo producto
   createProduct: async (productData) => {
     try {
-      const response = await api.post('/products/products', productData);
+      const response = await api.post('/products', productData);
       // El backend devuelve { message, data }
       return response.data?.data ?? response.data;
     } catch (error) {
@@ -39,7 +39,7 @@ export const productsService = {
   // Actualizar un producto
   updateProduct: async (id, productData) => {
     try {
-      const response = await api.put(`/products/products/${id}`, productData);
+      const response = await api.put(`/products/${id}`, productData);
       // El backend devuelve { message, data }
       return response.data?.data ?? response.data;
     } catch (error) {
@@ -51,7 +51,7 @@ export const productsService = {
   // Eliminar un producto
   deleteProduct: async (id) => {
     try {
-      const response = await api.delete(`/products/products/${id}`);
+      const response = await api.delete(`/products/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al eliminar producto:', error);

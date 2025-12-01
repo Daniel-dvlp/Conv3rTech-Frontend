@@ -3,11 +3,12 @@ import { FaPlus, FaSearch, FaDownload } from 'react-icons/fa';
 import PagosTable from './components/PagosTable';
 import CreatePaymentsModal from './components/CreatePaymentsModal';
 import Pagination from '../../../../shared/components/Pagination'; // Asegúrate de que esta ruta sea correcta
-import toast from 'react-hot-toast'; // Importar react-hot-toast
+import { toast } from 'react-hot-toast'; // Importar react-hot-toast como objeto { toast } o default según librería
 import PaymentsDetailModal from './components/PaymentsDetailModal'; // Importa el nuevo modal de detalles
 import { paymentsApi } from './services/paymentsApi';
 import { projectsApi } from '../../../../shared/services/projectsApi';
 import { projectPaymentsApi } from './services/projectPaymentsApi';
+import * as XLSX from 'xlsx';
 
 const ITEMS_PER_PAGE = 5;
 
@@ -36,24 +37,33 @@ const Payments_InstallmentsPage = () => {
       
       console.log('Proyectos obtenidos del backend:', projects);
       
+      // LOG PARA VERIFICAR COTIZACIONES
+      console.log('🔍 Verificación de Cotizaciones en Proyectos:', projects.map(p => ({
+        id: p.id,
+        nombre: p.nombre,
+        numeroContrato: p.numeroContrato,
+        tieneCotizacion: !!p.cotizacion,
+        cotizacion: p.cotizacion || 'Sin cotización asignada'
+      })));
+
       if (projects.length === 0) {
         setClientesConContratosYPagos([]);
         return;
       }
 
-      // Para cada proyecto, obtener sus pagos usando las rutas anidadas
-      const projectsWithPayments = await Promise.all(
+      // Optimización: Usar Promise.allSettled para evitar que un fallo bloquee todo
+      // y limitar la concurrencia si es necesario (aquí simple Promise.all para empezar)
+      const projectsWithPaymentsResults = await Promise.allSettled(
         projects.map(async (project) => {
           try {
-            console.log(`Obteniendo pagos para proyecto ${project.id}:`, project);
+            // console.log(`Obteniendo pagos para proyecto ${project.id}`);
             const paymentsResponse = await projectPaymentsApi.getProjectPayments(project.id);
-            console.log(`Pagos obtenidos para proyecto ${project.id}:`, paymentsResponse);
             return {
               ...project,
               pagos: paymentsResponse.data || []
             };
           } catch (error) {
-            console.warn(`No se pudieron cargar los pagos del proyecto ${project.id}:`, error);
+            console.warn(`No se pudieron cargar los pagos del proyecto ${project.id}:`, error.message);
             return {
               ...project,
               pagos: []
@@ -61,8 +71,12 @@ const Payments_InstallmentsPage = () => {
           }
         })
       );
+
+      const projectsWithPayments = projectsWithPaymentsResults.map(result => 
+          result.status === 'fulfilled' ? result.value : null
+      ).filter(p => p !== null);
       
-      console.log('Proyectos con pagos:', projectsWithPayments);
+      // console.log('Proyectos con pagos:', projectsWithPayments);
 
       // Agrupar proyectos por cliente y contrato
       const grouped = {};
@@ -117,13 +131,14 @@ const Payments_InstallmentsPage = () => {
           
           return {
             id: pago.id_pago_abono || pago.id,
-            fecha: pago.fecha,
+            fecha: pago.fecha ? new Date(pago.fecha).toISOString().split('T')[0] : '',
             montoTotal: montoTotal,
             montoAbonado: Number(pago.monto),
             montoRestante: montoRestante,
             metodoPago: pago.metodo_pago,
             estado: pago.estado ? 'Registrado' : 'Cancelado',
-            concepto: `Pago ${pago.metodo_pago}`
+            concepto: `Pago ${pago.metodo_pago}`,
+            motivo_anulacion: pago.motivo_anulacion // Aseguramos que pase el motivo
           };
         });
         
@@ -155,7 +170,16 @@ const Payments_InstallmentsPage = () => {
       
       setClientesConContratosYPagos(result);
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('Error cargando datos en loadPaymentsData:', error);
+      if (error.response) {
+          console.error('Datos de respuesta del error:', error.response.data);
+          console.error('Estado del error:', error.response.status);
+          console.error('Cabeceras del error:', error.response.headers);
+      } else if (error.request) {
+          console.error('No se recibió respuesta:', error.request);
+      } else {
+          console.error('Error al configurar la solicitud:', error.message);
+      }
       toast.error('Error al cargar los datos de pagos');
     } finally {
       setLoading(false);
@@ -362,15 +386,19 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
         estado: true
       });
       toast.success('Abono registrado correctamente.');
+      setMostrarModalPago(false); // Cerrar modal solo si es exitoso
+      setModalContractData(null); 
       loadPaymentsData(); // Recargar datos
     } catch (error) {
       console.error('Error registrando pago:', error);
-      toast.error('Error al registrar el abono');
+      const message = error?.response?.data?.error?.message || error?.response?.data?.message || 'Error al registrar el abono';
+      toast.error(message);
+      // NO cerramos el modal para que el usuario pueda corregir
     }
   };
 
   // Manejador para cancelar un pago
-  const handleCancelPayment = async (paymentIdToCancel, contratoNumero, clienteId) => {
+  const handleCancelPayment = async (paymentIdToCancel, contratoNumero, clienteId, motivo) => {
     try {
       // Buscar el proyecto para obtener el projectId
       const clienteFound = clientesConContratosYPagos.find(c => c.cliente.id === clienteId);
@@ -385,10 +413,85 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
         return;
       }
       
-      // Usar la ruta anidada para cancelar el pago
-      await projectPaymentsApi.cancelProjectPayment(contratoFound.id_proyecto, paymentIdToCancel);
+      // 1. Usar la ruta anidada para cancelar el pago en el backend
+      await projectPaymentsApi.cancelProjectPayment(contratoFound.id_proyecto, paymentIdToCancel, motivo);
       toast.success('Pago cancelado correctamente.');
-      loadPaymentsData();
+      
+      // 2. Actualización OPTIMISTA (Local): No hacemos fetch para evitar errores de red o retardos
+      
+      // Clonamos los pagos actuales del contrato (que ya tenemos en memoria)
+      const currentPagos = [...contratoFound.pagos];
+      
+      // Actualizamos el pago específico en la lista local
+      const pagosActualizados = currentPagos.map(p => {
+        if ((p.id_pago_abono || p.id) === paymentIdToCancel) {
+          return {
+            ...p,
+            estado: 'Cancelado', // Actualizamos el string de visualización
+            isCancelled: true,   // Flag interno si fuera necesario
+            motivo_anulacion: motivo,
+            fecha: p.fecha ? new Date(p.fecha).toISOString().split('T')[0] : '', // Asegurar formato en actualización local
+            // Importante: Si 'estado' venía como booleano en raw data, aquí estamos trabajando con data ya procesada
+            // En loadPaymentsData: estado: pago.estado ? 'Registrado' : 'Cancelado'
+            // Así que mantener 'Cancelado' es correcto para la UI.
+          };
+        }
+        return p;
+      });
+
+      // 3. Recalcular totales con la lista actualizada
+      const montoTotalContrato = contratoFound.montoTotal;
+      
+      // Calcular nuevo total abonado (sumar solo los que NO están cancelados)
+      const nuevoTotalAbonado = pagosActualizados
+        .filter(p => p.estado === 'Registrado') // Filtramos por el string que usa la UI
+        .reduce((sum, p) => sum + Number(p.montoAbonado), 0);
+      
+      const nuevoMontoRestante = Math.max(0, montoTotalContrato - nuevoTotalAbonado);
+
+      // Actualizar el monto restante en TODAS las filas (para que coincida con el header)
+      const pagosFinales = pagosActualizados.map(p => ({
+        ...p,
+        montoRestante: nuevoMontoRestante,
+        fecha: p.fecha ? new Date(p.fecha).toISOString().split('T')[0] : '' // Asegurar formato en todas las filas
+      }));
+
+      // 4. Actualizar el estado PRINCIPAL localmente
+      setClientesConContratosYPagos(prevClientes => {
+        return prevClientes.map(clienteEntry => {
+          if (clienteEntry.cliente.id !== clienteId) return clienteEntry;
+          
+          const updatedContratos = clienteEntry.contratos.map(contrato => {
+             if (contrato.numero !== contratoNumero) return contrato;
+             
+             return {
+               ...contrato,
+               pagos: pagosFinales,
+               montoAbonado: nuevoTotalAbonado,
+               montoRestante: nuevoMontoRestante
+             };
+          });
+
+          return {
+            ...clienteEntry,
+            contratos: updatedContratos
+          };
+        });
+      });
+
+      // 5. Actualizar el MODAL si está abierto
+      if (mostrarModalPago && modalContractData) {
+         setModalContractData(prev => ({
+            ...prev,
+            contrato: {
+                ...prev.contrato,
+                pagos: pagosFinales,
+                montoAbonado: nuevoTotalAbonado,
+                montoRestante: nuevoMontoRestante
+            }
+         }));
+      }
+
     } catch (error) {
       console.error('Error cancelando pago:', error);
       toast.error('Error al cancelar el pago');
@@ -397,9 +500,30 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
 
 
   const handleExport = () => {
-    // Lógica de exportación, si es necesario, aquí podrías exportar todos los pagos filtrados
-    toast.info('Funcionalidad de exportar no implementada en este ejemplo.');
-    console.log('Exportando pagos:', filteredPagos);
+    if (filteredPagos.length === 0) {
+      toast.error('No hay datos para exportar.');
+      return;
+    }
+
+    const dataToExport = filteredPagos.map(p => ({
+      'Cliente': `${p.nombre} ${p.apellido}`,
+      'Contrato': p.numeroContrato,
+      'Fecha': p.fecha,
+      'Concepto': p.concepto,
+      'Monto Total Contrato': p.montoTotal,
+      'Monto Abonado': p.montoAbonado,
+      'Monto Restante': p.montoRestante,
+      'Método de Pago': p.metodoPago,
+      'Estado': p.estado,
+      'Motivo Anulación': p.motivo_anulacion || ''
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dataToExport);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Pagos");
+    XLSX.writeFile(wb, `Pagos_Conv3rTech_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    
+    toast.success('Exportación exitosa.');
   };
 
 
@@ -467,11 +591,11 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
         isOpen={mostrarModalPago}
         onClose={() => {
           setMostrarModalPago(false);
-          setModalContractData(null); // Limpiar data al cerrar
+          setModalContractData(null);
         }}
         onSaveNewAbono={handleAddPagoToData}
-        contractData={modalContractData} // Pasa la data completa del contrato
-        onCancelPayment={handleCancelPayment} // Pasa la función para cancelar
+        contractData={modalContractData}
+        onCancelPayment={handleCancelPayment}
       />
 
       {/* Modal de Detalles del Contrato */}

@@ -10,7 +10,16 @@ const WeeklySalesChart = ({ data }) => {
   const [size, setSize] = useState({ width: 640, height: 220 });
 
   const chartData = useMemo(() => {
-    if (mode === 'week') return data;
+    if (mode === 'week') {
+      const normalized = Array.isArray(data)
+        ? data.filter((d) => d && typeof d.sales === 'number')
+        : [];
+      if (normalized.length === 0) {
+        const days = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+        return days.map((d) => ({ day: d, sales: 0 }));
+      }
+      return normalized;
+    }
     const months = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
     return months.map((m, i) => ({ day: m, sales: Math.round((i+1) * 180) }));
   }, [data, mode]);
@@ -24,18 +33,25 @@ const WeeklySalesChart = ({ data }) => {
     return () => ro.disconnect();
   }, []);
 
-  const maxSales = 5000; // Valor máximo fijo para el eje Y
+  const maxData = chartData.reduce((m, d) => Math.max(m, Number(d.sales) || 0), 0);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(Math.max(1, maxData))));
+  const niceMaxCandidate = Math.ceil(maxData / magnitude) * magnitude;
+  const maxSales = Math.max(1000, niceMaxCandidate);
   const width = size.width;
   const height = size.height;
-  const padding = { top: 20, right: 20, bottom: 30, left: 40 };
+  const padding = { top: 20, right: 20, bottom: 30, left: 70 };
   const innerW = width - padding.left - padding.right;
   const innerH = height - padding.top - padding.bottom;
-  const xAt = (i) => padding.left + (i * innerW) / (chartData.length - 1);
+  const denom = Math.max(1, chartData.length - 1);
+  const xAt = (i) => padding.left + (i * innerW) / denom;
   const yAt = (v) => padding.top + (1 - v / maxSales) * innerH;
   const points = chartData.map((d, i) => [xAt(i), yAt(d.sales)]);
-  const linePath = `M ${points.map(p => `${p[0]} ${p[1]}`).join(' L ')}`;
-  const areaPath = `${linePath} L ${xAt(chartData.length - 1)} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z`;
-  const tickVals = [1000, 2000, 3000, 4000, 5000];
+  const linePath = points.length > 0 ? `M ${points.map(p => `${p[0]} ${p[1]}`).join(' L ')}` : '';
+  const areaPath = points.length > 0
+    ? `${linePath} L ${xAt(Math.max(0, chartData.length - 1))} ${height - padding.bottom} L ${padding.left} ${height - padding.bottom} Z`
+    : '';
+  const tickCount = 5;
+  const tickVals = Array.from({ length: tickCount }, (_, i) => ((i + 1) * maxSales) / tickCount);
 
   useEffect(() => {
     setMounted(false);
@@ -44,7 +60,7 @@ const WeeklySalesChart = ({ data }) => {
 
   useEffect(() => {
     const el = lineRef.current;
-    if (!el) return;
+    if (!el || points.length < 2 || !linePath) return;
     const length = el.getTotalLength();
     el.style.strokeDasharray = `${length}`;
     el.style.strokeDashoffset = `${length}`;
@@ -103,7 +119,7 @@ const WeeklySalesChart = ({ data }) => {
           {tickVals.map((t, i) => (
             <g key={i}>
               <line x1={padding.left} x2={width - padding.right} y1={yAt(t)} y2={yAt(t)} stroke="#E5E7EB" strokeDasharray="4 4" />
-              <text x={padding.left - 8} y={yAt(t)} textAnchor="end" dominantBaseline="middle" fill="#6B7280" fontSize="12">{`$${t / 1000}k`}</text>
+              <text x={padding.left - 8} y={yAt(t)} textAnchor="end" dominantBaseline="middle" fill="#6B7280" fontSize="12">{new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(t)}</text>
             </g>
           ))}
           <path d={areaPath} fill="url(#areaGradient)" style={{ opacity: mounted ? 1 : 0, transition: 'opacity 700ms ease' }} />
@@ -121,7 +137,7 @@ const WeeklySalesChart = ({ data }) => {
                     {chartData[i].day}
                   </text>
                   <text x={Math.max(padding.left + 4, Math.min(p[0] - 55, width - padding.right - 110)) + 55} y={p[1] - 60 > padding.top ? p[1] - 28 : p[1] + 44} textAnchor="middle" fill="#FFFFFF" fontSize="14" fontWeight="600">
-                    {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(chartData[i].sales)}
+                    {new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(chartData[i].sales)}
                   </text>
                 </g>
               )}
