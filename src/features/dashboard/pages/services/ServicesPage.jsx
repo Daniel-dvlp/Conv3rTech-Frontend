@@ -5,7 +5,9 @@ import ServiceFormModal from './components/ServiceFormModal';
 import ServiceViewModal from './components/ServiceViewModal';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { serviceService } from './services/serviceService.js';
+import cloudinaryService from '../../../../services/cloudinaryService';
 import { toast } from 'react-hot-toast';
+import { FaPlus, FaSearch } from "react-icons/fa";
 
 const ServiciosLoading = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -18,7 +20,6 @@ const ServiciosLoading = () => (
 const ServicesPage = () => {
   const [loading, setLoading] = useState(true);
   const [servicios, setServicios] = useState([]);
-  const [filtro, setFiltro] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -60,7 +61,23 @@ const ServicesPage = () => {
   const handleEliminar = async (id) => {
     const confirmed = await confirmDelete('¿Deseas eliminar este servicio?');
     if (!confirmed) return;
+    
     try {
+      // Obtener el servicio para acceder a su imagen
+      const servicio = servicios.find((s) => s.id_servicio === id || s.id === id);
+      
+      // Eliminar imagen de Cloudinary si existe
+      if (servicio?.url_imagen && servicio.url_imagen.includes('res.cloudinary.com')) {
+        try {
+          await cloudinaryService.deleteImage(servicio.url_imagen);
+          console.log('✅ Imagen eliminada de Cloudinary');
+        } catch (deleteError) {
+          console.error('❌ Error al eliminar imagen de Cloudinary:', deleteError);
+          // Continuar con la eliminación del servicio aunque falle la imagen
+        }
+      }
+      
+      // Eliminar servicio del backend
       await serviceService.deleteService(id);
       setServicios((prev) => prev.filter((s) => s.id_servicio !== id && s.id !== id));
       showSuccess('Servicio eliminado correctamente');
@@ -75,6 +92,7 @@ const ServicesPage = () => {
       const response = await serviceService.createService(nuevoServicio);
       const creado = response?.service || response;
       setServicios((prev) => [...prev, creado]);
+      setModalOpen(false);
       showSuccess('Servicio creado correctamente');
       toast.success('Servicio creado exitosamente');
     } catch (error) {
@@ -90,6 +108,23 @@ const ServicesPage = () => {
   const handleActualizarServicio = async (servicioEditado) => {
     try {
       const id = servicioEditado.id_servicio || servicioEditado.id;
+      
+      // Obtener el servicio actual para comparar imágenes
+      const servicioActual = servicios.find((s) => s.id_servicio === id || s.id === id);
+      
+      // Si cambió la imagen y la antigua era de Cloudinary, eliminarla
+      if (servicioActual?.url_imagen && 
+          servicioActual.url_imagen !== servicioEditado.url_imagen &&
+          servicioActual.url_imagen.includes('res.cloudinary.com')) {
+        try {
+          await cloudinaryService.deleteImage(servicioActual.url_imagen);
+          console.log('✅ Imagen anterior eliminada de Cloudinary');
+        } catch (deleteError) {
+          console.error('❌ Error al eliminar imagen anterior:', deleteError);
+          // Continuar con la actualización aunque falle la eliminación
+        }
+      }
+      
       const response = await serviceService.updateService(id, servicioEditado);
       const actualizado = response?.service || response;
       setServicios((prev) =>
@@ -110,45 +145,11 @@ const ServicesPage = () => {
     }
   };
 
-  const handleToggleEstado = async (id) => {
-    try {
-      const servicio = servicios.find((s) => s.id_servicio === id || s.id === id);
-      if (!servicio) return;
-      
-      const nuevoEstado = servicio.estado === 'activo' ? 'inactivo' : 'activo';
-      const idToUpdate = servicio.id_servicio || servicio.id;
-      
-      await serviceService.updateService(idToUpdate, { ...servicio, estado: nuevoEstado });
-      setServicios((prev) =>
-        prev.map((s) =>
-          (s.id_servicio === id || s.id === id)
-            ? { ...s, estado: nuevoEstado }
-            : s
-        )
-      );
-      toast.success('Estado actualizado exitosamente');
-    } catch (error) {
-      toast.error('Error al cambiar el estado del servicio');
-    }
-  };
 
-  const serviciosFiltrados = servicios
-    .filter((s) => {
-      if (filtro === 'todos') return true;
-      // Si el servicio tiene categoría, filtrar por el nombre de la categoría
-      const categoriaNombre = s.categoria?.nombre || s.categoria || '';
-      if (filtro === 'mantenimiento') {
-        return categoriaNombre.toLowerCase().includes('mantenimiento');
-      }
-      if (filtro === 'instalacion') {
-        return categoriaNombre.toLowerCase().includes('instalacion');
-      }
-      return false;
-    })
-    .filter((s) =>
-      (s.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
-      (s.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
-    );
+  const serviciosFiltrados = servicios.filter((s) =>
+    (s.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
+    (s.descripcion || '').toLowerCase().includes(busqueda.toLowerCase())
+  );
 
   const indexInicio = (currentPage - 1) * serviciosPorPagina;
   const indexFin = indexInicio + serviciosPorPagina;
@@ -157,60 +158,40 @@ const ServicesPage = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-3xl font-bold mb-6 text-center text-[#000435]">
-        SERVICIOS
-      </h2>
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <h2 className="text-3xl font-bold text-[#000435]">SERVICIOS</h2>
 
-      {/* Buscador centrado y botón */}
-      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-6">
-        <input
-          type="text"
-          placeholder="Buscar servicio..."
-          className="border px-4 py-2 rounded w-full sm:w-96 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
-          value={busqueda}
-          onChange={(e) => {
-            setBusqueda(e.target.value);
-            setCurrentPage(1);
-          }}
-        />
-        <button
-          onClick={() => {
-            setModalOpen(true);
-            setEsEdicion(false);
-            setSelectedService(null);
-          }}
-          className="bg-[#FFB800] text-black px-4 py-2 rounded hover:bg-[#e0a500] transition w-full sm:w-auto"
-        >
-          + Crear Servicio
-        </button>
-      </div>
+        <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 sm:mt-0">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar servicio"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
 
-      {/* Filtros por tipo */}
-      <div className="flex flex-wrap justify-center gap-3 mb-6">
-        {[
-          { tipo: 'todos', label: 'Todos' },
-          { tipo: 'instalacion', label: 'Instalación' },
-          { tipo: 'mantenimiento', label: 'Mantenimiento' },
-        ].map(({ tipo, label }) => (
           <button
-            key={tipo}
             onClick={() => {
-              setFiltro(tipo);
-              setCurrentPage(1);
+              setModalOpen(true);
+              setEsEdicion(false);
+              setSelectedService(null);
             }}
-            className={`px-5 py-1.5 rounded-full text-sm font-semibold transition border shadow-sm
-              ${
-                filtro === tipo
-                  ? 'bg-[#000435] text-white border-[#000435]'
-                  : 'bg-white text-gray-600 border-gray-300 hover:bg-[#e0e7ff] hover:text-[#000435] hover:border-[#cbd5e1]'
-              }`}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
           >
-            {label}
+            <FaPlus />
+            Nuevo Servicio
           </button>
-        ))}
+        </div>
       </div>
 
-      {/* Tabla o skeleton */}
+      {/* Tabla */}
       {loading ? (
         <ServiciosLoading />
       ) : (
@@ -220,10 +201,8 @@ const ServicesPage = () => {
             onVer={handleVer}
             onEditar={handleEditar}
             onEliminar={handleEliminar}
-            onToggleEstado={handleToggleEstado}
           />
 
-          {/* Paginador estilo categoría */}
           {totalPaginas > 1 && (
             <div className="flex justify-center items-center mt-10 gap-2">
               <button
@@ -268,7 +247,7 @@ const ServicesPage = () => {
         </>
       )}
 
-      {/* Modal de crear o editar */}
+      {/* Modal crear/editar */}
       <ServiceFormModal
         isOpen={modalOpen}
         onClose={() => {
@@ -281,7 +260,7 @@ const ServicesPage = () => {
         esEdicion={esEdicion}
       />
 
-      {/* Modal de ver */}
+      {/* Modal ver */}
       <ServiceViewModal
         isOpen={viewModalOpen}
         onClose={() => setViewModalOpen(false)}

@@ -194,11 +194,21 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         
         if (files.length === 0) return;
 
+        // Validar archivos
+        const validation = cloudinaryService.validateImages(files);
+        if (!validation.valid) {
+            setErrors(prev => ({
+                ...prev,
+                imageUpload: validation.errors.join('. ')
+            }));
+            return;
+        }
+
         setUploadingImages(true);
         setUploadProgress(0);
 
         try {
-            // Subir imágenes a Cloudinary
+            // Subir imágenes a Cloudinary a través del backend
             const uploadedUrls = await cloudinaryService.uploadMultipleImages(files, 'products');
             
             setProductData((prev) => ({
@@ -207,11 +217,18 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             }));
 
             setUploadProgress(100);
+            
+            // Limpiar error si existe
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.imageUpload;
+                return newErrors;
+            });
         } catch (error) {
             console.error('Error al subir imágenes:', error);
             setErrors(prev => ({
                 ...prev,
-                imageUpload: 'Error al subir las imágenes. Inténtalo de nuevo.'
+                imageUpload: error.message || 'Error al subir las imágenes. Inténtalo de nuevo.'
             }));
         } finally {
             setUploadingImages(false);
@@ -477,7 +494,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                     <FormSection title="Información Principal">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <FormLabel htmlFor="nombre">* Nombre:</FormLabel>
+                                <FormLabel htmlFor="nombre"><span className="text-red-500">*</span> Nombre:</FormLabel>
                                 <input type="text" id="nombre" name="nombre" value={productData.nombre} onChange={handleChange} onBlur={handleBlur} className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500' : ''}`}  />
                                 {errors.nombre && (
                                     <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>
@@ -487,14 +504,14 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                 )}
                             </div>
                             <div>
-                                <FormLabel htmlFor="modelo">* Modelo:</FormLabel>
+                                <FormLabel htmlFor="modelo"><span className="text-red-500">*</span> Modelo:</FormLabel>
                                 <input type="text" id="modelo" name="modelo" value={productData.modelo} onChange={handleChange} onBlur={handleBlur} className={`${inputBaseStyle} ${errors.modelo ? 'border-red-500' : ''}`}  />
                                 {errors.modelo && (
                                     <p className="text-red-500 text-sm mt-1">{errors.modelo}</p>
                                 )}
                             </div>
                             <div className="relative">
-                                <FormLabel htmlFor="id_categoria">* Categoría:</FormLabel>
+                                <FormLabel htmlFor="id_categoria"><span className="text-red-500">*</span> Categoría:</FormLabel>
                                 <select
                                     id="id_categoria"
                                     name="id_categoria"
@@ -529,7 +546,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                             </div>
 
                             <div className="relative">
-                                <FormLabel htmlFor="unidad_medida">* Unidad:</FormLabel>
+                                <FormLabel htmlFor="unidad_medida"><span className="text-red-500">*</span> Unidad:</FormLabel>
                                 <select
                                     id="unidad_medida"
                                     name="unidad_medida"
@@ -560,21 +577,21 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                 )}
                             </div>
                             <div>
-                                <FormLabel htmlFor="precio">* Precio:</FormLabel>
+                                <FormLabel htmlFor="precio"><span className="text-red-500">*</span> Precio:</FormLabel>
                                 <input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}  />
                                 {errors.precio && (
                                     <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
                                 )}
                             </div>
                             <div>
-                                <FormLabel htmlFor="stock">* Cantidad:</FormLabel>
+                                <FormLabel htmlFor="stock"><span className="text-red-500">*</span> Cantidad:</FormLabel>
                                 <input type="number" id="stock" name="stock" value={productData.stock} onChange={handleChange} className={`${inputBaseStyle} ${errors.stock ? 'border-red-500' : ''}`}  />
                                 {errors.stock && (
                                     <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
                                 )}
                             </div>
                             <div>
-                                <FormLabel htmlFor="garantia">* Garantía (meses):</FormLabel>
+                                <FormLabel htmlFor="garantia"><span className="text-red-500">*</span> Garantía (meses):</FormLabel>
                                 <input type="number" id="garantia" name="garantia" value={productData.garantia} onChange={handleChange} className={`${inputBaseStyle} ${errors.garantia ? 'border-red-500' : ''}`}  />
                                 {errors.garantia && (
                                     <p className="text-red-500 text-sm mt-1">{errors.garantia}</p>
@@ -593,7 +610,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                             <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-4 items-start mb-2">
                                 {/* Bloque de Característica (Selector o Input) */}
                                 <div>
-                                    <FormLabel htmlFor={`caracteristica_input_${index}`}>* Característica:</FormLabel>
+                                    <FormLabel htmlFor={`caracteristica_input_${index}`}><span className="text-red-500">*</span> Característica:</FormLabel>
                                     
                                     {ficha.id_caracteristica === "otro" ? (
                                         <div className="flex gap-2">
@@ -650,7 +667,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                 
                                 {/* Bloque de Valor */}
                                 <div>
-                                    <FormLabel htmlFor={`valor_${index}`}>* Valor:</FormLabel>
+                                    <FormLabel htmlFor={`valor_${index}`}><span className="text-red-500">*</span> Valor:</FormLabel>
                                     <input
                                         type="text"
                                         id={`valor_${index}`}

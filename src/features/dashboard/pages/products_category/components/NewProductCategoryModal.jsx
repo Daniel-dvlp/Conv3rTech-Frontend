@@ -101,7 +101,7 @@ const handleSubmit = (e) => {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-5">
           <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1">* Nombre:</label>
+            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1"><span className="text-red-500">*</span> Nombre:</label>
             <input
               id="nombre"
               name="nombre"
@@ -115,7 +115,7 @@ const handleSubmit = (e) => {
           </div>
 
           <div>
-            <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1">* Descripción:</label>
+            <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1"><span className="text-red-500">*</span> Descripción:</label>
             <textarea
               id="descripcion"
               name="descripcion"
@@ -123,7 +123,7 @@ const handleSubmit = (e) => {
               onChange={handleChange}
               onBlur={handleBlur}
               rows="4"
-              className={inputBaseStyle}
+              className={`${inputBaseStyle} resize-none`}
             ></textarea>
             {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
           </div>

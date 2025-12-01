@@ -155,7 +155,7 @@ const ProductCategoryEditModal = ({
                             htmlFor="nombre"
                             className="block text-sm font-medium text-gray-700 mb-1"
                         >
-                            * Nombre:
+                            <span className="text-red-500">*</span> Nombre:
                         </label>
                         <input
                             id="nombre"
@@ -176,7 +176,7 @@ const ProductCategoryEditModal = ({
                             htmlFor="descripcion"
                             className="block text-sm font-medium text-gray-700 mb-1"
                         >
-                            * Descripción:
+                            <span className="text-red-500">*</span> Descripción:
                         </label>
                         <textarea
                             id="descripcion"
@@ -185,7 +185,7 @@ const ProductCategoryEditModal = ({
                             onChange={handleChange}
                             onBlur={handleBlur}
                             rows="4"
-                            className={inputBaseStyle}
+                            className={`${inputBaseStyle} resize-none`}
                         ></textarea>
                         {errors.descripcion && (
                             <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>
