@@ -16,3 +16,4 @@ export { default as paymentsInstallmentsService } from "./paymentsInstallmentsSe
 export { default as healthCheckService } from "./healthCheck";
 export { default as projectsService } from "./projectsService";
 export { default as rolesService } from "./rolesService";
+export { default as dashboardService } from "./dashboardService";

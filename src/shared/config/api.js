@@ -5,7 +5,7 @@ const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://backend-conv
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 10000,
+  timeout: 60000, // Aumentado a 60s para operaciones lentas
   headers: {
     'Content-Type': 'application/json',
   },

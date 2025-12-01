@@ -5,7 +5,7 @@ export const productsService = {
   // Obtener todos los productos
   getAllProducts: async () => {
     try {
-      const response = await api.get('/products/products');
+      const response = await api.get("/products");
       return response.data;
     } catch (error) {
       console.error('Error al obtener productos:', error);
@@ -16,7 +16,7 @@ export const productsService = {
   // Obtener un producto por ID
   getProductById: async (id) => {
     try {
-      const response = await api.get(`/products/products/${id}`);
+      const response = await api.get(`/products/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener producto:', error);
@@ -27,14 +27,8 @@ export const productsService = {
   // Crear un nuevo producto
   createProduct: async (productData) => {
     try {
-      console.log('📤 Enviando producto al backend:', productData);
-      const response = await api.post('/products/products', productData, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      console.log('✅ Respuesta del servidor:', response.data);
-      return response.data?.data ?? response.data;
+      const response = await api.post("/products", productData);
+      return response.data;
     } catch (error) {
       console.error('❌ Error al crear producto:', error);
       throw error;
@@ -44,17 +38,8 @@ export const productsService = {
   // Actualizar un producto
   updateProduct: async (id, productData) => {
     try {
-      console.log('📤 Actualizando producto:', id, productData);
-      
-      // Enviar como JSON normal (las fotos ya están como URLs de Cloudinary)
-      const response = await api.put(`/products/products/${id}`, productData, {
-        headers: {
-          'Content-Type': 'application/json',
-        }
-      });
-      
-      console.log('✅ Producto actualizado:', response.data);
-      return response.data?.data ?? response.data;
+      const response = await api.put(`/products/${id}`, productData);
+      return response.data;
     } catch (error) {
       console.error('❌ Error al actualizar producto:', error);
       throw error;
@@ -64,7 +49,7 @@ export const productsService = {
   // Eliminar un producto
   deleteProduct: async (id) => {
     try {
-      const response = await api.delete(`/products/products/${id}`);
+      const response = await api.delete(`/products/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al eliminar producto:', error);
@@ -78,7 +63,10 @@ export const categoriesService = {
   // Obtener todas las categorías
   getAllCategories: async () => {
     try {
-      const response = await api.get('/productsCategory');
+      const response = await api.patch(
+        `/products/${id}/estado`,
+        stateData
+      );
       return response.data;
     } catch (error) {
       console.error('Error al obtener categorías:', error);

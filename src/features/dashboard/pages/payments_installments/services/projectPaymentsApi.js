@@ -38,9 +38,11 @@ export const projectPaymentsApi = {
   },
 
   // Cancelar pago de un proyecto
-  cancelProjectPayment: async (projectId, paymentId) => {
+  cancelProjectPayment: async (projectId, paymentId, motivo) => {
     try {
-      const response = await api.delete(`${PROJECT_PAYMENTS_ENDPOINT}/${projectId}/payments/${paymentId}`);
+      const response = await api.delete(`${PROJECT_PAYMENTS_ENDPOINT}/${projectId}/payments/${paymentId}`, {
+        data: { motivo_anulacion: motivo }
+      });
       return response.data;
     } catch (error) {
       console.error('Error al cancelar pago del proyecto:', error);

@@ -37,7 +37,6 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
 
     useEffect(() => {
         if (isOpen && clientData) {
-            console.log('Client Data:', clientData); // DEBUG
             setFormData({
                 tipo_documento: clientData.tipo_documento || '',
                 documento: clientData.documento || '',
@@ -51,7 +50,6 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
             });
             setErrors({});
         }
-        console.log("Modal abierto:", isOpen); // <--- Agrega esto para depurar
     }, [isOpen, clientData]);
 
 
@@ -118,29 +116,28 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
           };
         
         onSubmit(clientDataForApi);
-        console.log("Se actualizó cliente, cerrando modal...");
         onClose();
-        // onSubmit debe ser una función que maneje la actualización del cliente
-       
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
-                <header className="flex justify-between items-center p-4 border-b">
-                    <h2 className="text-2xl font-bold text-gray-800">Editar Cliente</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" onClick={onClose}>
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+                <header className="flex justify-between items-center p-4 sm:p-6 border-b bg-white rounded-t-xl">
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Editar Cliente</h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2"><FaTimes /></button>
                 </header>
 
-                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
+                <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-6 custom-scroll">
                     {/* Información del cliente */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Información del Cliente</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Información del Cliente</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
-                                <label className={labelStyle}>Tipo de Documento</label>
+                                <label className={labelStyle}>
+                                    <span className="text-red-500">*</span> Tipo de Documento
+                                </label>
                                 <select name="tipo_documento" value={formData.tipo_documento} onChange={handleChange} className={inputBaseStyle}>
                                     <option value="">Seleccionar...</option>
                                     <option value="CC">Cédula de Ciudadanía</option>
@@ -152,12 +149,16 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
                             </div>
 
                             <div>
-                                <label className={labelStyle}>Documento</label>
-                                <input type="text" name="documento" value={formData.documento} onChange={handleChange} disabled className={`${inputBaseStyle} bg-gray-100 cursor-not-allowed`} />
+                                <label className={labelStyle}>
+                                    <span className="text-red-500">*</span> Documento
+                                </label>
+                                <input type="text" name="documento" value={formData.documento} disabled className={`${inputBaseStyle} bg-gray-100 cursor-not-allowed`} />
                             </div>
 
                             <div>
-                                <label className={labelStyle}>Nombre</label>
+                                <label className={labelStyle}>
+                                    <span className="text-red-500">*</span> Nombre
+                                </label>
                                 <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
                                 {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
                             </div>
@@ -168,13 +169,17 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
                             </div>
 
                             <div>
-                                <label className={labelStyle}>Correo</label>
+                                <label className={labelStyle}>
+                                    <span className="text-red-500">*</span> Correo
+                                </label>
                                 <input type="email" name="correo" value={formData.correo} onChange={handleChange} className={inputBaseStyle} />
                                 {errors.correo && <p className="text-red-500 text-sm mt-1">{errors.correo}</p>}
                             </div>
 
                             <div>
-                                <label className={labelStyle}>Celular</label>
+                                <label className={labelStyle}>
+                                    <span className="text-red-500">*</span> Celular
+                                </label>
                                 <input type="text" name="telefono" value={formData.telefono} onChange={handleChange} className={inputBaseStyle} />
                                 {errors.telefono && <p className="text-red-500 text-sm mt-1">{errors.telefono}</p>}
                             </div>
@@ -182,42 +187,48 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
                     </div>
 
                     {/* Direcciones */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Direcciones del Cliente</h3>
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Direcciones del Cliente</h3>
                         <div className="space-y-4">
                             {Array.isArray(formData.addresses) &&
                                 formData.addresses.map((dir, index) => (
-                                    <div key={index} className="grid grid-cols-1 md:grid-cols-[1fr,1fr,1fr,auto] gap-4 items-end">
+                                    <div key={index} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-4 items-end bg-white p-3 rounded-lg border border-gray-100 shadow-sm">
                                         <div>
-                                            <label className={labelStyle}>Nombre</label>
-                                            <input type="text" name="nombre_direccion" value={dir.nombre_direccion} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} />
+                                            <label className={labelStyle}>
+                                                <span className="text-red-500">*</span> Nombre
+                                            </label>
+                                            <input type="text" name="nombre_direccion" value={dir.nombre_direccion} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} placeholder="Ej: Casa" />
                                         </div>
                                         <div>
-                                            <label className={labelStyle}>Dirección</label>
-                                            <input type="text" name="direccion" value={dir.direccion} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} />
+                                            <label className={labelStyle}>
+                                                <span className="text-red-500">*</span> Dirección
+                                            </label>
+                                            <input type="text" name="direccion" value={dir.direccion} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} placeholder="Calle 123..." />
                                         </div>
                                         <div>
-                                            <label className={labelStyle}>Ciudad</label>
-                                            <input type="text" name="ciudad" value={dir.ciudad} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} />
+                                            <label className={labelStyle}>
+                                                <span className="text-red-500">*</span> Ciudad
+                                            </label>
+                                            <input type="text" name="ciudad" value={dir.ciudad} onChange={(e) => handleDireccionChange(index, e)} className={inputBaseStyle} placeholder="Bogotá" />
                                         </div>
-                                        <div className="text-right">
-                                            <button type="button" onClick={() => removeDireccion(index)} className="p-2 mt-1 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded-full"><FaTrash /></button>
+                                        <div className="text-right sm:text-center">
+                                            <button type="button" onClick={() => removeDireccion(index)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-100 rounded-full transition-colors"><FaTrash /></button>
                                         </div>
                                         {errors[`direccion-${index}`] && (
                                             <p className="col-span-full text-red-500 text-sm">{errors[`direccion-${index}`]}</p>
                                         )}
                                     </div>
                                 ))}
-                            <button type="button" onClick={addDireccion} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark px-4 py-2 rounded-lg">
+                            <button type="button" onClick={addDireccion} className="mt-2 w-full sm:w-auto inline-flex justify-center items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all">
                                 <FaPlus /> Agregar otra dirección
                             </button>
                         </div>
                     </div>
 
                     {/* Preferencias */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Preferencias</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+                        <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Preferencias</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                             <div>
                                 <label className={labelStyle}>Crédito</label>
                                 <div className="flex gap-6">
@@ -246,7 +257,7 @@ const EditClientModal = ({ isOpen, onClose, clientData, onSubmit }) => {
                         </div>
                     </div>
 
-                    <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+                    <div className="flex justify-end gap-4 pt-4 sm:pt-6 border-t mt-4 sm:mt-6">
                         <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
                         <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Cambios</button>
                     </div>

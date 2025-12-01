@@ -4,19 +4,12 @@ import { showSuccess } from '../../../../../shared/utils/alerts';
 
 const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
-const FormSection = ({ title, children }) => (
-  <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
-    <h3 className="text-lg font-bold text-gray-800 mb-0  border-gray-200 pb-3">{title}</h3>
-    <div className="space-y-4">{children}</div>
-  </div>
-);
-
 const FormLabel = ({ htmlFor, children }) => (
   <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
 );
 
 const evaluarContrasena = (password) => ({
-  longitud: password.length >= 8 && password.length <= 10,
+  longitud: password.length >= 8 && password.length <= 15,
   mayuscula: /[A-Z]/.test(password),
   minuscula: /[a-z]/.test(password),
   numero: /\d/.test(password),
@@ -152,24 +145,28 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" onClick={onClose}>
       <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">Editar Usuario</h2>
+        <header className="flex justify-between items-center p-4 sm:p-6 border-b bg-white rounded-t-xl">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Editar Usuario</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
             <FaTimes />
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 text-left">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-6 custom-scroll text-left">
 
-          <FormSection title="Información del Usuario">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Información del Usuario</h3>
+            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <FormLabel htmlFor="tipoDocumento">Tipo de Documento</FormLabel>
+                <FormLabel htmlFor="tipoDocumento">
+                  <span className="text-red-500">*</span> Tipo de Documento
+                </FormLabel>
                 <select id="tipoDocumento" name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
                   <option value="">Seleccionar...</option>
                   <option value="CC">CC</option>
@@ -182,30 +179,40 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
               </div>
 
               <div>
-                <FormLabel htmlFor="documento">Documento</FormLabel>
+                <FormLabel htmlFor="documento">
+                  <span className="text-red-500">*</span> Documento
+                </FormLabel>
                 <input id="documento" name="documento" value={formData.documento} className={`${inputBaseStyle} bg-gray-100 cursor-not-allowed`} disabled />
               </div>
 
               <div>
-                <FormLabel htmlFor="nombre">Nombre</FormLabel>
+                <FormLabel htmlFor="nombre">
+                  <span className="text-red-500">*</span> Nombre
+                </FormLabel>
                 <input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
                 {errors.nombre && <p className="text-red-500 text-sm">{errors.nombre}</p>}
               </div>
 
               <div>
-                <FormLabel htmlFor="apellido">Apellido</FormLabel>
+                <FormLabel htmlFor="apellido">
+                  <span className="text-red-500">*</span> Apellido
+                </FormLabel>
                 <input id="apellido" name="apellido" value={formData.apellido} onChange={handleChange} className={inputBaseStyle} />
                 {errors.apellido && <p className="text-red-500 text-sm">{errors.apellido}</p>}
               </div>
 
               <div>
-                <FormLabel htmlFor="celular">Celular</FormLabel>
+                <FormLabel htmlFor="celular">
+                  <span className="text-red-500">*</span> Celular
+                </FormLabel>
                 <input id="celular" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
                 {errors.celular && <p className="text-red-500 text-sm">{errors.celular}</p>}
               </div>
 
               <div>
-                <FormLabel htmlFor="rol">Rol</FormLabel>
+                <FormLabel htmlFor="rol">
+                  <span className="text-red-500">*</span> Rol
+                </FormLabel>
                 <select
                   id="rol"
                   name="rol"
@@ -225,13 +232,17 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
 
 
               <div className="col-span-2">
-                <FormLabel htmlFor="email">Correo Electrónico</FormLabel>
+                <FormLabel htmlFor="email">
+                  <span className="text-red-500">*</span> Correo Electrónico
+                </FormLabel>
                 <input id="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
                 {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
               </div>
             </div>
             <div>
-              <FormLabel htmlFor="status">Estado del Usuario</FormLabel>
+              <FormLabel htmlFor="status">
+                <span className="text-red-500">*</span> Estado del Usuario
+              </FormLabel>
               <select
                 id="status"
                 name="status"
@@ -251,10 +262,13 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
                 <p className="text-red-500 text-sm mt-1">{errors.status}</p>
               )}
             </div>
-          </FormSection>
+            </div>
+          </div>
 
-          <FormSection title="Actualizar Contraseña (opcional)">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Actualizar Contraseña (opcional)</h3>
+            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="relative">
                 <FormLabel htmlFor="nuevaContrasena">Nueva Contraseña</FormLabel>
                 <input
@@ -291,16 +305,17 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
             {/* Reglas visibles (opcional) */}
             {formData.nuevaContrasena && (
               <div className="text-sm text-gray-700 ml-2 mt-2 space-y-0">
-                <p className={validacionesContrasena.longitud ? "text-green-600" : "text-red-500"}>{validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 10 caracteres</p>
+                <p className={validacionesContrasena.longitud ? "text-green-600" : "text-red-500"}>{validacionesContrasena.longitud ? '✓' : '✗'} Entre 8 y 15 caracteres</p>
                 <p className={validacionesContrasena.mayuscula ? "text-green-600" : "text-red-500"}>{validacionesContrasena.mayuscula ? '✓' : '✗'} Al menos una mayúscula</p>
                 <p className={validacionesContrasena.minuscula ? "text-green-600" : "text-red-500"}>{validacionesContrasena.minuscula ? '✓' : '✗'} Al menos una minúscula</p>
                 <p className={validacionesContrasena.numero ? "text-green-600" : "text-red-500"}>{validacionesContrasena.numero ? '✓' : '✗'} Al menos un número</p>
                 <p className={validacionesContrasena.especial ? "text-green-600" : "text-red-500"}>{validacionesContrasena.especial ? '✓' : '✗'} Al menos un símbolo</p>
               </div>
             )}
-          </FormSection>
+            </div>
+          </div>
 
-          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+          <div className="flex justify-end gap-4 pt-4 sm:pt-6 border-t mt-4 sm:mt-6">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
             <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Guardar Cambios</button>
           </div>
