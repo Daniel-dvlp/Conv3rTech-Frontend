@@ -1,7 +1,7 @@
 // Configuración estática de la aplicación
 export const APP_CONFIG = {
   // URL base de la API (producción)
-  API_BASE_URL: "https://backend-conv3rtech.onrender.com/api",
+  API_BASE_URL: "https://convertech-bf96e8817559.herokuapp.com/api",
 
   // Timeout para peticiones (en milisegundos)
   API_TIMEOUT: 15000,
