@@ -94,8 +94,8 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                 }
                 break;
             case 'garantia':
-                if (!value || Number(value) < 12) {
-                    newErrors.garantia = 'La garantía debe ser de al menos 12 meses';
+                if (!value || ![6, 12, 24, 36].includes(Number(value))) {
+                    newErrors.garantia = 'Selecciona una garantía válida (6, 12, 24 o 36 meses)';
                 } else {
                     delete newErrors.garantia;
                 }
@@ -281,8 +281,8 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             errs.stock = 'La cantidad no puede ser negativa';
         }
         
-        if (!productData.garantia || Number(productData.garantia) < 12) {
-            errs.garantia = 'La garantía debe ser de al menos 12 meses';
+        if (!productData.garantia || ![6, 12, 24, 36].includes(Number(productData.garantia))) {
+            errs.garantia = 'Selecciona una garantía válida (6, 12, 24 o 36 meses)';
         }
 
         // Validar duplicados solo si nombre y modelo están completos
@@ -590,9 +590,30 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
                                 )}
                             </div>
-                            <div>
+                            <div className="relative">
                                 <FormLabel htmlFor="garantia"><span className="text-red-500">*</span> Garantía (meses):</FormLabel>
-                                <input type="number" id="garantia" name="garantia" value={productData.garantia} onChange={handleChange} className={`${inputBaseStyle} ${errors.garantia ? 'border-red-500' : ''}`}  />
+                                <select
+                                    id="garantia"
+                                    name="garantia"
+                                    value={productData.garantia}
+                                    onChange={handleChange}
+                                    className={`${inputBaseStyle} appearance-none pr-10 text-gray-500 ${errors.garantia ? 'border-red-500' : ''}`}
+                                >
+                                    <option value="">Seleccione la garantía:</option>
+                                    <option value="6">6 meses</option>
+                                    <option value="12">12 meses</option>
+                                    <option value="24">24 meses</option>
+                                    <option value="36">36 meses</option>
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 top-0 mt-2">
+                                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.584l3.71-4.354a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </div>
                                 {errors.garantia && (
                                     <p className="text-red-500 text-sm mt-1">{errors.garantia}</p>
                                 )}
