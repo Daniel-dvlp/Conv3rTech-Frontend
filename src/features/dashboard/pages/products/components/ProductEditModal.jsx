@@ -82,8 +82,16 @@ const ProductEditModal = ({
         else delete newErrors.precio;
         break;
       case 'garantia':
+<<<<<<< HEAD
         if (!value || value < 12) newErrors.garantia = 'La garantía debe ser de al menos 12 meses';
         else delete newErrors.garantia;
+=======
+        if (!value || ![6, 12, 24, 36].includes(Number(value))) {
+          newErrors.garantia = 'Selecciona una garantía válida (6, 12, 24 o 36 meses)';
+        } else {
+          delete newErrors.garantia;
+        }
+>>>>>>> origin/dev
         break;
       default:
         break;
@@ -267,10 +275,17 @@ const ProductEditModal = ({
     validateDuplicate();
     
     // Validar garantía
+<<<<<<< HEAD
     if (productData.garantia && productData.garantia < 12) {
       setErrors(prev => ({
         ...prev,
         garantia: 'La garantía debe ser de al menos 12 meses'
+=======
+    if (productData.garantia && ![6, 12, 24, 36].includes(Number(productData.garantia))) {
+      setErrors(prev => ({
+        ...prev,
+        garantia: 'Selecciona una garantía válida (6, 12, 24 o 36 meses)'
+>>>>>>> origin/dev
       }));
       return;
     }
@@ -396,7 +411,7 @@ const ProductEditModal = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Nombre */}
               <div>
-                <FormLabel htmlFor="nombre">* Nombre:</FormLabel>
+                <FormLabel htmlFor="nombre"><span className="text-red-500">*</span> Nombre:</FormLabel>
                 <input
                   type="text"
                   id="nombre"
@@ -416,7 +431,7 @@ const ProductEditModal = ({
 
               {/* Modelo */}
               <div>
-                <FormLabel htmlFor="modelo">* Modelo:</FormLabel>
+                <FormLabel htmlFor="modelo"><span className="text-red-500">*</span> Modelo:</FormLabel>
                 <input
                   type="text"
                   id="modelo"
@@ -433,7 +448,7 @@ const ProductEditModal = ({
 
               {/* Categoría */}
               <div>
-                <FormLabel htmlFor="id_categoria">* Categoría:</FormLabel>
+                <FormLabel htmlFor="id_categoria"><span className="text-red-500">*</span> Categoría:</FormLabel>
                 <select
                   id="id_categoria"
                   name="id_categoria"
@@ -455,7 +470,7 @@ const ProductEditModal = ({
 
               {/* Unidad */}
               <div>
-                <FormLabel htmlFor="unidad_medida">* Unidad:</FormLabel>
+                <FormLabel htmlFor="unidad_medida"><span className="text-red-500">*</span> Unidad:</FormLabel>
                 <select
                   id="unidad_medida"
                   name="unidad_medida"
@@ -478,7 +493,7 @@ const ProductEditModal = ({
 
               {/* Precio */}
               <div>
-                <FormLabel htmlFor="precio">* Precio:</FormLabel>
+                <FormLabel htmlFor="precio"><span className="text-red-500">*</span> Precio:</FormLabel>
                 <input
                   type="number"
                   id="precio"
@@ -510,16 +525,35 @@ const ProductEditModal = ({
               </div>
 
               {/* Garantía */}
-              <div>
-                <FormLabel htmlFor="garantia">* Garantía (meses):</FormLabel>
-                <input
-                  type="number"
+              <div className="relative">
+                <FormLabel htmlFor="garantia"><span className="text-red-500">*</span> Garantía:</FormLabel>
+                <select
                   id="garantia"
                   name="garantia"
                   value={productData.garantia}
                   onChange={handleChange}
+<<<<<<< HEAD
                   className={`${inputBaseStyle} ${errors.garantia ? 'border-red-500' : ''}`}
                 />
+=======
+                  className={`${inputBaseStyle} appearance-none pr-10 text-gray-500 ${errors.garantia ? 'border-red-500' : ''}`}
+                >
+                  <option value="">Seleccione la garantía:</option>
+                  <option value="6">6 meses</option>
+                  <option value="12">12 meses</option>
+                  <option value="24">24 meses</option>
+                  <option value="36">36 meses</option>
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 top-0 mt-2">
+                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M5.23 7.21a.75.75 0 011.06.02L10 11.584l3.71-4.354a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+>>>>>>> origin/dev
                 {errors.garantia && (
                   <p className="text-red-500 text-sm mt-1">{errors.garantia}</p>
                 )}
@@ -552,7 +586,7 @@ const ProductEditModal = ({
               >
                 <div>
                   <FormLabel htmlFor={`caracteristica_input_${index}`}>
-                    * Característica:
+                    <span className="text-red-500">*</span> Característica:
                   </FormLabel>
 
                   {ficha.id_caracteristica === 'otro' ? (
@@ -604,7 +638,7 @@ const ProductEditModal = ({
                 </div>
 
                 <div>
-                  <FormLabel htmlFor={`valor_${index}`}>* Valor:</FormLabel>
+                  <FormLabel htmlFor={`valor_${index}`}><span className="text-red-500">*</span> Valor:</FormLabel>
                   <input
                     type="text"
                     id={`valor_${index}`}

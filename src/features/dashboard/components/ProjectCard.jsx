@@ -12,14 +12,18 @@ const ProjectCard = ({ project }) => {
     'Baja': 'bg-yellow-100 text-yellow-700',
   };
 
-  const completionDate = new Date(estimatedCompletion);
+  const completionDateRaw = estimatedCompletion ? new Date(estimatedCompletion) : null;
+  const isValidCompletion = completionDateRaw && !isNaN(completionDateRaw.getTime());
+  const completionDate = isValidCompletion ? completionDateRaw : null;
   const currentDate = new Date();
 
-  completionDate.setHours(0, 0, 0, 0);
+  if (completionDate) {
+    completionDate.setHours(0, 0, 0, 0);
+  }
   currentDate.setHours(0, 0, 0, 0);
 
-  const diffTime = completionDate.getTime() - currentDate.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  const diffTime = completionDate ? completionDate.getTime() - currentDate.getTime() : 0;
+  const diffDays = completionDate ? Math.ceil(diffTime / (1000 * 60 * 60 * 24)) : 0;
 
   let isProgressLow = false;
   let warningMessage = '';
@@ -35,9 +39,9 @@ const ProjectCard = ({ project }) => {
       isProgressLow = true;
       warningMessage = `¡Recordatorio! Progreso lento para la fecha. Faltan ${diffDays} días.`;
     }
-  } else if (diffDays <= 0 && progress < 100) {
+  } else if (completionDate && diffDays <= 0 && progress < 100) {
       isProgressLow = true;
-      warningMessage = `¡Proyecto atrasado! La fecha de finalización era ${new Date(estimatedCompletion).toLocaleDateString('es-CO')}.`;
+      warningMessage = `¡Proyecto atrasado! La fecha de finalización era ${completionDate.toLocaleDateString('es-CO')}.`;
   }
 
   return (

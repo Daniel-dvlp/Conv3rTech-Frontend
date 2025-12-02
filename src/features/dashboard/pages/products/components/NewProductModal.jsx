@@ -94,8 +94,13 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                 }
                 break;
             case 'garantia':
+<<<<<<< HEAD
                 if (!value || Number(value) < 12) {
                     newErrors.garantia = 'La garantía debe ser de al menos 12 meses';
+=======
+                if (!value || ![6, 12, 24, 36].includes(Number(value))) {
+                    newErrors.garantia = 'Selecciona una garantía válida (6, 12, 24 o 36 meses)';
+>>>>>>> origin/dev
                 } else {
                     delete newErrors.garantia;
                 }
@@ -281,8 +286,13 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             errs.stock = 'La cantidad no puede ser negativa';
         }
         
+<<<<<<< HEAD
         if (!productData.garantia || Number(productData.garantia) < 12) {
             errs.garantia = 'La garantía debe ser de al menos 12 meses';
+=======
+        if (!productData.garantia || ![6, 12, 24, 36].includes(Number(productData.garantia))) {
+            errs.garantia = 'Selecciona una garantía válida (6, 12, 24 o 36 meses)';
+>>>>>>> origin/dev
         }
 
         // Validar duplicados solo si nombre y modelo están completos
@@ -494,7 +504,11 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                     <FormSection title="Información Principal">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
+<<<<<<< HEAD
                                 <FormLabel htmlFor="nombre">* Nombre:</FormLabel>
+=======
+                                <FormLabel htmlFor="nombre"><span className="text-red-500">*</span> Nombre:</FormLabel>
+>>>>>>> origin/dev
                                 <input type="text" id="nombre" name="nombre" value={productData.nombre} onChange={handleChange} onBlur={handleBlur} className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500' : ''}`}  />
                                 {errors.nombre && (
                                     <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>
@@ -504,14 +518,18 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                 )}
                             </div>
                             <div>
+<<<<<<< HEAD
                                 <FormLabel htmlFor="modelo">* Modelo:</FormLabel>
+=======
+                                <FormLabel htmlFor="modelo"><span className="text-red-500">*</span> Modelo:</FormLabel>
+>>>>>>> origin/dev
                                 <input type="text" id="modelo" name="modelo" value={productData.modelo} onChange={handleChange} onBlur={handleBlur} className={`${inputBaseStyle} ${errors.modelo ? 'border-red-500' : ''}`}  />
                                 {errors.modelo && (
                                     <p className="text-red-500 text-sm mt-1">{errors.modelo}</p>
                                 )}
                             </div>
                             <div className="relative">
-                                <FormLabel htmlFor="id_categoria">* Categoría:</FormLabel>
+                                <FormLabel htmlFor="id_categoria"><span className="text-red-500">*</span> Categoría:</FormLabel>
                                 <select
                                     id="id_categoria"
                                     name="id_categoria"
@@ -546,7 +564,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                             </div>
 
                             <div className="relative">
-                                <FormLabel htmlFor="unidad_medida">* Unidad:</FormLabel>
+                                <FormLabel htmlFor="unidad_medida"><span className="text-red-500">*</span> Unidad:</FormLabel>
                                 <select
                                     id="unidad_medida"
                                     name="unidad_medida"
@@ -577,22 +595,57 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                 )}
                             </div>
                             <div>
+<<<<<<< HEAD
                                 <FormLabel htmlFor="precio">* Precio:</FormLabel>
+=======
+                                <FormLabel htmlFor="precio"><span className="text-red-500">*</span> Precio:</FormLabel>
+>>>>>>> origin/dev
                                 <input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}  />
                                 {errors.precio && (
                                     <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
                                 )}
                             </div>
                             <div>
+<<<<<<< HEAD
                                 <FormLabel htmlFor="stock">* Cantidad:</FormLabel>
+=======
+                                <FormLabel htmlFor="stock"><span className="text-red-500">*</span> Cantidad:</FormLabel>
+>>>>>>> origin/dev
                                 <input type="number" id="stock" name="stock" value={productData.stock} onChange={handleChange} className={`${inputBaseStyle} ${errors.stock ? 'border-red-500' : ''}`}  />
                                 {errors.stock && (
                                     <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
                                 )}
                             </div>
+<<<<<<< HEAD
                             <div>
                                 <FormLabel htmlFor="garantia">* Garantía (meses):</FormLabel>
                                 <input type="number" id="garantia" name="garantia" value={productData.garantia} onChange={handleChange} className={`${inputBaseStyle} ${errors.garantia ? 'border-red-500' : ''}`}  />
+=======
+                            <div className="relative">
+                                <FormLabel htmlFor="garantia"><span className="text-red-500">*</span> Garantía (meses):</FormLabel>
+                                <select
+                                    id="garantia"
+                                    name="garantia"
+                                    value={productData.garantia}
+                                    onChange={handleChange}
+                                    className={`${inputBaseStyle} appearance-none pr-10 text-gray-500 ${errors.garantia ? 'border-red-500' : ''}`}
+                                >
+                                    <option value="">Seleccione la garantía:</option>
+                                    <option value="6">6 meses</option>
+                                    <option value="12">12 meses</option>
+                                    <option value="24">24 meses</option>
+                                    <option value="36">36 meses</option>
+                                </select>
+                                <div className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-gray-400 top-0 mt-2">
+                                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M5.23 7.21a.75.75 0 011.06.02L10 11.584l3.71-4.354a.75.75 0 111.14.976l-4.25 5a.75.75 0 01-1.14 0l-4.25-5a.75.75 0 01.02-1.06z"
+                                            clipRule="evenodd"
+                                        />
+                                    </svg>
+                                </div>
+>>>>>>> origin/dev
                                 {errors.garantia && (
                                     <p className="text-red-500 text-sm mt-1">{errors.garantia}</p>
                                 )}
@@ -610,7 +663,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                             <div key={index} className="grid grid-cols-[1fr,1fr,auto] gap-4 items-start mb-2">
                                 {/* Bloque de Característica (Selector o Input) */}
                                 <div>
-                                    <FormLabel htmlFor={`caracteristica_input_${index}`}>* Característica:</FormLabel>
+                                    <FormLabel htmlFor={`caracteristica_input_${index}`}><span className="text-red-500">*</span> Característica:</FormLabel>
                                     
                                     {ficha.id_caracteristica === "otro" ? (
                                         <div className="flex gap-2">
@@ -667,7 +720,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                 
                                 {/* Bloque de Valor */}
                                 <div>
-                                    <FormLabel htmlFor={`valor_${index}`}>* Valor:</FormLabel>
+                                    <FormLabel htmlFor={`valor_${index}`}><span className="text-red-500">*</span> Valor:</FormLabel>
                                     <input
                                         type="text"
                                         id={`valor_${index}`}

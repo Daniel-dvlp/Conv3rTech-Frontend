@@ -5,9 +5,13 @@ import ServiceFormModal from './components/ServiceFormModal';
 import ServiceViewModal from './components/ServiceViewModal';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { serviceService } from './services/serviceService.js';
+import cloudinaryService from '../../../../services/cloudinaryService';
 import { toast } from 'react-hot-toast';
 import { FaPlus, FaSearch } from "react-icons/fa";
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/dev
 
 const ServiciosLoading = () => (
   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -61,7 +65,23 @@ const ServicesPage = () => {
   const handleEliminar = async (id) => {
     const confirmed = await confirmDelete('¿Deseas eliminar este servicio?');
     if (!confirmed) return;
+    
     try {
+      // Obtener el servicio para acceder a su imagen
+      const servicio = servicios.find((s) => s.id_servicio === id || s.id === id);
+      
+      // Eliminar imagen de Cloudinary si existe
+      if (servicio?.url_imagen && servicio.url_imagen.includes('res.cloudinary.com')) {
+        try {
+          await cloudinaryService.deleteImage(servicio.url_imagen);
+          console.log('✅ Imagen eliminada de Cloudinary');
+        } catch (deleteError) {
+          console.error('❌ Error al eliminar imagen de Cloudinary:', deleteError);
+          // Continuar con la eliminación del servicio aunque falle la imagen
+        }
+      }
+      
+      // Eliminar servicio del backend
       await serviceService.deleteService(id);
       setServicios((prev) => prev.filter((s) => s.id_servicio !== id && s.id !== id));
       showSuccess('Servicio eliminado correctamente');
@@ -76,6 +96,7 @@ const ServicesPage = () => {
       const response = await serviceService.createService(nuevoServicio);
       const creado = response?.service || response;
       setServicios((prev) => [...prev, creado]);
+      setModalOpen(false);
       showSuccess('Servicio creado correctamente');
       toast.success('Servicio creado exitosamente');
     } catch (error) {
@@ -91,6 +112,23 @@ const ServicesPage = () => {
   const handleActualizarServicio = async (servicioEditado) => {
     try {
       const id = servicioEditado.id_servicio || servicioEditado.id;
+      
+      // Obtener el servicio actual para comparar imágenes
+      const servicioActual = servicios.find((s) => s.id_servicio === id || s.id === id);
+      
+      // Si cambió la imagen y la antigua era de Cloudinary, eliminarla
+      if (servicioActual?.url_imagen && 
+          servicioActual.url_imagen !== servicioEditado.url_imagen &&
+          servicioActual.url_imagen.includes('res.cloudinary.com')) {
+        try {
+          await cloudinaryService.deleteImage(servicioActual.url_imagen);
+          console.log('✅ Imagen anterior eliminada de Cloudinary');
+        } catch (deleteError) {
+          console.error('❌ Error al eliminar imagen anterior:', deleteError);
+          // Continuar con la actualización aunque falle la eliminación
+        }
+      }
+      
       const response = await serviceService.updateService(id, servicioEditado);
       const actualizado = response?.service || response;
       setServicios((prev) =>
@@ -111,27 +149,6 @@ const ServicesPage = () => {
     }
   };
 
-  const handleToggleEstado = async (id) => {
-    try {
-      const servicio = servicios.find((s) => s.id_servicio === id || s.id === id);
-      if (!servicio) return;
-      
-      const nuevoEstado = servicio.estado === 'activo' ? 'inactivo' : 'activo';
-      const idToUpdate = servicio.id_servicio || servicio.id;
-      
-      await serviceService.updateService(idToUpdate, { ...servicio, estado: nuevoEstado });
-      setServicios((prev) =>
-        prev.map((s) =>
-          (s.id_servicio === id || s.id === id)
-            ? { ...s, estado: nuevoEstado }
-            : s
-        )
-      );
-      toast.success('Estado actualizado exitosamente');
-    } catch (error) {
-      toast.error('Error al cambiar el estado del servicio');
-    }
-  };
 
   const serviciosFiltrados = servicios.filter((s) =>
     (s.nombre || '').toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -145,6 +162,7 @@ const ServicesPage = () => {
 
   return (
     <div className="p-6">
+<<<<<<< HEAD
 
       {/* --------------------------- */}
       {/*   HEADER ESTANDARIZADO     */}
@@ -182,6 +200,37 @@ const ServicesPage = () => {
           >
           <FaPlus />
              Nuevo Servicio
+=======
+      {/* HEADER */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+        <h2 className="text-3xl font-bold text-[#000435]">SERVICIOS</h2>
+
+        <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 sm:mt-0">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Buscar servicio"
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={busqueda}
+              onChange={(e) => {
+                setBusqueda(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          </div>
+
+          <button
+            onClick={() => {
+              setModalOpen(true);
+              setEsEdicion(false);
+              setSelectedService(null);
+            }}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+          >
+            <FaPlus />
+            Nuevo Servicio
+>>>>>>> origin/dev
           </button>
         </div>
       </div>
@@ -196,7 +245,6 @@ const ServicesPage = () => {
             onVer={handleVer}
             onEditar={handleEditar}
             onEliminar={handleEliminar}
-            onToggleEstado={handleToggleEstado}
           />
 
           {totalPaginas > 1 && (

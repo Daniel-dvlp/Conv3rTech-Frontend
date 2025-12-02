@@ -54,7 +54,7 @@ class QuotesService {
   // Cambiar estado de la cotización
   async changeQuoteStatus(id, statusData) {
     try {
-      const response = await api.put(`/quotes/${id}/status`, statusData);
+      const response = await api.patch(`/quotes/${id}/estado`, statusData);
       return response.data;
     } catch (error) {
       throw error;

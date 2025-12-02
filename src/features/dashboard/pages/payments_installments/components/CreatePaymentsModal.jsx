@@ -3,22 +3,23 @@ import { FaTimes, FaPlus, FaFilePdf, FaMinusCircle } from 'react-icons/fa';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { toast } from 'react-hot-toast'; // Importar react-hot-toast
+import Swal from 'sweetalert2'; // Importar Swal para el modal de motivo
 // Asegúrate de que esta ruta sea correcta para tu utilidad de alertas
 import { confirmDelete } from '../../../../../shared/utils/alerts';
 
 const inputBase = 'w-full p-2.5 border rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold';
 
 
-// Helper para formatear montos a moneda local (COP)
+// Helper para formatear montos a moneda local (COP) con decimales
 const formatCurrency = (amount) => {
   if (typeof amount !== 'number' || isNaN(amount)) {
-    return '$0'; // O algún valor predeterminado si el monto no es un número válido
+    return '$0,00'; 
   }
   return new Intl.NumberFormat('es-CO', {
     style: 'currency',
     currency: 'COP',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 };
 
@@ -70,10 +71,48 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
     ? 'text-orange-600 font-bold'
     : 'text-red-600 font-bold';
 
+  const handleMontoChange = (e) => {
+    // 1. Obtener el valor limpio (sin símbolos ni puntos, solo números y comas)
+    let rawValue = e.target.value.replace(/[^0-9,]/g, '');
+
+    // 2. Evitar múltiples comas: solo permitir la primera
+    const parts = rawValue.split(',');
+    if (parts.length > 2) {
+      // Si hay más de una coma, reconstruir usando solo la primera parte y el resto unido
+      rawValue = parts[0] + ',' + parts.slice(1).join('');
+    }
+
+    if (rawValue === '') {
+      setMontoAbonar('');
+      return;
+    }
+
+    // 3. Separar enteros y decimales
+    const partsFinal = rawValue.split(',');
+    let integerPart = partsFinal[0];
+    // Limitar decimales a 2 dígitos si se desea, aquí lo dejo abierto o limito a 2
+    const decimalPart = partsFinal.length > 1 ? ',' + partsFinal[1].substring(0, 2) : '';
+
+    // 4. Formatear la parte entera con puntos
+    // Eliminar ceros a la izquierda si no es solo "0"
+    if (integerPart.length > 1 && integerPart.startsWith('0')) {
+      integerPart = integerPart.replace(/^0+/, '');
+    }
+    if (integerPart === '') integerPart = '0'; // Si el usuario escribe ",50", asumir "0,50"
+
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    
+    setMontoAbonar(formattedInteger + decimalPart);
+  };
+
   const handleSaveAbono = () => {
     const erroresVal = {};
     if (!concepto.trim()) erroresVal.concepto = 'Campo requerido';
-    const montoIngresado = parseFloat(montoAbonar);
+
+    // Parsear el monto: quitar puntos, cambiar coma por punto
+    const montoLimpio = montoAbonar.replace(/\./g, '').replace(',', '.');
+    const montoIngresado = parseFloat(montoLimpio);
+
     if (isNaN(montoIngresado) || montoIngresado <= 0) erroresVal.montoAbonar = 'Monto válido requerido';
     if (!metodoPago) erroresVal.metodoPago = 'Campo requerido';
 
@@ -109,23 +148,52 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
       montoRestanteCalculado: nuevoMontoRestanteCalculado, // Pasa el restante actualizado
     };
 
-    onSaveNewAbono(nuevoAbonoData);
-    setConcepto('');
-    setMontoAbonar('');
-    setMetodoPago('');
-    setErrores({});
-    toast.success('Abono registrado exitosamente.');
+    // Llamar a onSaveNewAbono y manejar errores
+    try {
+      onSaveNewAbono(nuevoAbonoData); // Esta función ahora maneja su propio try/catch y toast
+      // Solo limpiar si la llamada es exitosa (dependiendo de cómo onSaveNewAbono propague errores)
+      // Como onSaveNewAbono en el padre maneja el error y muestra toast,
+      // aquí asumimos éxito para limpiar el formulario o esperamos que el padre cierre el modal.
+      // Sin embargo, el padre NO cierra el modal automáticamente en caso de error.
+      // Lo ideal sería que onSaveNewAbono devolviera una promesa.
+      
+      setConcepto('');
+      setMontoAbonar('');
+      setMetodoPago('');
+      setErrores({});
+      // toast.success('Abono registrado exitosamente.'); // El padre ya muestra el toast
+    } catch (error) {
+      // Si onSaveNewAbono lanzara error, lo capturamos aquí
+      console.error("Error en modal:", error);
+    }
   };
 
   const handleCancelPaymentInModal = async (pagoId) => {
-    const confirm = await confirmDelete('¿Deseas cancelar este pago? Esto lo anulará en el sistema.');
-    if (!confirm) return;
+    const { value: motivo } = await Swal.fire({
+      title: '¿Deseas anular este pago?',
+      text: "Esta acción no se puede deshacer. Por favor ingresa el motivo de la anulación:",
+      input: 'text',
+      inputPlaceholder: 'Escribe el motivo aquí...',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Sí, anular',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        if (!value) {
+          return '¡Necesitas escribir un motivo!';
+        }
+      }
+    });
 
-    if (contractData && onCancelPayment) {
-      onCancelPayment(pagoId, contractData.contrato.numero, contractData.cliente.id);
-      toast.success('Pago cancelado exitosamente.');
-    } else {
-      toast.error('No se pudo cancelar el pago. Falta información del contrato o la función de cancelación.');
+    if (motivo) {
+      if (contractData && onCancelPayment) {
+        // Pasamos el motivo como cuarto argumento
+        await onCancelPayment(pagoId, contractData.contrato.numero, contractData.cliente.id, motivo);
+      } else {
+        toast.error('No se pudo cancelar el pago. Falta información del contrato o la función de cancelación.');
+      }
     }
   };
 
@@ -170,63 +238,51 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto">
-      <div className="flex justify-center items-start p-6 pt-12 min-h-screen">
-        <div className="bg-white rounded-xl shadow-lg w-full max-w-5xl p-6 relative" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 overflow-y-auto flex justify-center items-center p-4">
+        <div className="bg-white rounded-xl shadow-lg w-full max-w-5xl p-5 relative max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
 
           {/* Título */}
-          <div className="flex justify-between items-center border-b pb-4 mb-4">
+          <div className="flex justify-between items-center border-b pb-3 mb-3">
             <h2 className="text-xl font-bold">Registrar Pagos o Abonos</h2>
             <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl"><FaTimes /></button>
           </div>
 
-          {/* Sección de Cliente y Contrato - Usando un Fieldset para agrupar visualmente */}
-          <fieldset className="border border-gray-300 rounded-lg p-4 mb-6 bg-gray-50">
-            <legend className="px-2 text-conv3r-dark text-md font-semibold bg-gray-50 rounded-md">
-              Datos del Contrato Seleccionado
-            </legend>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">Cliente</label>
-                <input
-                  type="text"
-                  value={`${contractData.cliente.nombre} ${contractData.cliente.apellido}`}
-                  disabled
-                  className={`${inputBase} bg-gray-200 cursor-not-allowed text-gray-800 font-semibold`}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-1 text-gray-700">Número de Contrato</label>
-                <input
-                  type="text"
-                  value={contractData.contrato.numero}
-                  disabled
-                  className={`${inputBase} bg-gray-200 cursor-not-allowed text-gray-800 font-semibold`}
-                />
-              </div>
-            </div>
-          </fieldset>
+          {/* Sección de Cliente y Contrato - Compacto */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
+             <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-gray-700">Cliente:</span>
+                <span className="text-sm text-gray-800 truncate" title={`${contractData.cliente.nombre} ${contractData.cliente.apellido}`}>
+                  {contractData.cliente.nombre} {contractData.cliente.apellido}
+                </span>
+             </div>
+             <div className="flex items-center gap-2">
+                <span className="text-sm font-bold text-gray-700">Contrato:</span>
+                <span className="text-sm text-gray-800 font-mono">{contractData.contrato.numero}</span>
+             </div>
+          </div>
 
-          {/* Información del Contrato - Panel más destacado y con énfasis en el restante */}
-          <div className="bg-grey-400 p-3 pl-0 rounded-xl border border-blue-200 mb-2 shadow-m">
-            <h3 className="text-conv3rge-dark font-extrabold text-xl mb-3 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+          {/* Información Financiera Compacta */}
+          <div className="bg-white border border-blue-100 rounded-lg p-3 mb-4 shadow-sm">
+            <h3 className="text-conv3r-dark font-bold text-sm mb-2 flex items-center gap-1">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m7 0V5a2 2 0 012-2h2a2 2 0 012 2v6m-6 0V5a2 2 0 00-2-2H9a2 2 0 00-2 2v6m0 0V5a2 2 0 012-2h2a2 2 0 012 2v6m-3 6h6m-3-3v6" />
               </svg>
-              Estado Financiero del Contrato
+              Estado Financiero
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 text-base">
+            <div className="flex justify-between items-center text-sm gap-4 flex-wrap">
               <div className="flex flex-col">
-                <span className="font-medium text-gray-600">Monto Total Contrato:</span>
-                <span className="text-gray-900 text-lg font-bold">{formatCurrency(currentMontoTotalContrato)}</span>
+                <span className="text-xs text-gray-500">Total Contrato</span>
+                <span className="font-bold text-gray-900">{formatCurrency(currentMontoTotalContrato)}</span>
               </div>
+              <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
               <div className="flex flex-col">
-                <span className="font-medium text-gray-600">Monto Abonado Total:</span>
-                <span className="text-green-700 text-lg font-bold">{formatCurrency(currentMontoAbonadoContrato)}</span>
+                <span className="text-xs text-gray-500">Total Abonado</span>
+                <span className="font-bold text-green-700">{formatCurrency(currentMontoAbonadoContrato)}</span>
               </div>
+              <div className="h-8 w-px bg-gray-200 hidden sm:block"></div>
               <div className="flex flex-col">
-                <span className="font-medium text-gray-600">Monto Restante:</span>
-                <span className={`text-lg ${restanteColorClass}`}>
+                <span className="text-xs text-gray-500">Restante</span>
+                <span className={`font-bold ${restanteColorClass}`}>
                   {formatCurrency(currentMontoRestanteContrato)}
                 </span>
               </div>
@@ -235,105 +291,116 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
 
 
           {/* Formulario de abono */}
-          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-4 items-end mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_auto] gap-3 items-end mb-3">
             <div>
-              <label className="block text-sm font-medium mb-1">Concepto</label>
+              <label className="block text-xs font-medium mb-1 text-gray-600">
+                <span className="text-red-500">*</span> Concepto
+              </label>
               <input
                 value={concepto}
                 onChange={e => setConcepto(e.target.value)}
-                className={inputBase}
-                placeholder="Ej: Abono de cuota de Julio"
+                className={`${inputBase} py-2`}
+                placeholder="Ej: Abono cuota Julio"
               />
-              {errores.concepto && <p className="text-red-600 text-xs mt-1">{errores.concepto}</p>}
+              {errores.concepto && <p className="text-red-600 text-xs mt-0.5">{errores.concepto}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Monto a Abonar</label>
-              <input
-                type="number"
-                value={montoAbonar}
-                onChange={e => setMontoAbonar(e.target.value)}
-                className={inputBase}
-                placeholder="Ej: 150000"
-              />
-              {errores.montoAbonar && <p className="text-red-600 text-xs mt-1">{errores.montoAbonar}</p>}
+              <label className="block text-xs font-medium mb-1 text-gray-600">
+                <span className="text-red-500">*</span> Monto
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-xs">$</span>
+                <input
+                  type="text"
+                  value={montoAbonar}
+                  onChange={handleMontoChange}
+                  className={`${inputBase} pl-6 py-2 font-semibold text-gray-800`}
+                  placeholder="150.000"
+                />
+              </div>
+              {errores.montoAbonar && <p className="text-red-600 text-xs mt-0.5">{errores.montoAbonar}</p>}
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Método de Pago</label>
+              <label className="block text-xs font-medium mb-1 text-gray-600">
+                <span className="text-red-500">*</span> Método
+              </label>
               <select
                 value={metodoPago}
                 onChange={e => setMetodoPago(e.target.value)}
-                className={inputBase}
+                className={`${inputBase} py-2`}
               >
-                <option value="">Seleccionar...</option>
+                <option value="">Elegir...</option>
                 <option value="Efectivo">Efectivo</option>
                 <option value="Transferencia">Transferencia</option>
                 <option value="PSE">PSE</option>
                 <option value="Cheque">Cheque</option>
                 <option value="Tarjeta">Tarjeta</option>
               </select>
-              {errores.metodoPago && <p className="text-red-600 text-xs mt-1">{errores.metodoPago}</p>}
+              {errores.metodoPago && <p className="text-red-600 text-xs mt-0.5">{errores.metodoPago}</p>}
             </div>
 
             <button
               type="button"
               onClick={handleSaveAbono}
-              // Deshabilita el botón si no hay contrato data o el restante es 0
-              disabled={currentMontoRestanteContrato <= 0} // Ahora contractData ya está validado
-              className={`inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all h-fit
+              disabled={currentMontoRestanteContrato <= 0}
+              className={`inline-flex items-center justify-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm transition-all h-10
                           ${(currentMontoRestanteContrato <= 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <FaPlus /> Guardar Abono
+              <FaPlus size={12} /> Guardar
             </button>
           </div>
 
-          <div className="flex justify-end mt-4">
+          <div className="flex justify-end mt-2 mb-2">
             <button
               onClick={handleDescargarPDF}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-conv3r-dark bg-blue-50 border border-blue-200 mb-3 px-4 py-2 rounded-lg shadow-sm hover:shadow-md"
+              className="inline-flex items-center gap-2 text-xs font-medium text-conv3r-dark bg-blue-50 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors"
             >
-              <FaFilePdf size={14} /> Descargar PDF de este contrato
+              <FaFilePdf size={12} /> PDF Contrato
             </button>
           </div>
 
           {/* Tabla de todos los pagos asociados al contrato */}
-          <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-            <table className="w-full text-center">
-              <thead className="bg-gray-50">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden max-h-60 overflow-y-auto">
+            <table className="w-full text-center text-sm">
+              <thead className="bg-gray-50 sticky top-0">
                 <tr>
-                  {['Fecha', 'Concepto', 'Monto Total', 'Monto Abono', 'Restante (Contrato)', 'Método', 'Estado', 'Acciones']
+                  {['Fecha', 'Concepto', 'Abono', 'Restante', 'Método', 'Estado', 'Acción']
                     .map(h => <th key={h} className="px-2 py-2 text-xs font-medium text-gray-500 uppercase whitespace-nowrap">{h}</th>)}
                 </tr>
               </thead>
-              <tbody className='divide-y divide-gray-200'>
+              <tbody className='divide-y divide-gray-100'>
                 {contractData.contrato.pagos.length > 0 ? (
                   contractData.contrato.pagos.map(p => (
                     <tr key={p.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-2 py-2 whitespace-nowrap">{p.fecha}</td>
-                      <td className="px-2 py-2 text-left">{p.concepto}</td>
-                      <td className="px-2 py-2 whitespace-nowrap">{formatCurrency(p.montoTotal)}</td> {/* Monto total del contrato */}
-                      <td className="px-2 py-2 whitespace-nowrap">{formatCurrency(p.montoAbonado)}</td> {/* Monto de ESTE abono */}
-                      <td className="px-2 py-2 whitespace-nowrap">{formatCurrency(p.montoRestante)}</td> {/* Restante del contrato DESPUÉS de este abono */}
-                      <td className="px-2 py-2">{p.metodoPago}</td>
-                      <td className="px-2 py-2">{p.estado}</td>
+                      <td className="px-2 py-2 whitespace-nowrap text-xs">{p.fecha}</td>
+                      <td className="px-2 py-2 text-left text-xs truncate max-w-[150px]" title={p.concepto}>{p.concepto}</td>
+                      <td className="px-2 py-2 whitespace-nowrap text-xs font-medium">{formatCurrency(p.montoAbonado)}</td>
+                      <td className="px-2 py-2 whitespace-nowrap text-xs text-gray-500">{formatCurrency(p.montoRestante)}</td>
+                      <td className="px-2 py-2 text-xs">{p.metodoPago}</td>
+                      <td className="px-2 py-2 text-xs">
+                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${p.estado === 'Registrado' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                            {p.estado}
+                         </span>
+                      </td>
                       <td className="px-2 py-2">
-                        {/* {p.estado?.toLowerCase() === 'registrado' && ( */}
-                          <button
-                            className="text-red-600 hover:text-red-800"
+                        {p.estado === 'Registrado' && (
+                            <button
+                            className="text-red-500 hover:text-red-700 transition-colors"
                             onClick={() => handleCancelPaymentInModal(p.id)}
                             title="Cancelar pago"
-                          >
-                            <FaMinusCircle size={16} />
-                          </button>
-                        
+                            >
+                            <FaMinusCircle size={14} />
+                            </button>
+                        )}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="8" className="px-4 py-4 text-center text-gray-500">
-                      No hay pagos registrados para este contrato aún.
+                    <td colSpan="7" className="px-4 py-8 text-center text-gray-500 text-xs">
+                      No hay pagos registrados.
                     </td>
                   </tr>
                 )}
@@ -342,12 +409,11 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
           </div>
 
           {/* Botones finales */}
-          <div className="flex justify-end gap-4 mt-6">
-            <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cerrar</button>
+          <div className="flex justify-end gap-3 mt-4">
+            <button type="button" onClick={onClose} className="bg-gray-100 text-gray-700 font-semibold py-1.5 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm">Cerrar</button>
           </div>
 
         </div>
-      </div>
     </div>
   );
 };

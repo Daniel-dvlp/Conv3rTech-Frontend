@@ -22,7 +22,7 @@ const cloudinaryService = {
             }
 
             // Hacer la petición al backend
-            const response = await api.post('/products/products/upload-images', formData, {
+            const response = await api.post('/products/upload-images', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -37,8 +37,11 @@ const cloudinaryService = {
             return response.data.urls || [];
         } catch (error) {
             console.error('Error al subir imágenes:', error);
+            if (error.response?.status === 404) {
+                throw new Error('Ruta no encontrada. Verifica la configuración del servidor.');
+            }
             throw new Error(
-                error.response?.data?.message || 'Error al subir las imágenes'
+                error.response?.data?.message || error.message || 'Error al subir las imágenes'
             );
         }
     },
@@ -66,14 +69,17 @@ const cloudinaryService = {
      */
     deleteImage: async (imageUrl) => {
         try {
-            const response = await api.delete('/products/products/delete-image', {
+            const response = await api.delete('/products/delete-image', {
                 data: { imageUrl },
             });
             return response.data.success || false;
         } catch (error) {
             console.error('Error al eliminar imagen:', error);
+            if (error.response?.status === 404) {
+                throw new Error('Ruta no encontrada. Verifica la configuración del servidor.');
+            }
             throw new Error(
-                error.response?.data?.message || 'Error al eliminar la imagen'
+                error.response?.data?.message || error.message || 'Error al eliminar la imagen'
             );
         }
     },

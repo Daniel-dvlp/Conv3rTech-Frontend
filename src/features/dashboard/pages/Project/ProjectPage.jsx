@@ -41,7 +41,13 @@ const ProjectPage = () => {
     try {
       const response = await projectsService.getAllProjects();
       if (response.success) {
-        setAllProjects(response.data || []);
+        const projects = response.data || [];
+        console.log('🔍 Verificación de Cotizaciones en ProjectsPage:', projects.map(p => ({
+          id: p.id,
+          nombre: p.nombre,
+          cotizacion: p.cotizacion
+        })));
+        setAllProjects(projects);
       } else {
         showToast("Error al cargar los proyectos", "error");
         setAllProjects([]);

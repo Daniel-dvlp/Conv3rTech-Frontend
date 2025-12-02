@@ -92,7 +92,7 @@ const SearchSelector = ({
         <div className="relative" ref={dropdownRef}>
             {label && (
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                    {label} {required && <span className="text-red-500">*</span>}
+                    {required && <span className="text-red-500">*</span>}{label}
                 </label>
             )}
 

@@ -131,7 +131,7 @@ function App() {
             <Route
               path="programacion_laboral"
               element={
-                <ProtectedRoute requiredModule="programacion_laboral" requiredPrivilege="Ver">
+                <ProtectedRoute requiredModule="programacion_laboral">
                   <LaborSchedulingPage />
                 </ProtectedRoute>
               }

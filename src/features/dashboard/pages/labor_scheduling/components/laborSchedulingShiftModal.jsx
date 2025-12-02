@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaSave, FaUser, FaCalendarAlt, FaClock, FaPlus, FaTrash } from 'react-icons/fa';
 import { usersService } from '../../../../../services';
+<<<<<<< HEAD
 import { useAuth } from '../../../../../shared/contexts/AuthContext';
+=======
+>>>>>>> origin/dev
 
 // Reutilizar componentes del formato estándar como en NewPurchasesModal
 const FormSection = ({ title, children }) => (
@@ -32,7 +35,10 @@ const LaborSchedulingShiftModal = ({ isOpen, onClose, onSave, users }) => {
    const [daysOfWeek, setDaysOfWeek] = useState([]); // Solo para horarios recurrentes
    const [selectedUserId, setSelectedUserId] = useState('');
    const [tipoProgramacion, setTipoProgramacion] = useState('horario'); // 'horario' o 'evento'
+<<<<<<< HEAD
    const { hasPrivilege } = useAuth();
+=======
+>>>>>>> origin/dev
 
 
   useEffect(() => {
@@ -512,9 +518,13 @@ const LaborSchedulingShiftModal = ({ isOpen, onClose, onSave, users }) => {
             </button>
             <button
               type="submit"
+<<<<<<< HEAD
               disabled={!hasPrivilege('programacion_laboral', 'Crear')}
               className={`inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md ${hasPrivilege('programacion_laboral','Crear') ? 'text-conv3r-dark bg-conv3r-gold hover:brightness-95 transition-transform hover:scale-105' : 'bg-gray-200 text-gray-500 cursor-not-allowed'}`}
               title={!hasPrivilege('programacion_laboral','Crear') ? 'No tienes privilegio para crear' : ''}
+=======
+              className="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-conv3r-dark bg-conv3r-gold hover:brightness-95 transition-transform hover:scale-105"
+>>>>>>> origin/dev
             >
               Crear Programación
             </button>
@@ -525,4 +535,8 @@ const LaborSchedulingShiftModal = ({ isOpen, onClose, onSave, users }) => {
   );
 };
 
+<<<<<<< HEAD
 export default LaborSchedulingShiftModal;
+=======
+export default LaborSchedulingShiftModal;
+>>>>>>> origin/dev

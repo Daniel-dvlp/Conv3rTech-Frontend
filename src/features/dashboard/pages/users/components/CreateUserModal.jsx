@@ -2,13 +2,6 @@
 import { FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 
-const FormSection = ({ title, children }) => (
-  <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
-    <h3 className="text-lg font-bold text-gray-800 mb-0  border-gray-200 pb-3">{title}</h3>
-    <div className="space-y-4">{children}</div>
-  </div>
-);
-
 const FormLabel = ({ htmlFor, children }) => (
   <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
 );
@@ -17,7 +10,7 @@ const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-s
 
 const evaluarContrasena = (password) => {
   return {
-    longitud: password.length >= 8 && password.length <= 10,
+    longitud: password.length >= 8 && password.length <= 15,
     mayuscula: /[A-Z]/.test(password),
     minuscula: /[a-z]/.test(password),
     numero: /\d/.test(password),
@@ -74,7 +67,7 @@ const CreateUserModal = ({ isOpen, onClose, roles, onSubmit, usuariosExistentes 
       if (name === 'celular') {
 const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
         if (!celularRegex.test(value)) {
-          updatedErrors.celular = 'Debe tener entre 10 y 13 dígitos, solo números (opcional + al inicio)';
+          updatedErrors.celular = 'Debe tener entre 7 y 15 dígitos, solo números (opcional + al inicio)';
         }
       }
 
@@ -149,7 +142,7 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
     if (!formData.celular) {
       newErrors.celular = "El celular es obligatorio";
     } else if (!celularRegex.test(formData.celular)) {
-      newErrors.celular = 'Debe tener entre 10 y 13 dígitos, solo números (opcional + al inicio)';
+      newErrors.celular = 'Debe tener entre 7 y 15 dígitos, solo números (opcional + al inicio)';
     }
 
     if (!formData.rol) newErrors.rol = "Selecciona un rol";
@@ -202,26 +195,30 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4" onClick={onClose}>
       <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <header className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-2xl font-bold text-gray-800">Crear Usuario</h2>
+        <header className="flex justify-between items-center p-4 sm:p-6 border-b bg-white rounded-t-xl">
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Crear Usuario</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
             <FaTimes />
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
+        <form onSubmit={handleSubmit} className="p-4 sm:p-6 overflow-y-auto space-y-6 custom-scroll">
 
           {/* Sección principal */}
-          <FormSection title="Información Personal">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 sm:p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-2">Información Personal</h3>
+            <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
               <div>
-                <FormLabel htmlFor="tipoDocumento">Tipo de Documento</FormLabel>
+                <FormLabel htmlFor="tipoDocumento">
+                  <span className="text-red-500">*</span> Tipo de Documento
+                </FormLabel>
                 <select id="tipoDocumento" name="tipoDocumento" value={formData.tipoDocumento} onChange={handleChange} className={inputBaseStyle}>
                   <option value="">Seleccionar...</option>
                   <option value="CC">CC</option>
@@ -234,31 +231,41 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
               </div>
 
               <div>
-                <FormLabel htmlFor="documento">Documento</FormLabel>
+                <FormLabel htmlFor="documento">
+                  <span className="text-red-500">*</span> Documento
+                </FormLabel>
                 <input id="documento" name="documento" value={formData.documento} onChange={handleChange} className={inputBaseStyle} />
                 {errors.documento && <p className="text-red-500 text-sm mt-1">{errors.documento}</p>}
               </div>
 
               <div>
-                <FormLabel htmlFor="nombre">Nombre</FormLabel>
+                <FormLabel htmlFor="nombre">
+                  <span className="text-red-500">*</span> Nombre
+                </FormLabel>
                 <input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} className={inputBaseStyle} />
                 {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
               </div>
 
               <div>
-                <FormLabel htmlFor="apellido">Apellido</FormLabel>
+                <FormLabel htmlFor="apellido">
+                  <span className="text-red-500">*</span> Apellido
+                </FormLabel>
                 <input id="apellido" name="apellido" value={formData.apellido} onChange={handleChange} className={inputBaseStyle} />
                 {errors.apellido && <p className="text-red-500 text-sm mt-1">{errors.apellido}</p>}
               </div>
 
               <div>
-                <FormLabel htmlFor="celular">Celular</FormLabel>
+                <FormLabel htmlFor="celular">
+                  <span className="text-red-500">*</span> Celular
+                </FormLabel>
                 <input id="celular" name="celular" value={formData.celular} onChange={handleChange} className={inputBaseStyle} />
                 {errors.celular && <p className="text-red-500 text-sm mt-1">{errors.celular}</p>}
               </div>
 
               <div>
-                <FormLabel htmlFor="rol">Rol</FormLabel>
+                <FormLabel htmlFor="rol">
+                  <span className="text-red-500">*</span> Rol
+                </FormLabel>
                 <select id="rol" name="rol" value={formData.rol} onChange={handleChange} className={inputBaseStyle}>
                   <option value="">Seleccionar...</option>
                   {roles.map((rol) => (
@@ -269,13 +276,17 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
               </div>
 
               <div className="col-span-2">
-                <FormLabel htmlFor="email">Correo Electrónico</FormLabel>
+                <FormLabel htmlFor="email">
+                  <span className="text-red-500">*</span> Correo Electrónico
+                </FormLabel>
                 <input id="email" name="email" value={formData.email} onChange={handleChange} className={inputBaseStyle} />
                 {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
               </div>
 
               <div className="col-span-2">
-                <FormLabel htmlFor="status">Estado del Usuario</FormLabel>
+                <FormLabel htmlFor="status">
+                  <span className="text-red-500">*</span> Estado del Usuario
+                </FormLabel>
                 <select
                   id="status"
                   name="status"
@@ -298,7 +309,9 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
 
               <div className="flex justify-around gap-4 col-span-2">
                 <div className='w-full'>
-                  <FormLabel htmlFor="contrasena">Contraseña</FormLabel>
+                  <FormLabel htmlFor="contrasena">
+                    <span className="text-red-500">*</span> Contraseña
+                  </FormLabel>
                   <div className="relative">
                     <input
                       id="contrasena"
@@ -338,7 +351,9 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
                 </div>
 
                 <div className='w-full'>
-                  <FormLabel htmlFor="confirmarContrasena">Confirmar Contraseña</FormLabel>
+                  <FormLabel htmlFor="confirmarContrasena">
+                    <span className="text-red-500">*</span> Confirmar Contraseña
+                  </FormLabel>
                   <div className='relative'>
                   <input
                     type={verConfirmacion ? "text" : "password"}
@@ -360,10 +375,11 @@ const celularRegex = /^\+?\d{7,15}$/; // Alinear con backend
                 </div>
               </div>
             </div>
-          </FormSection>
+          </div>
+          </div>
 
           {/* Footer botones */}
-          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+          <div className="flex justify-end gap-4 pt-4 sm:pt-6 border-t mt-4 sm:mt-6">
             <button type="button" onClick={onClose} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors">Cancelar</button>
             <button type="submit" className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105">Crear Usuario</button>
           </div>
