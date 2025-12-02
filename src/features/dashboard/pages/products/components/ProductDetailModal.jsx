@@ -89,7 +89,7 @@ const ProductDetailModal = ({ product, categories, onClose }) => {
             {Array.isArray(product.fotos) && product.fotos.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {product.fotos.map((foto, idx) => (
-                  <img key={idx} src={foto} alt={`Imagen ${idx + 1}`} className="w-full h-48 object-cover rounded-lg transition-transform duration-200 hover:scale-105" />
+                  <img key={idx} src={foto} alt={`Imagen ${idx + 1}`} className="w-full max-w-xs h-40 object-cover rounded-lg transition-transform duration-200 hover:scale-105" />
                 ))}
               </div>
             ) : (

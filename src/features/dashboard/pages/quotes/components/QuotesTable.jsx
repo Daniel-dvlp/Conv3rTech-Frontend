@@ -24,7 +24,6 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cliente</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Documento cliente</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto cotización</th>
-            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de vencimiento</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Acciones</th>
           </tr>
@@ -48,14 +47,12 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
               ?? quote.total
               ?? 0
             );
-            const fechaVenc = quote.fecha_vencimiento ?? quote.fechaVencimiento ?? '';
             return (
               <tr key={keyId}>
                 <td className="px-4 py-3">{quote.nombre_cotizacion}</td>
                 <td className="px-4 py-3">{clienteDisplay}</td>
                 <td className="px-4 py-3">{documento}</td>
                 <td className="px-4 py-3">${formatNumber(monto)}</td>
-                <td className="px-4 py-3">{fechaVenc}</td>
               <td className="px-4 py-3">
                 <span className={`px-2 py-1 rounded-full text-sm font-semibold ${
                   quote.estado === 'Rechazada' || quote.estado === 'Anulada' 

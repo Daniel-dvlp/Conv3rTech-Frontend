@@ -24,11 +24,6 @@ const SkeletonRow = () => {
         <div className="h-4 w-24 bg-gray-200 rounded"></div>
       </td>
 
-      {/* Fecha de Vencimiento de la Cotización */}
-      <td className="px-4 py-4 whitespace-nowrap">
-        <div className="h-4 w-28 bg-gray-200 rounded"></div>
-      </td>
-
       {/* Estado de la Cotización */}
       <td className="px-4 py-4 whitespace-nowrap">
         <div className="h-5 w-28 bg-gray-200 rounded-full"></div>
