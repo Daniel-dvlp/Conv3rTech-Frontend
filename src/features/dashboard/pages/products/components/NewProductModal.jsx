@@ -37,6 +37,74 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
     const [errors, setErrors] = useState({});
     const [uploadingImages, setUploadingImages] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [loading, setLoading] = useState(false);
+
+    const validateField = (name, value) => {
+        const newErrors = { ...errors };
+        // Limpiar errores del servidor cuando el usuario modifica campos
+        if (newErrors.servidor) delete newErrors.servidor;
+        
+        switch (name) {
+            case 'nombre':
+                if (!value?.trim()) {
+                    newErrors.nombre = 'El nombre es obligatorio';
+                } else if (value.trim().length < 3) {
+                    newErrors.nombre = 'El nombre debe tener al menos 3 caracteres';
+                } else {
+                    delete newErrors.nombre;
+                }
+                break;
+            case 'modelo':
+                if (!value?.trim()) {
+                    newErrors.modelo = 'El modelo es obligatorio';
+                } else if (value.trim().length < 2) {
+                    newErrors.modelo = 'El modelo debe tener al menos 2 caracteres';
+                } else {
+                    delete newErrors.modelo;
+                }
+                break;
+            case 'id_categoria':
+                if (!value) {
+                    newErrors.id_categoria = 'Selecciona una categoría';
+                } else {
+                    delete newErrors.id_categoria;
+                }
+                break;
+            case 'unidad_medida':
+                if (!value) {
+                    newErrors.unidad_medida = 'Selecciona una unidad de medida';
+                } else {
+                    delete newErrors.unidad_medida;
+                }
+                break;
+            case 'precio':
+                if (!value || Number(value) <= 0) {
+                    newErrors.precio = 'Ingresa un precio válido mayor a 0';
+                } else {
+                    delete newErrors.precio;
+                }
+                break;
+            case 'stock':
+                if (value === '' || value === null || value === undefined) {
+                    newErrors.stock = 'Ingresa una cantidad';
+                } else if (Number(value) < 0) {
+                    newErrors.stock = 'La cantidad no puede ser negativa';
+                } else {
+                    delete newErrors.stock;
+                }
+                break;
+            case 'garantia':
+                if (!value || Number(value) < 12) {
+                    newErrors.garantia = 'La garantía debe ser de al menos 12 meses';
+                } else {
+                    delete newErrors.garantia;
+                }
+                break;
+            default:
+                break;
+        }
+        setErrors(newErrors);
+    };
 
     const validateDuplicate = () => {
         const nombreNorm = normalizeText(productData.nombre);
@@ -55,11 +123,13 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
     };
 
     const handleChange = (e) => {
-        const { name, value, type, checked } = e.target;
-        setProductData((prev) => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value,
-        }));
+      const { name, value, type, checked } = e.target;
+      const finalValue = type === 'checkbox' ? checked : value;
+      setProductData((prev) => ({
+        ...prev,
+        [name]: finalValue,
+      }));
+      validateField(name, finalValue);
     };
 
     const handleBlur = (e) => {
@@ -90,7 +160,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                 delete updated[index].nuevaCaracteristica;
             }
         }
-        
+
         setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
     };
     
@@ -124,11 +194,21 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         
         if (files.length === 0) return;
 
+        // Validar archivos
+        const validation = cloudinaryService.validateImages(files);
+        if (!validation.valid) {
+            setErrors(prev => ({
+                ...prev,
+                imageUpload: validation.errors.join('. ')
+            }));
+            return;
+        }
+
         setUploadingImages(true);
         setUploadProgress(0);
 
         try {
-            // Subir imágenes a Cloudinary
+            // Subir imágenes a Cloudinary a través del backend
             const uploadedUrls = await cloudinaryService.uploadMultipleImages(files, 'products');
             
             setProductData((prev) => ({
@@ -137,11 +217,18 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             }));
 
             setUploadProgress(100);
+            
+            // Limpiar error si existe
+            setErrors(prev => {
+                const newErrors = { ...prev };
+                delete newErrors.imageUpload;
+                return newErrors;
+            });
         } catch (error) {
             console.error('Error al subir imágenes:', error);
             setErrors(prev => ({
                 ...prev,
-                imageUpload: 'Error al subir las imágenes. Inténtalo de nuevo.'
+                imageUpload: error.message || 'Error al subir las imágenes. Inténtalo de nuevo.'
             }));
         } finally {
             setUploadingImages(false);
@@ -153,55 +240,157 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        validateDuplicate();
-        if (errors.duplicate || (productData.garantia && productData.garantia < 12)) return;
+        e.stopPropagation();
+        
+        // Limpiar errores previos del servidor
+        setErrors(prev => {
+            const newErrs = { ...prev };
+            delete newErrs.servidor;
+            return newErrs;
+        });
 
-        let fichasProcesadas = [];
+        // Validar todos los campos obligatorios
+        const errs = {};
+        if (!productData.nombre?.trim()) {
+            errs.nombre = 'El nombre es obligatorio';
+        } else if (productData.nombre.trim().length < 3) {
+            errs.nombre = 'El nombre debe tener al menos 3 caracteres';
+        }
+        
+        if (!productData.modelo?.trim()) {
+            errs.modelo = 'El modelo es obligatorio';
+        } else if (productData.modelo.trim().length < 2) {
+            errs.modelo = 'El modelo debe tener al menos 2 caracteres';
+        }
+        
+        if (!productData.id_categoria) {
+            errs.id_categoria = 'Selecciona una categoría';
+        }
+        
+        if (!productData.unidad_medida) {
+            errs.unidad_medida = 'Selecciona una unidad de medida';
+        }
+        
+        if (!productData.precio || Number(productData.precio) <= 0) {
+            errs.precio = 'Ingresa un precio válido mayor a 0';
+        }
+        
+        if (productData.stock === '' || productData.stock === null || productData.stock === undefined) {
+            errs.stock = 'Ingresa una cantidad';
+        } else if (Number(productData.stock) < 0) {
+            errs.stock = 'La cantidad no puede ser negativa';
+        }
+        
+        if (!productData.garantia || Number(productData.garantia) < 12) {
+            errs.garantia = 'La garantía debe ser de al menos 12 meses';
+        }
 
-        for (const ficha of productData.fichas_tecnicas) {
-            let idCaracteristica = ficha.id_caracteristica;
-
-            if (idCaracteristica === "otro" && ficha.nuevaCaracteristica) {
-                // 1. Crear la nueva característica en el backend
-                try {
-                    const newFeature = await featuresService.createFeature({ nombre: ficha.nuevaCaracteristica });
-                    idCaracteristica = newFeature.id_caracteristica;
-                } catch (error) {
-                    console.error("Error al crear característica:", error);
-                    continue;
-                }
-            }
+        // Validar duplicados solo si nombre y modelo están completos
+        if (productData.nombre?.trim() && productData.modelo?.trim()) {
+            const nombreNorm = normalizeText(productData.nombre);
+            const modeloNorm = normalizeText(productData.modelo);
+            const isDuplicate = existingProducts?.some(
+                (prod) => normalizeText(prod.nombre) === nombreNorm && normalizeText(prod.modelo) === modeloNorm
+            );
             
-            // 2. Procesar y convertir a número el ID si es válido
-            const numericId = Number(idCaracteristica);
-            
-            // Reforzamos la validación para asegurar que se envía un número entero positivo (ID)
-            if (idCaracteristica && idCaracteristica !== "otro" && !isNaN(numericId) && numericId > 0) {
-                fichasProcesadas.push({
-                    id_caracteristica: numericId, // Usamos el valor numérico validado
-                    valor: ficha.valor
-                });
+            if (isDuplicate) {
+                errs.duplicate = 'Ya existe un producto con este nombre y modelo';
             }
         }
 
-        const newProduct = {
-            ...productData,
-            // Conversiones a número para el cuerpo principal
-            id_categoria: Number(productData.id_categoria),
-            precio: Number(productData.precio),
-            stock: Number(productData.stock),
-            garantia: Number(productData.garantia),
-            codigo_barra: productData.codigo_barra?.trim() || null,
-            fichas_tecnicas: fichasProcesadas, // Array de IDs numéricos
-            estado: !!productData.estado,
-            // Asegurar que fotos sea un array válido
-            fotos: Array.isArray(productData.fotos) ? productData.fotos : []
-        };
+        // Si hay errores, mostrarlos y NO continuar
+        if (Object.keys(errs).length > 0) {
+            setErrors(errs);
+            
+            // Hacer scroll al primer error después de que se actualice el DOM
+            setTimeout(() => {
+                const firstErrorField = document.querySelector('.border-red-500');
+                if (firstErrorField) {
+                    firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    // Si no hay campo con borde rojo, buscar el primer mensaje de error
+                    const firstErrorMsg = document.querySelector('.text-red-500');
+                    if (firstErrorMsg) {
+                        firstErrorMsg.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                }
+            }, 100);
+            
+            // NO continuar - el formulario NO se enviará
+            return;
+        }
 
-        await onSave(newProduct);
-        setProductData(initialState);
-        setErrors({});
-        onClose();
+        // Si llegamos aquí, no hay errores de validación
+        setLoading(true);
+
+        try {
+            let fichasProcesadas = [];
+
+            for (const ficha of productData.fichas_tecnicas) {
+                let idCaracteristica = ficha.id_caracteristica;
+
+                if (idCaracteristica === "otro" && ficha.nuevaCaracteristica) {
+                    // 1. Crear la nueva característica en el backend
+                    try {
+                        const newFeature = await featuresService.createFeature({ nombre: ficha.nuevaCaracteristica });
+                        idCaracteristica = newFeature.id_caracteristica;
+                    } catch (error) {
+                        console.error("Error al crear característica:", error);
+                        continue;
+                    }
+                }
+                
+                // 2. Procesar y convertir a número el ID si es válido
+                const numericId = Number(idCaracteristica);
+                
+                // Reforzamos la validación para asegurar que se envía un número entero positivo (ID)
+                if (idCaracteristica && idCaracteristica !== "otro" && !isNaN(numericId) && numericId > 0) {
+                    fichasProcesadas.push({
+                        id_caracteristica: numericId, // Usamos el valor numérico validado
+                        valor: ficha.valor
+                    });
+                }
+            }
+
+            const newProduct = {
+                ...productData,
+                // Conversiones a número para el cuerpo principal
+                id_categoria: Number(productData.id_categoria),
+                precio: Number(productData.precio),
+                stock: Number(productData.stock),
+                garantia: Number(productData.garantia),
+                codigo_barra: productData.codigo_barra?.trim() || null,
+                fichas_tecnicas: fichasProcesadas, // Array de IDs numéricos
+                estado: !!productData.estado,
+                // Asegurar que fotos sea un array válido
+                fotos: Array.isArray(productData.fotos) ? productData.fotos : []
+            };
+
+            await onSave(newProduct);
+            // Si onSave no lanza error, el modal se cerrará desde el componente padre
+            setProductData(initialState);
+            setErrors({});
+        } catch (error) {
+            // Manejar errores del servidor
+            const errorMessage = error?.response?.data?.message || 
+                                error?.response?.data?.errors?.[0]?.msg || 
+                                error?.message || 
+                                'Ocurrió un error al crear el producto';
+            setErrors(prev => ({
+                ...prev,
+                servidor: errorMessage
+            }));
+            
+            // Hacer scroll al error del servidor
+            setTimeout(() => {
+                const errorElement = document.querySelector('[data-error-servidor]');
+                if (errorElement) {
+                    errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        } finally {
+            setLoading(false);
+        }
     };
 
 
@@ -215,7 +404,26 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2"><FaTimes /></button>
                 </header>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-6">
+                <form onSubmit={handleSubmit} className="p-6 space-y-6" noValidate>
+                    {/* Mensaje de error del servidor */}
+                    {errors.servidor && (
+                        <div 
+                            data-error-servidor
+                            className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg"
+                        >
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <p className="text-sm text-red-700 font-medium">{errors.servidor}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     <FormSection title="Fotos del Producto">
                         <div className="flex gap-3 flex-wrap">
                             {(productData.fotos || []).map((foto, index) => (
@@ -287,14 +495,20 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <FormLabel htmlFor="nombre">* Nombre:</FormLabel>
-                                <input type="text" id="nombre" name="nombre" value={productData.nombre} onChange={handleChange} onBlur={handleBlur} className={inputBaseStyle} required />
+                                <input type="text" id="nombre" name="nombre" value={productData.nombre} onChange={handleChange} onBlur={handleBlur} className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500' : ''}`}  />
+                                {errors.nombre && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>
+                                )}
                                 {errors.duplicate && (
                                     <p className="text-red-500 text-sm mt-1">{errors.duplicate}</p>
                                 )}
                             </div>
                             <div>
                                 <FormLabel htmlFor="modelo">* Modelo:</FormLabel>
-                                <input type="text" id="modelo" name="modelo" value={productData.modelo} onChange={handleChange} onBlur={handleBlur} className={inputBaseStyle} required />
+                                <input type="text" id="modelo" name="modelo" value={productData.modelo} onChange={handleChange} onBlur={handleBlur} className={`${inputBaseStyle} ${errors.modelo ? 'border-red-500' : ''}`}  />
+                                {errors.modelo && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.modelo}</p>
+                                )}
                             </div>
                             <div className="relative">
                                 <FormLabel htmlFor="id_categoria">* Categoría:</FormLabel>
@@ -303,8 +517,8 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     name="id_categoria"
                                     value={productData.id_categoria}
                                     onChange={handleChange}
-                                    className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
-                                    required
+                                    className={`${inputBaseStyle} appearance-none pr-10 text-gray-500 ${errors.id_categoria ? 'border-red-500' : ''}`}
+                                    
                                 >
                                     <option value="" disabled>Seleccione una categoría</option>
                                     {categories?.length > 0 ? (
@@ -326,6 +540,9 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                         />
                                     </svg>
                                 </div>
+                                {errors.id_categoria && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.id_categoria}</p>
+                                )}
                             </div>
 
                             <div className="relative">
@@ -335,8 +552,8 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                     name="unidad_medida"
                                     value={productData.unidad_medida}
                                     onChange={handleChange}
-                                    className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
-                                    required
+                                    className={`${inputBaseStyle} appearance-none pr-10 text-gray-500 ${errors.unidad_medida ? 'border-red-500' : ''}`}
+                                    
                                 >
                                     <option value="">Seleccione la unidad:</option>
                                     <option value="unidad">Unidad</option>
@@ -355,20 +572,29 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                         />
                                     </svg>
                                 </div>
+                                {errors.unidad_medida && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.unidad_medida}</p>
+                                )}
                             </div>
                             <div>
                                 <FormLabel htmlFor="precio">* Precio:</FormLabel>
-                                <input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} className={inputBaseStyle} required />
+                                <input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}  />
+                                {errors.precio && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
+                                )}
                             </div>
                             <div>
                                 <FormLabel htmlFor="stock">* Cantidad:</FormLabel>
-                                <input type="number" id="stock" name="stock" value={productData.stock} onChange={handleChange} className={inputBaseStyle} required />
+                                <input type="number" id="stock" name="stock" value={productData.stock} onChange={handleChange} className={`${inputBaseStyle} ${errors.stock ? 'border-red-500' : ''}`}  />
+                                {errors.stock && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
+                                )}
                             </div>
                             <div>
                                 <FormLabel htmlFor="garantia">* Garantía (meses):</FormLabel>
-                                <input type="number" id="garantia" name="garantia" value={productData.garantia} onChange={handleChange} className={inputBaseStyle} required />
-                                {productData.garantia && productData.garantia < 12 && (
-                                    <p className="text-red-500 text-sm mt-2">La garantía debe ser de al menos 12 meses.</p>
+                                <input type="number" id="garantia" name="garantia" value={productData.garantia} onChange={handleChange} className={`${inputBaseStyle} ${errors.garantia ? 'border-red-500' : ''}`}  />
+                                {errors.garantia && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.garantia}</p>
                                 )}
                             </div>
                             <div>
@@ -395,7 +621,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                                 value={ficha.nuevaCaracteristica || ""}
                                                 onChange={(e) => handleFichaChange(index, 'nuevaCaracteristica', e.target.value)}
                                                 className={inputBaseStyle}
-                                                required
+                                                
                                             />
                                             {/* Botón para volver al selector */}
                                             <button
@@ -416,7 +642,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                                 value={ficha.id_caracteristica}
                                                 onChange={(e) => handleFichaChange(index, 'id_caracteristica', e.target.value)}
                                                 className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
-                                                required
+                                                
                                             >
                                                 <option value="">Seleccione una característica</option>
                                                 {Array.isArray(features) && features.map((feat) => (
@@ -449,7 +675,7 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                                         value={ficha.valor}
                                         onChange={(e) => handleFichaChange(index, 'valor', e.target.value)}
                                         className={inputBaseStyle}
-                                        required
+                                        
                                     />
                                 </div>
                                 
@@ -480,18 +706,18 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                         <button 
                             type="button" 
                             onClick={onClose} 
-                            className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
-                            disabled={uploadingImages}
+                            className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={uploadingImages || loading}
                         >
                             Cancelar
                         </button>
                         <button 
                             type="submit" 
                             className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2" 
-                            disabled={productData.garantia && productData.garantia < 12 || uploadingImages}
+                            disabled={uploadingImages || loading}
                         >
-                            {uploadingImages && <FaSpinner className="animate-spin" />}
-                            {uploadingImages ? 'Subiendo imágenes...' : 'Guardar'}
+                            {(uploadingImages || loading) && <FaSpinner className="animate-spin" />}
+                            {uploadingImages ? 'Subiendo imágenes...' : loading ? 'Guardando...' : 'Guardar'}
                         </button>
                     </div>
                 </form>

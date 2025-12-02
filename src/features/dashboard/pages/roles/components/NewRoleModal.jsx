@@ -111,11 +111,43 @@ const NewRoleModal = ({ isOpen, onClose, onSave }) => {
   const [description, setDescription] = useState("");
   const [permissions, setPermissions] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dynamicModules, setDynamicModules] = useState([]);
 
   // Debug: Log cuando cambie el estado isOpen
   useEffect(() => {
     console.log("🔍 NewRoleModal isOpen changed:", { isOpen });
   }, [isOpen]);
+
+  useEffect(() => {
+    let mounted = true;
+    import("../../../../../services/rolesService").then(async ({ default: srv }) => {
+      try {
+        const resp = await srv.getAvailablePermissions();
+        const list = Array.isArray(resp?.data?.data)
+          ? resp.data.data
+          : Array.isArray(resp?.data)
+          ? resp.data
+          : [];
+        const extras = [];
+        for (const perm of list) {
+          const name = perm?.nombre_permiso;
+          const inConfig = MODULES_CONFIG.some((m) => m.name === name) || MODULES_CONFIG.some((m) => (m.submodules||[]).some((s)=>s.name===name));
+          if (!inConfig) {
+            const privs = Array.isArray(perm?.privilegios)
+              ? perm.privilegios.map((p) => p?.nombre_privilegio || p?.nombre).filter(Boolean).map((n)=>{
+                  const s = String(n||"").toLowerCase();
+                  const map = { crear: "Crear", editar: "Editar", ver: "Ver", eliminar: "Eliminar", anular: "Anular", crear_entrega: "Crear entrega" };
+                  return map[s] || n;
+                })
+              : [];
+            extras.push({ name, privileges: privs });
+          }
+        }
+        if (mounted) setDynamicModules(extras);
+      } catch {}
+    });
+    return () => { mounted = false; };
+  }, []);
 
   const handlePermissionChange = (moduleName, submoduleName, privilege) => {
     const key = submoduleName ? `${moduleName}.${submoduleName}` : moduleName;
@@ -385,7 +417,7 @@ const NewRoleModal = ({ isOpen, onClose, onSave }) => {
               </h3>
 
               <div className="space-y-4">
-                {MODULES_CONFIG.map((module) => (
+                {[...MODULES_CONFIG, ...dynamicModules].map((module) => (
                   <div
                     key={module.name}
                     className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden"

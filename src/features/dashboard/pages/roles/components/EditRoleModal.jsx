@@ -95,6 +95,7 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
   const [description, setDescription] = useState("");
   const [permissions, setPermissions] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [dynamicModules, setDynamicModules] = useState([]);
 
   // Cargar datos del rol cuando se abre el modal
   useEffect(() => {
@@ -174,6 +175,19 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
         return name;
       };
 
+      const toUiPrivilege = (raw) => {
+        const s = String(raw || "").toLowerCase().trim();
+        const map = {
+          crear: "Crear",
+          editar: "Editar",
+          ver: "Ver",
+          eliminar: "Eliminar",
+          anular: "Anular",
+          crear_entrega: "Crear entrega",
+        };
+        return map[s] || raw;
+      };
+
       // Traer permisos del backend si no están presentes
       let sourceRole = role;
       try {
@@ -201,26 +215,40 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
       // Convertir permisos del rol a formato del modal
       const rolePermissions = {};
 
-      // Caso A: datos del backend → role.permisos = [{ nombre_permiso, privilegios: [{ nombre_privilegio }] }]
+      // Caso A: datos del backend → soporta include y forma pivote
       if (Array.isArray(sourceRole.permisos) && sourceRole.permisos.length > 0) {
         sourceRole.permisos.forEach((permiso) => {
           const moduleName =
-            permiso?.nombre_permiso || permiso?.modulo || permiso?.module;
+            permiso?.nombre_permiso ||
+            permiso?.modulo ||
+            permiso?.module ||
+            permiso?.permiso?.nombre_permiso; // pivote: permiso.nombre_permiso
+
           const key = findPermissionKeyByName(moduleName);
           if (!key) return;
           if (!rolePermissions[key]) rolePermissions[key] = {};
+
+          // Pivote: fila única con privilegio.nombre_privilegio
+          const pivotPrivName =
+            permiso?.privilegio?.nombre_privilegio || permiso?.privilegio?.nombre;
+          if (pivotPrivName) {
+            rolePermissions[key][toUiPrivilege(pivotPrivName)] = true;
+            return;
+          }
+
+          // Include: arreglo de privilegios del permiso
           if (Array.isArray(permiso?.privilegios)) {
             permiso.privilegios.forEach((priv) => {
               const action = priv?.nombre_privilegio || priv?.nombre;
-              if (action) rolePermissions[key][action] = true;
+              if (action) rolePermissions[key][toUiPrivilege(action)] = true;
             });
           } else if (Array.isArray(permiso?.acciones)) {
             permiso.acciones.forEach((accion) => {
-              rolePermissions[key][accion] = true;
+              rolePermissions[key][toUiPrivilege(accion)] = true;
             });
           } else if (Array.isArray(permiso?.actions)) {
             permiso.actions.forEach((accion) => {
-              rolePermissions[key][accion] = true;
+              rolePermissions[key][toUiPrivilege(accion)] = true;
             });
           } else {
             // Si no hay detalle de privilegios, marcar "Ver" por defecto
@@ -251,6 +279,31 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
       }
 
       setPermissions(rolePermissions);
+
+      try {
+        const avail = await rolesService.getAvailablePermissions();
+        const list = Array.isArray(avail?.data?.data)
+          ? avail.data.data
+          : Array.isArray(avail?.data)
+          ? avail.data
+          : [];
+        const extras = [];
+        for (const perm of list) {
+          const moduleName = perm?.nombre_permiso;
+          const key = findPermissionKeyByName(moduleName);
+          const isMapped = !!key && key !== moduleName;
+          if (!isMapped) {
+            const privs = Array.isArray(perm?.privilegios)
+              ? perm.privilegios
+                  .map((p) => p?.nombre_privilegio || p?.nombre)
+                  .filter(Boolean)
+                  .map((n) => toUiPrivilege(n))
+              : [];
+            extras.push({ name: moduleName, privileges: privs });
+          }
+        }
+        setDynamicModules(extras);
+      } catch {}
     };
 
     loadRoleForEdit();
@@ -497,7 +550,7 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
               </h3>
 
               <div className="space-y-4">
-                {MODULES_CONFIG.map((module) => (
+                {[...MODULES_CONFIG, ...dynamicModules].map((module) => (
                   <div
                     key={module.name}
                     className="bg-gray-50 border border-gray-200 rounded-lg overflow-hidden"

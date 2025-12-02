@@ -2,8 +2,8 @@ import React from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
-const ProtectedRoute = ({ children, requiredModule = null }) => {
-  const { isAuthenticated, user, loading, hasPermission } = useAuth();
+const ProtectedRoute = ({ children, requiredModule = null, requiredPrivilege = null }) => {
+  const { isAuthenticated, user, loading, hasPermission, hasPrivilege } = useAuth();
 
   // Mostrar loading mientras se verifica la autenticación
   if (loading) {
@@ -21,9 +21,12 @@ const ProtectedRoute = ({ children, requiredModule = null }) => {
 
   // Si se especifica un módulo requerido, verificar permisos dinámicos del backend
   if (requiredModule) {
-    // Administrador siempre tiene acceso total
     const isAdmin = user?.rol === "Administrador" || user?.rol === "Admin";
-    const allowed = isAdmin || hasPermission(requiredModule);
+    const allowed = isAdmin || (
+      requiredPrivilege
+        ? hasPrivilege(requiredModule, requiredPrivilege)
+        : hasPermission(requiredModule)
+    );
 
     if (!allowed) {
       // Redirigir al dashboard si no tiene permisos para el módulo

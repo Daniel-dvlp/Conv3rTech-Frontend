@@ -45,16 +45,14 @@ const Header = () => {
       '/dashboard/productos': 'Productos',
       '/dashboard/compras': 'Compras',
       '/dashboard/categoria_servicios': 'Categoría de Servicios',
-      '/dashboard/ordenes_servicios': 'Órdenes de Servicios',
       '/dashboard/programacion_laboral': 'Programación Laboral',
       '/dashboard/clientes': 'Clientes',
       '/dashboard/venta_productos': 'Venta de Productos',
       '/dashboard/citas': 'Citas',
       '/dashboard/cotizaciones': 'Cotizaciones',
-      '/dashboard/proyectos_servicios': 'Proyectos de Servicios',
+      '/dashboard/proyectos_servicios': 'Proyectos de Servicio',
       '/dashboard/pagosyabonos': 'Pagos y Abonos',
       '/dashboard/servicios': 'Servicios',
-      '/dashboard/profile': 'Perfil'
     };
 
     const module = moduleMap[path] || 'Dashboard';

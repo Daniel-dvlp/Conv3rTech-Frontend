@@ -2,28 +2,39 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { FaTimes } from "react-icons/fa";
-import { toast } from "react-hot-toast";
 
-const inputBaseStyle =
-  "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
+const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
+
+// Componentes reutilizables del diseño estándar
+const FormSection = ({ title, children }) => (
+  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
+    <div className="space-y-4">{children}</div>
+  </div>
+);
+
+const FormLabel = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
+);
+
+const initialState = {
+  nit: "",
+  empresa: "",
+  encargado: "",
+  telefono_entidad: "",
+  telefono_encargado: "",
+  correo_principal: "",
+  correo_secundario: "",
+  direccion: "",
+  observaciones: "",
+};
 
 const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
-  const initialState = {
-    taxId: "",
-    empresa: "",
-    encargado: "",
-    contactNumber: "",
-    email: "",
-    address: "",
-  };
 
   const [providerData, setProviderData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [formSubmitted, setFormSubmitted] = useState(false);
-
-  // Eliminamos useRef para modalContentRef y mouseDownTarget ya que no se usarán para cerrar el modal al hacer clic fuera
-  // const modalContentRef = useRef(null); 
-  // const mouseDownTarget = useRef(null); 
+  const formRef = useRef(null);
 
   // Resetear el formulario cuando se abre/cierra
   useEffect(() => {
@@ -32,24 +43,22 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
       setErrors({});
       setFormSubmitted(false);
     }
-  }, [isOpen]); // Dependencia solo en isOpen para resetear al abrir
+  }, [isOpen]);
 
   // Validaciones
   const validateField = (name, value) => {
     let error = "";
     switch (name) {
-      case "taxId":
-        if (!value.trim()) {
-          error = "El NIT es obligatorio.";
-        } else if (!/^\d+$/.test(value)) {
-          error = "El NIT debe contener solo números.";
+      case "nit":
+        if (value.trim() && !/^[a-zA-Z0-9]+$/.test(value)) {
+          error = "El NIT debe ser alfanumérico.";
         } else if (existingNits.includes(value)) {
           error = "Este NIT ya está registrado.";
         }
         break;
       case "empresa":
         if (!value.trim()) {
-          error = "El nombre de la empresa es obligatorio.";
+          error = "El nombre de la entidad es obligatorio.";
         }
         break;
       case "encargado":
@@ -57,12 +66,26 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           error = "El nombre del encargado es obligatorio.";
         }
         break;
-      case "contactNumber":
-        if (value.trim() && !/^[\d\s\+\-\(\)]*$/.test(value)) {
-          error = "El teléfono contiene caracteres no válidos.";
+      case "telefono_entidad":
+        if (!value.trim()) {
+          error = "El teléfono de la entidad es obligatorio.";
+        } else if (!/^[0-9+\-\s()]+$/.test(value)) {
+          error = "El teléfono de la entidad contiene caracteres no válidos.";
         }
         break;
-      case "email":
+      case "telefono_encargado":
+        if (value.trim() && !/^[0-9+\-\s()]+$/.test(value)) {
+          error = "El teléfono del encargado contiene caracteres no válidos.";
+        }
+        break;
+      case "correo_principal":
+        if (!value.trim()) {
+          error = "El correo principal es obligatorio.";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+          error = "Ingrese un correo electrónico válido.";
+        }
+        break;
+      case "correo_secundario":
         if (value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
           error = "Ingrese un correo electrónico válido.";
         }
@@ -78,9 +101,9 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     const { name, value } = e.target;
     setProviderData((prev) => ({ ...prev, [name]: value }));
     if (formSubmitted) {
-        validateField(name, value);
+      validateField(name, value);
     } else {
-        setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -89,12 +112,6 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     validateField(name, value);
   };
 
-  const handleKeyPressNumeric = (e) => {
-    const charCode = e.charCode;
-    if (charCode < 48 || charCode > 57) {
-      e.preventDefault();
-    }
-  };
 
   const handleKeyPressPhone = (e) => {
     const charCode = e.charCode;
@@ -117,32 +134,58 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     let formIsValid = true;
     const newErrors = {};
 
-    Object.keys(providerData).forEach(name => {
-      const error = validateField(name, providerData[name]);
+    // Validate required fields
+    const requiredFields = ['empresa', 'encargado', 'correo_principal'];
+    requiredFields.forEach(field => {
+      const error = validateField(field, providerData[field]);
       if (error) {
-        newErrors[name] = error;
+        newErrors[field] = error;
         formIsValid = false;
+      }
+    });
+
+    // Validate optional fields
+    const optionalFields = ['nit', 'telefono_entidad', 'telefono_encargado', 'correo_secundario'];
+    optionalFields.forEach(field => {
+      if (providerData[field].trim()) {
+        const error = validateField(field, providerData[field]);
+        if (error) {
+          newErrors[field] = error;
+          formIsValid = false;
+        }
       }
     });
 
     setErrors(newErrors);
 
     if (!formIsValid) {
-      toast.error("Por favor, corrige los errores en el formulario.");
+      // Scroll to first error
+      setTimeout(() => {
+        const firstError = formRef.current?.querySelector('.text-red-500');
+        if (firstError) {
+          firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
       return;
     }
 
+    // Función auxiliar para convertir cadenas vacías a null
+    const sanitize = (value) => (value && value.trim() !== "" ? value : null);
+
     const newProvider = {
-      id: Date.now(), // Asigna un ID único, podrías usar una librería como uuid si es necesario
-      nit: providerData.taxId,
-      empresa: providerData.empresa,
-      encargado: providerData.encargado,
-      telefono: providerData.contactNumber,
-      correo: providerData.email,
-      direccion: providerData.address,
+      nit: sanitize(providerData.nit),
+      empresa: providerData.empresa, // Changed to match useSuppliers expectation
+      encargado: providerData.encargado, // Changed to match useSuppliers expectation
+      telefono_entidad: sanitize(providerData.telefono_entidad),
+      telefono_encargado: sanitize(providerData.telefono_encargado),
+      correo_principal: providerData.correo_principal,
+      correo_secundario: sanitize(providerData.correo_secundario),
+      direccion: sanitize(providerData.direccion),
+      observaciones: sanitize(providerData.observaciones),
       estado: "Activo", // Los nuevos proveedores inician como Activos
     };
 
+    console.log("Enviando nuevo proveedor:", newProvider);
     onSave(newProvider);
     // El hook manejará el toast de éxito
     setProviderData(initialState);
@@ -151,20 +194,11 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
     onClose();
   };
 
-  // Eliminamos handleMouseDown y handleMouseUp ya que no queremos cerrar al hacer clic fuera
-  // y por lo tanto tampoco necesitamos las referencias 'modalContentRef' y 'mouseDownTarget'.
-
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12"
-      // Eliminamos onMouseDown y onMouseUp de aquí
-    >
-      <div
-        // Eliminamos ref={modalContentRef} de aquí
-        className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
-      >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
         {/* Encabezado fijo */}
         <header className="flex justify-between items-center p-4 border-b">
           <h2 className="text-2xl font-bold text-gray-800">Registrar Nuevo Proveedor</h2>
@@ -175,119 +209,182 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
         {/* Contenido del formulario con scroll */}
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
-          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow" // Añadimos flex-grow
+          noValidate
+          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow"
         >
-          {/* NIT y Empresa */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-            <div>
-              <label htmlFor="taxId" className="block text-sm font-medium text-gray-700 mb-1">
-                * NIT / Identificación Fiscal
-              </label>
-              <input
-                id="taxId"
-                type="text"
-                name="taxId"
-                value={providerData.taxId}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyPress={handleKeyPressNumeric}
-                inputMode="numeric"
-                className={`${inputBaseStyle} ${errors.taxId ? 'border-red-500' : ''}`}
-                required
-                title="Ingrese solo números"
-              />
-              {errors.taxId && <p className="text-red-500 text-xs mt-1">{errors.taxId}</p>}
-            </div>
+          <FormSection title="Información Entidad">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div>
+                <FormLabel htmlFor="empresa">
+                  <span className="text-red-500">*</span> Nombre Entidad
+                </FormLabel>
+                <input
+                  id="empresa"
+                  type="text"
+                  name="empresa"
+                  value={providerData.empresa}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${inputBaseStyle} ${errors.empresa ? 'border-red-500' : ''}`}
+                  required
+                  maxLength="150"
+                />
+                {errors.empresa && <p className="text-red-500 text-xs mt-1">{errors.empresa}</p>}
+              </div>
 
-            <div>
-              <label htmlFor="empresa" className="block text-sm font-medium text-gray-700 mb-1">
-                * Nombre de la Empresa
-              </label>
-              <input
-                id="empresa"
-                type="text"
-                name="empresa"
-                value={providerData.empresa}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`${inputBaseStyle} ${errors.empresa ? 'border-red-500' : ''}`}
-                required
-              />
-              {errors.empresa && <p className="text-red-500 text-xs mt-1">{errors.empresa}</p>}
-            </div>
+              <div>
+                <FormLabel htmlFor="nit">
+                  NIT
+                </FormLabel>
+                <input
+                  id="nit"
+                  type="text"
+                  name="nit"
+                  value={providerData.nit}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${inputBaseStyle} ${errors.nit ? 'border-red-500' : ''}`}
+                  maxLength="30"
+                />
+                {errors.nit && <p className="text-red-500 text-xs mt-1">{errors.nit}</p>}
+              </div>
 
-            {/* Encargado */}
-            <div>
-              <label htmlFor="encargado" className="block text-sm font-medium text-gray-700 mb-1">
-                * Nombre del Encargado
-              </label>
-              <input
-                id="encargado"
-                type="text"
-                name="encargado"
-                value={providerData.encargado}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`${inputBaseStyle} ${errors.encargado ? 'border-red-500' : ''}`}
-                required
-              />
-              {errors.encargado && <p className="text-red-500 text-xs mt-1">{errors.encargado}</p>}
+              <div className="sm:col-span-2">
+                <FormLabel htmlFor="telefono_entidad">
+                  Teléfono Entidad
+                </FormLabel>
+                <input
+                  id="telefono_entidad"
+                  type="tel"
+                  name="telefono_entidad"
+                  value={providerData.telefono_entidad}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyPress={handleKeyPressPhone}
+                  className={`${inputBaseStyle} ${errors.telefono_entidad ? 'border-red-500' : ''}`}
+                  title="Ingrese un número de teléfono válido (solo números, espacios, +, - , ( , ) )"
+                  maxLength="20"
+                />
+                {errors.telefono_entidad && <p className="text-red-500 text-xs mt-1">{errors.telefono_entidad}</p>}
+              </div>
             </div>
+          </FormSection>
 
-            {/* Teléfono */}
-            <div>
-              <label htmlFor="contactNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                Teléfono
-              </label>
-              <input
-                id="contactNumber"
-                type="tel"
-                name="contactNumber"
-                value={providerData.contactNumber}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyPress={handleKeyPressPhone}
-                className={`${inputBaseStyle} ${errors.contactNumber ? 'border-red-500' : ''}`}
-                title="Ingrese un número de teléfono válido (solo números, espacios, +, - , ( , ) )"
-              />
-              {errors.contactNumber && <p className="text-red-500 text-xs mt-1">{errors.contactNumber}</p>}
-            </div>
+          <FormSection title="Información Encargado">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div>
+                <FormLabel htmlFor="encargado">
+                  <span className="text-red-500">*</span> Nombre Encargado
+                </FormLabel>
+                <input
+                  id="encargado"
+                  type="text"
+                  name="encargado"
+                  value={providerData.encargado}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${inputBaseStyle} ${errors.encargado ? 'border-red-500' : ''}`}
+                  required
+                  maxLength="150"
+                />
+                {errors.encargado && <p className="text-red-500 text-xs mt-1">{errors.encargado}</p>}
+              </div>
 
-            {/* Correo */}
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Correo Electrónico
-              </label>
-              <input
-                id="email"
-                type="email"
-                name="email"
-                value={providerData.email}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`${inputBaseStyle} ${errors.email ? 'border-red-500' : ''}`}
-                placeholder="ejemplo@correo.com"
-              />
-              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
-            </div>
+              <div>
+                <FormLabel htmlFor="telefono_encargado">
+                  Teléfono Encargado
+                </FormLabel>
+                <input
+                  id="telefono_encargado"
+                  type="tel"
+                  name="telefono_encargado"
+                  value={providerData.telefono_encargado}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyPress={handleKeyPressPhone}
+                  className={`${inputBaseStyle} ${errors.telefono_encargado ? 'border-red-500' : ''}`}
+                  title="Ingrese un número de teléfono válido (solo números, espacios, +, - , ( , ) )"
+                  maxLength="20"
+                />
+                {errors.telefono_encargado && <p className="text-red-500 text-xs mt-1">{errors.telefono_encargado}</p>}
+              </div>
 
-            {/* Dirección */}
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
-                Dirección
-              </label>
-              <input
-                id="address"
-                type="text"
-                name="address"
-                value={providerData.address}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={inputBaseStyle}
-              />
+              <div>
+                <FormLabel htmlFor="correo_principal">
+                  <span className="text-red-500">*</span> Correo Principal
+                </FormLabel>
+                <input
+                  id="correo_principal"
+                  type="email"
+                  name="correo_principal"
+                  value={providerData.correo_principal}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${inputBaseStyle} ${errors.correo_principal ? 'border-red-500' : ''}`}
+                  required
+                  placeholder="ejemplo@correo.com"
+                  maxLength="150"
+                />
+                {errors.correo_principal && <p className="text-red-500 text-xs mt-1">{errors.correo_principal}</p>}
+              </div>
+
+              <div>
+                <FormLabel htmlFor="correo_secundario">
+                  Correo Secundario
+                </FormLabel>
+                <input
+                  id="correo_secundario"
+                  type="email"
+                  name="correo_secundario"
+                  value={providerData.correo_secundario}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${inputBaseStyle} ${errors.correo_secundario ? 'border-red-500' : ''}`}
+                  placeholder="ejemplo@correo.com"
+                  maxLength="150"
+                />
+                {errors.correo_secundario && <p className="text-red-500 text-xs mt-1">{errors.correo_secundario}</p>}
+              </div>
             </div>
-          </div>
+          </FormSection>
+
+          <FormSection title="Información General">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div className="sm:col-span-2">
+                <FormLabel htmlFor="direccion">
+                  Dirección
+                </FormLabel>
+                <input
+                  id="direccion"
+                  type="text"
+                  name="direccion"
+                  value={providerData.direccion}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={inputBaseStyle}
+                  maxLength="200"
+                />
+              </div>
+
+              <div className="sm:col-span-2">
+                <FormLabel htmlFor="observaciones">
+                  Observaciones
+                </FormLabel>
+                <textarea
+                  id="observaciones"
+                  name="observaciones"
+                  value={providerData.observaciones}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${inputBaseStyle} resize-none`}
+                  rows="3"
+                  maxLength="500"
+                />
+              </div>
+            </div>
+          </FormSection>
 
           <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button

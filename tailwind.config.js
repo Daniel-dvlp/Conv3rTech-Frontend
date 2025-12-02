@@ -1,9 +1,15 @@
 
+import defaultTheme from "tailwindcss/defaultTheme";
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Roboto", ...defaultTheme.fontFamily.sans],
+        display: ["Roboto", "sans-serif"],
+      },
       animation: {
         "fade-in": "fadeIn 0.25s ease-in-out",
       },

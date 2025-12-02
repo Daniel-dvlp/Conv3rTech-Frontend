@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { serviceCategoryService } from '../../services_category/services/serviceCategoryService.js';
 import { showSuccess } from '../../../../../shared/utils/alerts';
+import cloudinaryService from '../../../../../services/cloudinaryService';
+import { toast } from 'react-hot-toast';
 
 const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) => {
   const [formData, setFormData] = useState({
@@ -16,6 +18,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
   });
 
   const [previewImage, setPreviewImage] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [categories, setCategories] = useState([]);
   const fileInputRef = useRef();
 
@@ -94,11 +97,22 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
-      setFormData((prev) => ({ ...prev, imagen: file }));
-      setPreviewImage(URL.createObjectURL(file));
+      try {
+        setUploading(true);
+        // Subir a Cloudinary
+        const cloudinaryUrl = await cloudinaryService.uploadImage(file, 'services');
+        setFormData((prev) => ({ ...prev, url_imagen: cloudinaryUrl }));
+        setPreviewImage(cloudinaryUrl);
+        toast.success('Imagen subida exitosamente');
+      } catch (error) {
+        toast.error(error.message || 'Error al subir la imagen');
+        console.error('Error uploading image:', error);
+      } finally {
+        setUploading(false);
+      }
     }
   };
 
@@ -149,8 +163,8 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-md max-h-[90vh] overflow-y-auto p-6 relative">
         <h2 className="text-xl font-bold mb-4 text-center">
           {esEdicion ? 'Editar servicio' : 'Agregar un nuevo servicio'}
         </h2>
@@ -167,14 +181,24 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
               ref={fileInputRef}
               onChange={handleImageChange}
               className="hidden"
+              disabled={uploading}
             />
             <button
               type="button"
               onClick={() => fileInputRef.current.click()}
-              className="mb-2 px-4 py-2 bg-[#FFB800] text-black font-semibold rounded hover:bg-[#e0a500] transition"
+              disabled={uploading}
+              className={`mb-2 px-4 py-2 font-semibold rounded transition ${
+                uploading
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-[#FFB800] text-black hover:bg-[#e0a500]'
+              }`}
             >
-              📁 Elegir imagen
+              {uploading ? '⏳ Subiendo...' : '📁 Elegir imagen'}
             </button>
+
+            {uploading && (
+              <p className="text-sm text-blue-600 mb-2">Subiendo imagen a Cloudinary...</p>
+            )}
 
             {formData.imagen && <p className="text-sm text-gray-600 mb-2">{formData.imagen.name}</p>}
 
@@ -189,7 +213,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
           {/* Nombre */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">* Nombre:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
             <input
               type="text"
               name="nombre"
@@ -203,7 +227,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
           {/* Categoría */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">* Categoría:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
             <select
               name="categoriaId"
               value={formData.categoriaId}
@@ -222,7 +246,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
           {/* Precio */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">* Precio:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Precio</label>
             <input
               type="number"
               name="precio"
@@ -238,7 +262,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
           {/* Duración */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Duración:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Duración</label>
             <div className="flex gap-2">
               <select
                 value={formData.horas}
@@ -277,13 +301,13 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
           {/* Descripción */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">* Descripción:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
             <textarea
               name="descripcion"
               placeholder="Descripción del servicio"
               value={formData.descripcion}
               onChange={handleChange}
-              className="w-full border rounded px-3 py-2"
+              className="w-full border rounded px-3 py-2 resize-none"
               rows={3}
               required
             ></textarea>
@@ -291,7 +315,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
           {/* Estado */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">* Estado:</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
             <select
               name="estado"
               value={formData.estado}

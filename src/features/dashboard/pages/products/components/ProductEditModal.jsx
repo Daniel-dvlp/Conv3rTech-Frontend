@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { FaTimes, FaTrash, FaPlus, FaReply } from 'react-icons/fa';
+import { FaTimes, FaTrash, FaPlus, FaReply, FaSpinner } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
 import { featuresService } from '../services/productsService';
+import cloudinaryService from '../../../../../services/cloudinaryService';
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -20,7 +21,7 @@ const inputBaseStyle =
   'block w-full text-sm text-gray-500 border border-gray-300 rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
 const normalizeText = (text) =>
-  text?.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 const ToggleSwitch = ({ checked, onChange }) => (
   <Switch
@@ -50,6 +51,45 @@ const ProductEditModal = ({
   const [productData, setProductData] = useState(null);
   const [errors, setErrors] = useState({});
   const [allFeatures, setAllFeatures] = useState(features || []);
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [loading, setLoading] = useState(false);
+
+  const validateField = (name, value) => {
+    const newErrors = { ...errors };
+    // Limpiar errores del servidor cuando el usuario modifica campos
+    if (newErrors.servidor) delete newErrors.servidor;
+    
+    switch (name) {
+      case 'nombre':
+        if (!value?.trim()) newErrors.nombre = 'El nombre es obligatorio';
+        else delete newErrors.nombre;
+        break;
+      case 'modelo':
+        if (!value?.trim()) newErrors.modelo = 'El modelo es obligatorio';
+        else delete newErrors.modelo;
+        break;
+      case 'id_categoria':
+        if (!value) newErrors.id_categoria = 'Selecciona una categoría';
+        else delete newErrors.id_categoria;
+        break;
+      case 'unidad_medida':
+        if (!value) newErrors.unidad_medida = 'Selecciona una unidad de medida';
+        else delete newErrors.unidad_medida;
+        break;
+      case 'precio':
+        if (!value || value <= 0) newErrors.precio = 'Ingresa un precio válido mayor a 0';
+        else delete newErrors.precio;
+        break;
+      case 'garantia':
+        if (!value || value < 12) newErrors.garantia = 'La garantía debe ser de al menos 12 meses';
+        else delete newErrors.garantia;
+        break;
+      default:
+        break;
+    }
+    setErrors(newErrors);
+  };
 
   useEffect(() => {
     if (productToEdit) {
@@ -81,13 +121,14 @@ const ProductEditModal = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    
+
     // No permitir cambios en stock por seguridad
     if (name === 'stock') {
       return;
     }
-    
+
     setProductData((prev) => ({ ...prev, [name]: value }));
+    validateField(name, value);
   };
 
   const handleBlur = (e) => {
@@ -104,14 +145,12 @@ const ProductEditModal = ({
 
     if (field === 'id_caracteristica') {
       if (value === "otro") {
-        // Si selecciona 'otro', inicializa el campo de texto para la nueva característica
         updated[index].nuevaCaracteristica = updated[index].nuevaCaracteristica || '';
       } else {
-        // Si selecciona una existente, elimina el campo de texto si existía
         delete updated[index].nuevaCaracteristica;
       }
     }
-    
+
     setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
   };
 
@@ -135,105 +174,180 @@ const ProductEditModal = ({
     const updated = [...(productData.fichas_tecnicas || [])];
     updated[index] = { 
       id_caracteristica: '', 
-      valor: updated[index].valor || '' // Mantener el valor si ya se ingresó
+      valor: updated[index].valor || ''
     };
-    // Asegurar que se elimine la nuevaCaracteristica si existe
     delete updated[index].nuevaCaracteristica;
     setProductData((prev) => ({ ...prev, fichas_tecnicas: updated }));
   };
 
-  // ✅ Crear característica si el usuario selecciona "Otro"
-  const createNewFeature = async (name) => {
-    try {
-      const newFeature = await featuresService.createFeature({ nombre: name });
-      setAllFeatures((prev) => [...prev, newFeature]);
-      return newFeature.id_caracteristica;
-    } catch (error) {
-      console.error('Error al crear la característica:', error);
-      alert('No se pudo crear la nueva característica');
-      return null;
-    }
-  };
-
-  // ✅ Fotos
-  const handleRemoveFoto = (index) => {
+  // ✅ Fotos con Cloudinary (CORREGIDO)
+  const handleRemoveFoto = async (index) => {
     const updatedFotos = [...(productData.fotos || [])];
+    const fotoToRemove = updatedFotos[index];
+    
+    // Si la foto está en Cloudinary (contiene res.cloudinary.com), intentar eliminarla
+    if (fotoToRemove && fotoToRemove.includes('res.cloudinary.com')) {
+      try {
+        await cloudinaryService.deleteImage(fotoToRemove);
+        console.log('Imagen eliminada de Cloudinary');
+      } catch (error) {
+        console.error('Error al eliminar imagen de Cloudinary:', error);
+        // Continuar aunque falle la eliminación
+      }
+    }
+    
     updatedFotos.splice(index, 1);
     setProductData((prev) => ({ ...prev, fotos: updatedFotos }));
   };
 
-  const handleAddFotos = (e) => {
+  const handleAddFotos = async (e) => {
     const files = Array.from(e.target.files).slice(
       0,
       4 - (productData.fotos?.length || 0)
     );
-    const readers = files.map(
-      (file) =>
-        new Promise((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.readAsDataURL(file);
-        })
-    );
+    
+    if (files.length === 0) return;
 
-    Promise.all(readers).then((images) => {
-      setProductData((prev) => ({
+    // Validar archivos
+    const validation = cloudinaryService.validateImages(files);
+    if (!validation.valid) {
+      setErrors(prev => ({
         ...prev,
-        fotos: [...(prev.fotos || []), ...images],
+        imageUpload: validation.errors.join('. ')
       }));
-    });
-  };
-
-  // ✅ Guardar producto (crea la característica si hay "Otro")
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    validateDuplicate();
-    if (errors.duplicate || (productData.garantia && productData.garantia < 12)) return;
-
-    let fichasProcesadas = [];
-
-    for (const ficha of productData.fichas_tecnicas || []) {
-      let idCaracteristica = ficha.id_caracteristica;
-
-      if (idCaracteristica === "otro" && ficha.nuevaCaracteristica) {
-        // 1. Crear la nueva característica en el backend
-        try {
-          const newFeature = await featuresService.createFeature({ nombre: ficha.nuevaCaracteristica });
-          idCaracteristica = newFeature.id_caracteristica;
-        } catch (error) {
-          console.error("Error al crear característica:", error);
-          continue;
-        }
-      }
-      
-      // 2. Procesar y convertir a número el ID si es válido
-      const numericId = Number(idCaracteristica);
-      
-      // Reforzamos la validación para asegurar que se envía un número entero positivo (ID)
-      if (idCaracteristica && idCaracteristica !== "otro" && !isNaN(numericId) && numericId > 0) {
-        fichasProcesadas.push({
-          id_caracteristica: numericId, // Usamos el valor numérico validado
-          valor: ficha.valor
-        });
-      }
+      return;
     }
 
-    const updatedProduct = {
-      ...productData,
-      // Conversiones a número para el cuerpo principal
-      id_categoria: Number(productData.id_categoria),
-      precio: Number(productData.precio),
-      // stock: NO se incluye - se maneja desde ventas/proyectos por seguridad
-      garantia: Number(productData.garantia),
-      codigo_barra: productData.codigo_barra?.trim() || null,
-      fichas_tecnicas: fichasProcesadas, // Array de IDs numéricos
-      estado: !!productData.estado,
-      // Asegurar que fotos sea un array válido
-      fotos: Array.isArray(productData.fotos) ? productData.fotos : []
-    };
+    setUploadingImages(true);
+    setUploadProgress(0);
 
-    onSave(updatedProduct);
-    onClose();
+    try {
+      // Subir imágenes a Cloudinary
+      const uploadedUrls = await cloudinaryService.uploadMultipleImages(files, 'products');
+      
+      setProductData((prev) => ({
+        ...prev,
+        fotos: [...(prev.fotos || []), ...uploadedUrls],
+      }));
+
+      setUploadProgress(100);
+      
+      // Limpiar error si existe
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.imageUpload;
+        return newErrors;
+      });
+    } catch (error) {
+      console.error('Error al subir imágenes:', error);
+      setErrors(prev => ({
+        ...prev,
+        imageUpload: error.message || 'Error al subir las imágenes. Inténtalo de nuevo.'
+      }));
+    } finally {
+      setUploadingImages(false);
+      setUploadProgress(0);
+      e.target.value = '';
+    }
+  };
+
+  // ✅ Guardar producto
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Limpiar errores del servidor
+    setErrors(prev => {
+      const newErrs = { ...prev };
+      delete newErrs.servidor;
+      return newErrs;
+    });
+
+    // Validar duplicados
+    validateDuplicate();
+    
+    // Validar garantía
+    if (productData.garantia && productData.garantia < 12) {
+      setErrors(prev => ({
+        ...prev,
+        garantia: 'La garantía debe ser de al menos 12 meses'
+      }));
+      return;
+    }
+    
+    // Si hay errores, no continuar
+    if (Object.keys(errors).length > 0) {
+      setTimeout(() => {
+        const firstErrorField = document.querySelector('.border-red-500');
+        if (firstErrorField) {
+          firstErrorField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let fichasProcesadas = [];
+
+      for (const ficha of productData.fichas_tecnicas || []) {
+        let idCaracteristica = ficha.id_caracteristica;
+
+        if (idCaracteristica === "otro" && ficha.nuevaCaracteristica) {
+          try {
+            const newFeature = await featuresService.createFeature({ 
+              nombre: ficha.nuevaCaracteristica 
+            });
+            idCaracteristica = newFeature.id_caracteristica;
+          } catch (error) {
+            console.error("Error al crear característica:", error);
+            continue;
+          }
+        }
+        
+        const numericId = Number(idCaracteristica);
+        
+        if (idCaracteristica && idCaracteristica !== "otro" && !isNaN(numericId) && numericId > 0) {
+          fichasProcesadas.push({
+            id_caracteristica: numericId,
+            valor: ficha.valor
+          });
+        }
+      }
+
+      const updatedProduct = {
+        ...productData,
+        id_categoria: Number(productData.id_categoria),
+        precio: Number(productData.precio),
+        garantia: Number(productData.garantia),
+        codigo_barra: productData.codigo_barra?.trim() || null,
+        fichas_tecnicas: fichasProcesadas,
+        estado: !!productData.estado,
+        fotos: Array.isArray(productData.fotos) ? productData.fotos : []
+      };
+
+      await onSave(updatedProduct);
+      onClose();
+    } catch (error) {
+      const errorMessage = error?.response?.data?.message || 
+                          error?.response?.data?.errors?.[0]?.msg || 
+                          error?.message || 
+                          'Ocurrió un error al actualizar el producto';
+      setErrors(prev => ({
+        ...prev,
+        servidor: errorMessage
+      }));
+      
+      setTimeout(() => {
+        const errorElement = document.querySelector('[data-error-servidor]');
+        if (errorElement) {
+          errorElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -255,10 +369,29 @@ const ProductEditModal = ({
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* ———————————————————————
+        <form onSubmit={handleSubmit} className="p-6 space-y-6" noValidate>
+          {/* Mensaje de error del servidor */}
+          {errors.servidor && (
+            <div 
+              data-error-servidor
+              className="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg"
+            >
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700 font-medium">{errors.servidor}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ——————————————————————————————
                 INFORMACIÓN PRINCIPAL
-          ——————————————————————— */}
+          —————————————————————————————— */}
           <FormSection title="Información Principal">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Nombre */}
@@ -271,13 +404,13 @@ const ProductEditModal = ({
                   value={productData.nombre}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500' : ''}`}
                 />
+                {errors.nombre && (
+                  <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>
+                )}
                 {errors.duplicate && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.duplicate}
-                  </p>
+                  <p className="text-red-500 text-sm mt-1">{errors.duplicate}</p>
                 )}
               </div>
 
@@ -291,9 +424,11 @@ const ProductEditModal = ({
                   value={productData.modelo}
                   onChange={handleChange}
                   onBlur={handleBlur}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.modelo ? 'border-red-500' : ''}`}
                 />
+                {errors.modelo && (
+                  <p className="text-red-500 text-sm mt-1">{errors.modelo}</p>
+                )}
               </div>
 
               {/* Categoría */}
@@ -304,21 +439,18 @@ const ProductEditModal = ({
                   name="id_categoria"
                   value={productData.id_categoria}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.id_categoria ? 'border-red-500' : ''}`}
                 >
-                  <option value="" disabled>
-                    Seleccione una categoría
-                  </option>
+                  <option value="" disabled>Seleccione una categoría</option>
                   {categories.map((cat) => (
-                    <option
-                      key={cat.id_categoria}
-                      value={cat.id_categoria}
-                    >
+                    <option key={cat.id_categoria} value={cat.id_categoria}>
                       {cat.nombre}
                     </option>
                   ))}
                 </select>
+                {errors.id_categoria && (
+                  <p className="text-red-500 text-sm mt-1">{errors.id_categoria}</p>
+                )}
               </div>
 
               {/* Unidad */}
@@ -329,8 +461,7 @@ const ProductEditModal = ({
                   name="unidad_medida"
                   value={productData.unidad_medida}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.unidad_medida ? 'border-red-500' : ''}`}
                 >
                   <option value="">Seleccione la unidad:</option>
                   <option value="unidad">Unidad</option>
@@ -340,6 +471,9 @@ const ProductEditModal = ({
                   <option value="paquetes">Paquetes</option>
                   <option value="kit">Kit</option>
                 </select>
+                {errors.unidad_medida && (
+                  <p className="text-red-500 text-sm mt-1">{errors.unidad_medida}</p>
+                )}
               </div>
 
               {/* Precio */}
@@ -351,12 +485,14 @@ const ProductEditModal = ({
                   name="precio"
                   value={productData.precio}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}
                 />
+                {errors.precio && (
+                  <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
+                )}
               </div>
 
-              {/* Stock - Solo lectura por seguridad */}
+              {/* Stock - Solo lectura */}
               <div>
                 <FormLabel htmlFor="stock">Cantidad (Stock):</FormLabel>
                 <input
@@ -369,7 +505,7 @@ const ProductEditModal = ({
                   disabled
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  El stock no puede ser editado
+                  El stock no puede ser editado manualmente
                 </p>
               </div>
 
@@ -382,13 +518,10 @@ const ProductEditModal = ({
                   name="garantia"
                   value={productData.garantia}
                   onChange={handleChange}
-                  className={inputBaseStyle}
-                  required
+                  className={`${inputBaseStyle} ${errors.garantia ? 'border-red-500' : ''}`}
                 />
-                {productData.garantia && productData.garantia < 12 && (
-                  <p className="text-red-500 text-sm mt-2">
-                    La garantía debe ser de al menos 12 meses.
-                  </p>
+                {errors.garantia && (
+                  <p className="text-red-500 text-sm mt-1">{errors.garantia}</p>
                 )}
               </div>
 
@@ -399,7 +532,7 @@ const ProductEditModal = ({
                   type="text"
                   id="codigo_barra"
                   name="codigo_barra"
-                  value={productData.codigo_barra}
+                  value={productData.codigo_barra || ''}
                   onChange={handleChange}
                   placeholder="N/A"
                   className={inputBaseStyle}
@@ -408,9 +541,9 @@ const ProductEditModal = ({
             </div>
           </FormSection>
 
-          {/* ———————————————————————
+          {/* ——————————————————————————————
                 FICHAS TÉCNICAS
-          ——————————————————————— */}
+          —————————————————————————————— */}
           <FormSection title="Fichas Técnicas">
             {(productData.fichas_tecnicas || []).map((ficha, index) => (
               <div
@@ -423,7 +556,6 @@ const ProductEditModal = ({
                   </FormLabel>
 
                   {ficha.id_caracteristica === 'otro' ? (
-                    // 💥 Reemplaza el selector con el input de texto 💥
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -432,9 +564,7 @@ const ProductEditModal = ({
                         value={ficha.nuevaCaracteristica || ""}
                         onChange={(e) => handleFichaChange(index, 'nuevaCaracteristica', e.target.value)}
                         className={inputBaseStyle}
-                        required
                       />
-                      {/* Botón para volver al selector */}
                       <button
                         type="button"
                         onClick={() => handleResetFicha(index)}
@@ -445,15 +575,12 @@ const ProductEditModal = ({
                       </button>
                     </div>
                   ) : (
-                    // Muestra el selector normal
                     <div className="relative">
                       <select
                         id={`caracteristica_input_${index}`}
-                        name={`id_caracteristica_${index}`}
                         value={ficha.id_caracteristica}
                         onChange={(e) => handleFichaChange(index, 'id_caracteristica', e.target.value)}
                         className={`${inputBaseStyle} appearance-none pr-10 text-gray-500`}
-                        required
                       >
                         <option value="">Seleccione una característica</option>
                         {Array.isArray(allFeatures) && allFeatures.map((feat) => (
@@ -481,13 +608,9 @@ const ProductEditModal = ({
                   <input
                     type="text"
                     id={`valor_${index}`}
-                    name={`valor_${index}`}
                     value={ficha.valor}
-                    onChange={(e) =>
-                      handleFichaChange(index, 'valor', e.target.value)
-                    }
+                    onChange={(e) => handleFichaChange(index, 'valor', e.target.value)}
                     className={inputBaseStyle}
-                    required
                   />
                 </div>
 
@@ -505,18 +628,19 @@ const ProductEditModal = ({
             <button
               type="button"
               onClick={handleAddFicha}
-              className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg"
+              className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-white bg-conv3r-dark hover:bg-conv3r-dark-700 px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98]"
             >
-              <FaPlus className="text-white" size={12} /> Agregar ficha técnica
+              <FaPlus className="text-white" size={12} />
+              Agregar ficha técnica
             </button>
           </FormSection>
 
-          {/* ———————————————————————
+          {/* ——————————————————————————————
                 FOTOS DEL PRODUCTO
-          ——————————————————————— */}
+          —————————————————————————————— */}
           <FormSection title="Fotos del Producto">
             <div className="flex gap-3 flex-wrap">
-              {productData.fotos?.map((foto, index) => (
+              {(productData.fotos || []).map((foto, index) => (
                 <div
                   key={index}
                   className="relative w-24 h-24 rounded-lg border border-gray-300"
@@ -535,15 +659,26 @@ const ProductEditModal = ({
                     src={foto}
                     alt={`Foto ${index + 1}`}
                     className="object-cover w-full h-full rounded-lg"
+                    loading="lazy"
                   />
                 </div>
               ))}
 
-              {(productData.fotos?.length || 0) < 4 && (
+              {/* Estado de carga */}
+              {uploadingImages && (
+                <div className="w-24 h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-conv3r-gold rounded-lg bg-conv3r-gold/10">
+                  <FaSpinner className="animate-spin text-conv3r-gold" />
+                  <span className="text-xs text-conv3r-gold font-medium">
+                    {uploadProgress}%
+                  </span>
+                </div>
+              )}
+
+              {(productData.fotos?.length || 0) < 4 && !uploadingImages && (
                 <>
                   <label
                     htmlFor="editar-fotos"
-                    className="w-24 h-24 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer text-gray-500 hover:bg-gray-100"
+                    className="w-24 h-24 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-gray-400 rounded-lg cursor-pointer text-gray-500 hover:bg-gray-100 transition-colors"
                   >
                     <FaPlus />
                     <span className="text-xs">Agregar</span>
@@ -555,15 +690,26 @@ const ProductEditModal = ({
                     multiple
                     onChange={handleAddFotos}
                     className="hidden"
+                    disabled={uploadingImages}
                   />
                 </>
               )}
             </div>
+            
+            {/* Mensaje de error de subida */}
+            {errors.imageUpload && (
+              <p className="text-red-500 text-sm mt-2">{errors.imageUpload}</p>
+            )}
+            
+            {/* Información sobre optimización */}
+            <p className="text-xs text-gray-500 mt-2">
+              Las imágenes se optimizan automáticamente para mejor rendimiento
+            </p>
           </FormSection>
 
-          {/* ———————————————————————
+          {/* ——————————————————————————————
                 ESTADO DEL PRODUCTO
-          ——————————————————————— */}
+          —————————————————————————————— */}
           <FormSection title="Estado del Producto">
             <div className="flex items-center gap-4">
               <span className="text-sm text-gray-700 font-medium">Activo:</span>
@@ -580,16 +726,18 @@ const ProductEditModal = ({
             <button
               type="button"
               onClick={onClose}
-              className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors"
+              className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={uploadingImages || loading}
             >
               Cancelar
             </button>
             <button
               type="submit"
-              className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105"
-              disabled={productData.garantia && productData.garantia < 12}
+              className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
+              disabled={uploadingImages || loading}
             >
-              Guardar cambios
+              {(uploadingImages || loading) && <FaSpinner className="animate-spin" />}
+              {uploadingImages ? 'Subiendo imágenes...' : loading ? 'Guardando...' : 'Guardar cambios'}
             </button>
           </div>
         </form>

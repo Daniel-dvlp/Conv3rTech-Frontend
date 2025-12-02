@@ -14,7 +14,7 @@ import DashboardPage from "./features/dashboard/DashboardPage";
 import LoginPage from "./features/auth/pages/LoginPage";
 import RecoverRequestPage from "./features/auth/pages/RecoverRequestPage";
 import RecoverCodePage from "./features/auth/pages/RecoverCodePage";
-import WorkSchedulingPage from "./features/dashboard/pages/Work_scheduling/WorkSchedulingPage.jsx";
+import LaborSchedulingPage from "./features/dashboard/pages/labor_scheduling/laborSchedulingPage.jsx";
 import RolesPage from "./features/dashboard/pages/roles/RolesPage";
 import ProjectPage from "./features/dashboard/pages/Project/ProjectPage";
 import EditProfilePage from "./features/dashboard/pages/profile/EditProfilePage";
@@ -34,7 +34,6 @@ import ProductsSalePage from "./features/dashboard/pages/products_sale/ProductsS
 //Rutas Cruz
 import PurchasesPage from "./features/dashboard/pages/purchases/PurchasesPage";
 import SuppliersPage from "./features/dashboard/pages/suppliers/SuppliersPage";
-import ServiceOrdersPage from "./features/dashboard/pages/service_orders/ServicesOrdersPage";
 import QuotesPage from "./features/dashboard/pages/quotes/QuotesPage";
 
 function App() {
@@ -127,20 +126,13 @@ function App() {
               }
             />
 
-            <Route
-              path="ordenes_servicios"
-              element={
-                <ProtectedRoute requiredModule="ordenes_servicios">
-                  <ServiceOrdersPage />
-                </ProtectedRoute>
-              }
-            />
+            
 
             <Route
               path="programacion_laboral"
               element={
-                <ProtectedRoute requiredModule="programacion_laboral">
-                  <WorkSchedulingPage />
+                <ProtectedRoute requiredModule="programacion_laboral" requiredPrivilege="Ver">
+                  <LaborSchedulingPage />
                 </ProtectedRoute>
               }
             />

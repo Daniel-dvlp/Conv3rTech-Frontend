@@ -3,6 +3,12 @@ import { FaEye, FaMinusCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 
+const STATUS_BADGES = {
+  Activa: 'bg-green-100 text-green-800',
+  Anulada: 'bg-red-100 text-red-800',
+  Completada: 'bg-blue-100 text-blue-800'
+};
+
 const PurchasesTable = ({ compras, onView, onAnnul }) => {
   const manejarAnularClick = async (compra) => {
     // Primer modal: Confirmación de anulación
@@ -38,9 +44,12 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
       });
 
       if (motivoAnulacion) { // Si el usuario proporcionó un motivo y no canceló este segundo modal
-        toast.success(`La compra ${compra.numeroRecibo} ha sido anulada. Motivo: "${motivoAnulacion}"`);
-        if (onAnnul) {
-          onAnnul(compra.id, motivoAnulacion); // Pasa el ID de la compra y el motivo de anulación
+        try {
+          if (onAnnul) {
+            await onAnnul(compra.id, motivoAnulacion); // El hook gestionará el toast de éxito
+          }
+        } catch (err) {
+          toast.error('Error al cambiar estado de la compra');
         }
       } else {
         // Si el usuario canceló el segundo modal o no proporcionó un motivo
@@ -75,9 +84,7 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
               <td className="px-4 py-3 whitespace-nowrap">
                 <span
                   className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                    compra.estado === 'Activa'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
+                    STATUS_BADGES[compra.estado] || 'bg-gray-100 text-gray-800'
                   }`}
                 >
                   {compra.estado}
@@ -109,7 +116,7 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
           {compras.length === 0 && (
             <tr>
               <td colSpan="6" className="px-4 py-3 text-center text-gray-500">
-                No hay compras para mostrar.
+                No se encontraron compras.
               </td>
             </tr>
           )}
