@@ -470,7 +470,7 @@ const NewPurchasesModal = ({
         ref={modalContentRef} // Referencia para el scroll
       >
         <header className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-3xl font-bold text-gray-800">Nueva Compra</h2>
+          <h2 className="text-3xl font-bold text-gray-800">Nueva compra</h2>
           <button
             onClick={handleCloseModal}
             className="text-gray-400 hover:text-gray-700 text-2xl p-2"
@@ -484,7 +484,7 @@ const NewPurchasesModal = ({
           <FormSection title="Información General">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <FormLabel htmlFor="numeroRecibo"><span className="text-red-500">*</span> Número de Recibo</FormLabel>
+                <FormLabel htmlFor="numeroRecibo"><span className="text-red-500">*</span> Número de recibo:</FormLabel>
                 <input
                   id="numeroRecibo"
                   type="text"
@@ -510,7 +510,7 @@ const NewPurchasesModal = ({
                 )}
               </div>
               <div>
-                <FormLabel htmlFor="fechaRegistro"><span className="text-red-500">*</span> Fecha de Registro</FormLabel>
+                <FormLabel htmlFor="fechaRegistro"><span className="text-red-500">*</span> Fecha de registro:</FormLabel>
                 <input
                   id="fechaRegistro"
                   type="date"
@@ -535,7 +535,7 @@ const NewPurchasesModal = ({
             <div>
               <div className="flex items-end gap-2">
                 <div className="flex-grow">
-                  <FormLabel htmlFor="idProveedor"><span className="text-red-500">*</span> Proveedor</FormLabel>
+                  <FormLabel htmlFor="idProveedor"><span className="text-red-500">*</span> Proveedor:</FormLabel>
                   <select
                     id="idProveedor"
                     name="idProveedor"
@@ -585,7 +585,7 @@ const NewPurchasesModal = ({
               )}
               <div className="md:col-span-2 flex items-end gap-2">
                 <div className="flex-grow">
-                  <FormLabel><span className="text-red-500">*</span> Producto</FormLabel>
+                  <FormLabel><span className="text-red-500">*</span> Producto:</FormLabel>
                   <select
                     value={nuevoProductoSeleccionado.idProducto}
                     onChange={handleNuevoProductoChange}
@@ -620,7 +620,7 @@ const NewPurchasesModal = ({
                 </button>
               </div>
               <div>
-                <FormLabel>Unidad</FormLabel>
+                <FormLabel>Unidad:</FormLabel>
                 <input
                   type="text"
                   readOnly
@@ -629,7 +629,7 @@ const NewPurchasesModal = ({
                 />
               </div>
               <div>
-                <FormLabel><span className="text-red-500">*</span> Cantidad</FormLabel>
+                <FormLabel><span className="text-red-500">*</span> Cantidad:</FormLabel>
                 <input
                   type="text"
                   name="cantidad"
@@ -649,7 +649,7 @@ const NewPurchasesModal = ({
                 />
               </div>
               <div className="md:col-span-2">
-                <FormLabel><span className="text-red-500">*</span> Precio Unitario de Compra</FormLabel>
+                <FormLabel><span className="text-red-500">*</span> Precio unitario de compra:</FormLabel>
                 <input
                   type="text"
                   name="precioUnitarioCompra"
@@ -673,7 +673,7 @@ const NewPurchasesModal = ({
               </div>
               <div className="md:col-span-2 flex items-end gap-2">
                 <div className="flex-1">
-                  <FormLabel>Código de Barras</FormLabel>
+                  <FormLabel>Código de barras:</FormLabel>
                   <input
                     type="text"
                     name="codigoDeBarras"
@@ -767,7 +767,7 @@ const NewPurchasesModal = ({
                 <h4 className="font-medium text-gray-700 mb-2">Detalles</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span className="text-sm">Subtotal Productos:</span>
+                    <span className="text-sm">Subtotal productos:</span>
                     <span className="text-sm font-semibold">${purchaseData.subtotalProductos.toLocaleString('es-CO')}</span>
                   </div>
                   <div className="flex justify-between">
@@ -777,7 +777,7 @@ const NewPurchasesModal = ({
                 </div>
               </div>
               <div className="md:col-span-1 bg-white border border-gray-300 text-gray-800 p-4 rounded-lg flex flex-col items-center justify-center h-full">
-                <span className="text-sm font-bold uppercase mb-1">Total Compra</span>
+                <span className="text-sm font-bold uppercase mb-1">Total compra:</span>
                 <span className="text-3xl font-extrabold">${purchaseData.total.toLocaleString('es-CO')}</span>
               </div>
             </div>
@@ -804,9 +804,9 @@ const NewPurchasesModal = ({
             </button>
             <button
               type="submit"
-              className="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-sm font-medium rounded-md text-conv3r-dark bg-conv3r-gold hover:brightness-95 transition-transform hover:scale-105"
+              className="bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg hover:brightness-95 transition-transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center gap-2"
             >
-              Guardar Compra
+              Guardar compra
             </button>
           </div>
         </form>
