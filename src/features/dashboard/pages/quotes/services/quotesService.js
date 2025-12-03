@@ -48,6 +48,12 @@ export const quotesService = {
     const response = await api.post('/quotes/validate-stock', { id_producto: productId, cantidad: quantity });
     return response.data?.data ?? response.data;
   },
+
+  // Eliminar cotización
+  deleteQuote: async (id) => {
+    const response = await api.delete(`/quotes/${id}`);
+    return response.data?.data ?? response.data;
+  },
 };
 
 // Servicio simple para listar servicios (catálogo de servicios)

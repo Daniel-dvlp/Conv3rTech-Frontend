@@ -100,13 +100,14 @@ export const rolePermissions = {
   Tecnico: {
     canAccess: [
       "dashboard",
+      "usuarios",
       "ordenes_servicios",
       "programacion_laboral",
       "proyectos_servicios",
       "citas",
       "profile",
     ],
-    canManage: ["ordenes_servicios", "proyectos_servicios"],
+    canManage: ["ordenes_servicios"],
   },
 
   Recepcionista: {

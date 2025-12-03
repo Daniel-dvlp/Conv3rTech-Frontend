@@ -90,4 +90,10 @@ export const serviceCategoryService = {
     const response = await api.delete(`/service-categories/${id}`);
     return response.data;
   },
+
+  changeStateCategory: async (id, state) => {
+    const payload = { estado: state };
+    const response = await api.patch(`/service-categories/${id}`, payload);
+    return response.data;
+  },
 };

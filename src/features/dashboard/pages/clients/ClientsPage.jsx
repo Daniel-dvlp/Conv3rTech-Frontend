@@ -8,10 +8,12 @@ import EditClientModal from './components/EditClientModal';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { toast } from 'react-hot-toast';
 import { useClients } from './hooks/useClients';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 const ITEMS_PER_PAGE = 5;
 
 const ClientsPage = () => {
+  const { checkManage } = usePermissions();
   const {
     clientes,
     loading,

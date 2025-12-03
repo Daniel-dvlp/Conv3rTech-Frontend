@@ -2,10 +2,10 @@ import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 import ClientsDetailModal from './ClientsDetailModal';
 import { useState } from 'react';
-
-
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const ClientesTable = ({ clientes, onEdit, onDelete, onChangeStatus, onChangeCredit }) => {
+  const { checkManage } = usePermissions();
   const [selectedClient, setSelectedClient] = useState(null);
 
 
@@ -54,13 +54,17 @@ const ClientesTable = ({ clientes, onEdit, onDelete, onChangeStatus, onChangeCre
                   }} title="Ver detalles">
                     <FaEye size={20} />
                   </button>
-                  <button className="text-yellow-600 hover:text-yellow-800" title="Editar"
-                  onClick={() => onEdit(cliente)}>
-                    <FaEdit size={20} />
-                  </button>
-                  <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDelete(cliente.id_cliente)}>
-                    <FaTrashAlt size={20} />
-                  </button>
+                  {checkManage('clientes') && (
+                    <button className="text-yellow-600 hover:text-yellow-800" title="Editar"
+                    onClick={() => onEdit(cliente)}>
+                      <FaEdit size={20} />
+                    </button>
+                  )}
+                  {checkManage('clientes') && (
+                    <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDelete(cliente.id_cliente)}>
+                      <FaTrashAlt size={20} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>
