@@ -5,9 +5,19 @@ import ProjectCard from './components/ProjectCard';
 import WeeklySalesChart from './components/WeeklySalesChart';
 import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { dashboardService } from '../../services';
+import { useAuth } from '../../shared/contexts/AuthContext';
+import DashboardFallbackPage from './DashboardFallbackPage';
 
 
 function DashboardPage() {
+  const { user } = useAuth();
+  
+  // El dashboard principal es exclusivo para administradores (id_rol === 1)
+  // Los demás usuarios ven el dashboard alternativo
+  if (user?.id_rol !== 1) {
+    return <DashboardFallbackPage />;
+  }
+
   const [kpis, setKpis] = useState([
     { id: 1, title: 'Citas Hoy', value: 0 },
     { id: 2, title: 'Ventas Hoy', value: 0 },

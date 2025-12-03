@@ -6,10 +6,12 @@ import CreateNovedadModal from './components/CreateNovedadModal';
 import { showToast } from '../../../../shared/utils/alertas';
 import laborSchedulingService from '../../../../services/laborSchedulingService';
 import usersService from '../../../../services/usersService';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 const LaborSchedulingPage = () => {
   const calendarRef = useRef();
   const miniJumpRef = useRef(false);
+  const { checkManage } = usePermissions();
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -34,6 +36,8 @@ const LaborSchedulingPage = () => {
   const [selectedEventForMenu, setSelectedEventForMenu] = useState(null);
 
   const flattenedEvents = useMemo(() => events, [events]);
+  
+  const canManageSchedule = checkManage('programacion_laboral');
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -483,7 +487,7 @@ const LaborSchedulingPage = () => {
           <LaborSchedulingCalendar
             events={filteredEvents}
             calendarRef={calendarRef}
-            onSelect={handleCreateProgramacion}
+            onSelect={canManageSchedule ? handleCreateProgramacion : undefined}
             onEventClick={handleEventClick}
             onDatesSet={handleDatesSet}
           />
@@ -506,12 +510,12 @@ const LaborSchedulingPage = () => {
             setSelectedUser={() => {}}
             activeDate={activeDate}
             onDateSelect={handleSidebarDateSelect}
-            onCreate={handleCreateProgramacion}
-            onCreateNovedad={handleCreateNovedad}
-            onEdit={handleUserEdit}
-            onDelete={handleUserDelete}
-            onEditNovedad={(item) => openNovedadModal(item.id)}
-            onDeleteNovedad={handleDeleteNovedad}
+            onCreate={canManageSchedule ? handleCreateProgramacion : undefined}
+            onCreateNovedad={canManageSchedule ? handleCreateNovedad : undefined}
+            onEdit={canManageSchedule ? handleUserEdit : undefined}
+            onDelete={canManageSchedule ? handleUserDelete : undefined}
+            onEditNovedad={canManageSchedule ? (item) => openNovedadModal(item.id) : undefined}
+            onDeleteNovedad={canManageSchedule ? handleDeleteNovedad : undefined}
           />
         </div>
       </div>
@@ -530,7 +534,7 @@ const LaborSchedulingPage = () => {
         initialData={modalData}
       />
 
-      {showEventContextMenu && (
+      {showEventContextMenu && canManageSchedule && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setShowEventContextMenu(false)} />
           <div

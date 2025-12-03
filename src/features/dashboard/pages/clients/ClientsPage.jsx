@@ -8,10 +8,12 @@ import EditClientModal from './components/EditClientModal';
 import { showSuccess, confirmDelete } from '../../../../shared/utils/alerts.js';
 import { toast } from 'react-hot-toast';
 import { useClients } from './hooks/useClients';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 const ITEMS_PER_PAGE = 5;
 
 const ClientsPage = () => {
+  const { checkManage } = usePermissions();
   const {
     clientes,
     loading,
@@ -108,11 +110,13 @@ const ClientsPage = () => {
             />
             <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-            onClick={() => setOpenModal(true)}  >
-            <FaPlus />
-            Crear Cliente
-          </button>
+          {checkManage('clientes') && (
+            <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+              onClick={() => setOpenModal(true)}  >
+              <FaPlus />
+              Crear Cliente
+            </button>
+          )}
         </div>
       </div>
 

@@ -104,13 +104,13 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                 </div>
               </td>
               <td className="px-6 py-4">
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex-1 flex items-center justify-end gap-2">
                    {hasPermission('proyectos_servicios') && (
                      <button onClick={() => onViewDetails(project)} className="text-blue-400 hover:text-blue-600 text-sm p-1 rounded hover:bg-blue-50" title="Ver Detalles">
                       <FaEye size={16} />
                     </button>
                    )}
-                   {hasPrivilege('proyectos_servicios', 'Editar') && (
+                   {checkManage('proyectos_servicios') && (
                      <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-sm p-1 rounded hover:bg-yellow-50" title="Editar">
                       <FaEdit size={16} />
                     </button>
@@ -124,7 +124,7 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                        <FaTruck size={16} />
                      </button>
                    )}
-                   {hasPrivilege('proyectos_servicios', 'Eliminar') && (
+                   {checkManage('proyectos_servicios') && (
                      <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-sm p-1 rounded hover:bg-red-50" title="Eliminar">
                       <FaTrashAlt size={16} />
                     </button>

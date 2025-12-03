@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
+import { serviceCategoryService } from '../services/serviceCategoryService';
 
 const inputBaseStyle =
     "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
@@ -22,8 +23,6 @@ const ToggleSwitch = ({ checked, onChange }) => (
         />
     </Switch>
 );
-
-const API_URL = 'https://backend-conv3rtech.onrender.com/api/service-categories';
 
 const ServiceCategoryEditModal = ({
     isOpen,
@@ -109,26 +108,20 @@ const ServiceCategoryEditModal = ({
         }, 0);
     };
 
-    const handleEstadoPatch = (id, nuevoEstado) => {
-        fetch(`${API_URL}/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estado: nuevoEstado }),
-        })
-            .then(res => res.json())
-            .then(() => {
-                setCategoryData((prev) => ({
-                    ...prev,
-                    estado: nuevoEstado,
-                }));
-            })
-            .catch(() => {
-                // Opcional: mostrar error
-                setCategoryData((prev) => ({
-                    ...prev,
-                    estado: prev.estado === 'Activo' ? 'Inactivo' : 'Activo', // Revierte el cambio si falla
-                }));
-            });
+    const handleEstadoPatch = async (id, nuevoEstado) => {
+        try {
+            await serviceCategoryService.changeStateCategory(id, nuevoEstado);
+            setCategoryData((prev) => ({
+                ...prev,
+                estado: nuevoEstado,
+            }));
+        } catch (error) {
+            // Opcional: mostrar error
+            setCategoryData((prev) => ({
+                ...prev,
+                estado: prev.estado === 'Activo' ? 'Inactivo' : 'Activo', // Revierte el cambio si falla
+            }));
+        }
     };
 
     return (

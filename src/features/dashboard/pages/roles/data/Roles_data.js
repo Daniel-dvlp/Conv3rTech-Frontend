@@ -11,7 +11,7 @@ const defaultRoles = [
     // Nueva estructura de permisos detallados
     permissions: {
       'Dashboard': ['Ver'],
-      'Usuarios': ['Crear', 'Ver', 'Editar', 'Eliminar'],
+      'Usuarios': ['Crear', 'Ver', 'Editar', 'Eliminar', 'Exportar'],
       'Compras.Proveedores': ['Crear', 'Ver', 'Editar', 'Eliminar'],
       'Compras.Categorías de Productos': ['Crear', 'Ver', 'Editar', 'Eliminar'],
       'Compras.Productos': ['Crear', 'Ver', 'Editar', 'Eliminar'],
@@ -24,7 +24,7 @@ const defaultRoles = [
       'Ventas.Órdenes de Servicios': ['Crear', 'Ver', 'Editar', 'Eliminar'],
       'Ventas.Citas': ['Crear', 'Ver', 'Editar', 'Eliminar'],
       'Ventas.Cotizaciones': ['Crear', 'Ver', 'Editar', 'Eliminar'],
-      'Ventas.Proyectos de Servicio': ['Crear', 'Ver', 'Editar', 'Eliminar'],
+      'Ventas.Proyectos de Servicio': ['Crear', 'Ver', 'Editar', 'Eliminar', 'Exportar'],
       'Ventas.Pagos y Abonos': ['Crear', 'Ver', 'Editar', 'Eliminar'],
       'Configuración.Editar mi Perfil': ['Ver', 'Editar'],
       'Configuración.Gestión de Roles': ['Crear', 'Ver', 'Editar', 'Eliminar']
@@ -35,9 +35,11 @@ const defaultRoles = [
     name: 'Técnico de Campo',
     description: 'Puede ver y gestionar órdenes de servicio y agenda.',
     status: 'Activo',
-    permisos: ['Agenda', 'Órdenes de Servicio', 'Citas'],
+    permisos: ['Agenda', 'Órdenes de Servicio', 'Citas', 'Usuarios', 'Proyectos'],
     permissions: {
       'Dashboard': ['Ver'],
+      'Usuarios': ['Ver'],
+      'Ventas.Proyectos de Servicio': ['Ver'],
       'Servicios.Órdenes de Servicio': ['Crear', 'Ver', 'Editar'],
       'Servicios.Programación laboral': ['Ver', 'Editar'],
       'Ventas.Citas': ['Crear', 'Ver', 'Editar'],
@@ -56,7 +58,7 @@ const defaultRoles = [
       'Ventas.Venta de Productos': ['Crear', 'Ver'],
       'Ventas.Citas': ['Crear', 'Ver', 'Editar'],
       'Ventas.Cotizaciones': ['Crear', 'Ver', 'Editar'],
-      'Ventas.Proyectos de Servicio': ['Crear', 'Ver', 'Editar'],
+      'Ventas.Proyectos de Servicio': ['Crear', 'Ver', 'Editar', 'Exportar'],
       'Configuración.Editar mi Perfil': ['Ver', 'Editar']
     }
   },
