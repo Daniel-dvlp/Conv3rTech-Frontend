@@ -1,8 +1,10 @@
 import React from 'react';
 import { FaEye, FaEdit, FaDownload, FaMinusCircle } from 'react-icons/fa';
 import {showError} from '../../../../../shared/utils/alerts';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel }) => {
+  const { checkManage } = usePermissions();
   const formatNumber = (num) => {
     if (num === null || num === undefined) return '$0';
     const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
@@ -73,14 +75,16 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                   <FaEye />
                 </button>
 
-                <button
-                  onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onEdit(quote)}
-                  title="Editar"
-                  disabled={isLocked(quote.estado)}
-                  className={isLocked(quote.estado) ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:text-yellow-600'}
-                >
-                  <FaEdit />
-                </button>
+                {checkManage('cotizaciones') && (
+                  <button
+                    onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onEdit(quote)}
+                    title="Editar"
+                    disabled={isLocked(quote.estado)}
+                    className={isLocked(quote.estado) ? 'text-gray-400 cursor-not-allowed' : 'text-yellow-500 hover:text-yellow-600'}
+                  >
+                    <FaEdit />
+                  </button>
+                )}
 
                 <button
                   onClick={() => onDownloadPDF(quote)}
@@ -90,14 +94,16 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                   <FaDownload />
                 </button>
 
-                <button
-                  onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onCancel(quote)}
-                  title="Anular"
-                  disabled={isLocked(quote.estado)}
-                  className={isLocked(quote.estado) ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-gray-900'}
-                >
-                  <FaMinusCircle />
-                </button>
+                {checkManage('cotizaciones') && (
+                  <button
+                    onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onCancel(quote)}
+                    title="Anular"
+                    disabled={isLocked(quote.estado)}
+                    className={isLocked(quote.estado) ? 'text-gray-400 cursor-not-allowed' : 'text-red-600 hover:text-gray-900'}
+                  >
+                    <FaMinusCircle />
+                  </button>
+                )}
               </td>
             </tr>
             );

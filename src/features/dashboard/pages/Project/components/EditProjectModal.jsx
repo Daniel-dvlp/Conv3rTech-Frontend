@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { showToast } from "../../../../../shared/utils/alertas";
 import { usersService } from "../../../../../services";
-import { mockClientes } from "../../clients/data/Clientes_data";
+import { clientsApi } from "../../clients/services/clientsApi";
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -42,49 +42,59 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     materiales: [],
     servicios: [],
     costos: { manoDeObra: "" },
-    sedes: [], // <-- NUEVO
+    sedes: [],
   };
   const [projectData, setProjectData] = useState(initialState);
   const [errors, setErrors] = useState({});
   const [empleadoSearch, setEmpleadoSearch] = useState("");
   const [sedeModalOpen, setSedeModalOpen] = useState(false);
-  const [editingSede, setEditingSede] = useState(null); // null o índice de sede
+  const [editingSede, setEditingSede] = useState(null);
   const [sedeForm, setSedeForm] = useState({
     nombre: "",
     ubicacion: "",
     materialesAsignados: [],
     serviciosAsignados: [],
   });
-  const [usuarios, setUsuarios] = useState([]);
-  const [loadingUsuarios, setLoadingUsuarios] = useState(false);
+  
+  const [coordinadores, setCoordinadores] = useState([]);
+  const [tecnicos, setTecnicos] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
 
-  // Cargar usuarios desde la API cuando se abra el modal
+  // Cargar usuarios y clientes desde la API cuando se abra el modal
   useEffect(() => {
     if (isOpen) {
-      loadUsuarios();
+      loadData();
     }
   }, [isOpen]);
 
-  const loadUsuarios = async () => {
-    setLoadingUsuarios(true);
+  const loadData = async () => {
+    setLoadingData(true);
     try {
-      const response = await usersService.getAllUsers();
-      if (response.success) {
-        // Filtrar solo usuarios con rol de técnico y coordinador
-        const usuariosFiltrados = response.data.filter(
-          (user) => user.rol === "Tecnico" || user.rol === "Coordinador"
-        );
-        setUsuarios(usuariosFiltrados);
+      const [usersResponse, clientsData] = await Promise.all([
+        usersService.getAllUsers(),
+        clientsApi.getAllClients()
+      ]);
+
+      if (usersResponse.success) {
+        const allUsers = usersResponse.data;
+        setCoordinadores(allUsers.filter(u => u.rol === "Coordinador"));
+        setTecnicos(allUsers.filter(u => u.rol === "Tecnico"));
       } else {
         showToast("Error al cargar usuarios", "error");
-        setUsuarios([]);
       }
+
+      if (clientsData) {
+        setClientes(clientsData);
+      } else {
+        showToast("Error al cargar clientes", "error");
+      }
+
     } catch (error) {
-      console.error("Error loading users:", error);
-      showToast("Error de conexión al cargar usuarios", "error");
-      setUsuarios([]);
+      console.error("Error loading data:", error);
+      showToast("Error de conexión al cargar datos", "error");
     }
-    setLoadingUsuarios(false);
+    setLoadingData(false);
   };
 
   useEffect(() => {
@@ -101,15 +111,11 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
         setProjectData(project);
       }
     }
-  }, [project, isOpen]);
-
-  const clientesList = mockClientes.map((c) => c.nombre);
-  const mockResponsables = ["Daniela V.", "Carlos R.", "Ana G.", "Sofía M."];
-  const mockEmpleados = [...mockResponsables, "Luis P."];
+  }, [project, isOpen, clientes]); // Added clientes dependency
 
   // Función helper para obtener las sedes de un cliente
   const getSedesFromCliente = (nombreCliente) => {
-    const cliente = mockClientes.find((c) => c.nombre === nombreCliente);
+    const cliente = clientes.find((c) => c.nombre === nombreCliente);
     return (
       cliente?.direcciones?.map((direccion) => ({
         nombre: direccion.nombre,
@@ -124,6 +130,7 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
       })) || []
     );
   };
+
 
   if (!isOpen) return null;
 
@@ -1110,9 +1117,9 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                   <option value="" disabled>
                     Selecciona un cliente...
                   </option>
-                  {clientesList.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
+                  {clientes.map((c) => (
+                    <option key={c.id || c.nombre} value={c.nombre}>
+                      {c.nombre}
                     </option>
                   ))}
                 </select>
@@ -1130,13 +1137,11 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                   <option value="" disabled>
                     Selecciona un responsable...
                   </option>
-                  {usuarios
-                    .filter((u) => u.rol === "Coordinador")
-                    .map((u) => (
-                      <option key={u.id} value={`${u.nombre} ${u.apellido}`}>
-                        {u.nombre} {u.apellido}
-                      </option>
-                    ))}
+                  {coordinadores.map((u) => (
+                    <option key={u.id} value={`${u.nombre} ${u.apellido}`}>
+                      {u.nombre} {u.apellido}
+                    </option>
+                  ))}
                 </select>
                 <span className="text-red-500 text-xs">
                   {errors.responsable}
@@ -1261,7 +1266,8 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                 ))}
               </div>
               <div className="mt-2 max-h-32 overflow-y-auto border rounded bg-white shadow">
-                {mockEmpleados
+                {tecnicos
+                  .map((t) => `${t.nombre} ${t.apellido}`)
                   .filter(
                     (emp) =>
                       emp
@@ -1269,9 +1275,9 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                         .includes(empleadoSearch.toLowerCase()) &&
                       !projectData.empleadosAsociados.includes(emp)
                   )
-                  .map((emp) => (
+                  .map((emp, idx) => (
                     <div
-                      key={emp}
+                      key={idx}
                       className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
                       onClick={() =>
                         setProjectData((prev) => ({

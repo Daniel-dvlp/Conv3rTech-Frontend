@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
+import { serviceCategoryService } from '../services/serviceCategoryService';
 
 // Componentes reutilizables del diseño estándar
 const FormSection = ({ title, children }) => (
@@ -32,8 +33,6 @@ const ToggleSwitch = ({ checked, onChange }) => (
         />
     </Switch>
 );
-
-const API_URL = 'https://backend-conv3rtech.onrender.com/api/service-categories';
 
 const ServiceCategoryEditModal = ({
     isOpen,

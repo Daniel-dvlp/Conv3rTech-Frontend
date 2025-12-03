@@ -140,18 +140,22 @@ const LaborSchedulingSidebar = ({
 
       {/* 1. Botones Superiores (Separados) */}
       <div className="p-4 flex gap-3 border-b border-gray-100">
-        <button
-          onClick={() => onCreate()}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm font-medium"
-        >
-          <FaPlus size={12} /> Programar
-        </button>
-        <button
-          onClick={() => onCreateNovedad()}
-          className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-all shadow-sm text-sm font-medium"
-        >
-          <FaPlus size={12} /> Novedad
-        </button>
+        {onCreate && (
+          <button
+            onClick={() => onCreate()}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm font-medium"
+          >
+            <FaPlus size={12} /> Programar
+          </button>
+        )}
+        {onCreateNovedad && (
+          <button
+            onClick={() => onCreateNovedad()}
+            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-all shadow-sm text-sm font-medium"
+          >
+            <FaPlus size={12} /> Novedad
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">

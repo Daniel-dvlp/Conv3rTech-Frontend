@@ -83,15 +83,49 @@ const EditProfilePage = () => {
       navigate("/login");
       return;
     }
-    setCurrentUser(user);
-    setForm({
-      nombre: user.name || user.nombre || "",
-      apellido: user.lastName || user.apellido || "",
-      email: user.email || "",
-      celular: user.celular || "",
-      documento: user.documento || "",
-      tipoDocumento: user.tipoDocumento || "CC",
-    });
+
+    const fetchProfile = async () => {
+      try {
+        const res = await authService.getProfile();
+        if (res.success && res.data) {
+          const userData = res.data;
+          setCurrentUser(userData);
+          setForm({
+            nombre: userData.nombre || userData.name || "",
+            apellido: userData.apellido || userData.lastName || "",
+            email: userData.correo || userData.email || "",
+            celular: userData.celular || userData.phone || "",
+            documento: userData.documento || "",
+            tipoDocumento: userData.tipoDocumento || "CC",
+          });
+        } else {
+          // Fallback: usar datos del contexto
+          setCurrentUser(user);
+          setForm({
+            nombre: user.name || user.nombre || "",
+            apellido: user.lastName || user.apellido || "",
+            email: user.correo || user.email || "",
+            celular: user.celular || "",
+            documento: user.documento || "",
+            tipoDocumento: user.tipoDocumento || "CC",
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        // Fallback: usar datos del contexto
+        setCurrentUser(user);
+        setForm({
+          nombre: user.name || user.nombre || "",
+          apellido: user.lastName || user.apellido || "",
+          email: user.correo || user.email || "",
+          celular: user.celular || "",
+          documento: user.documento || "",
+          tipoDocumento: user.tipoDocumento || "CC",
+        });
+      }
+    };
+
+    fetchProfile();
   }, [user, navigate]);
 
   const handleInfoChange = (e) => {
@@ -164,10 +198,15 @@ const EditProfilePage = () => {
     setIsLoading(true);
 
     try {
-      const result = await authService.updateProfile(form);
+      // Mapear 'email' a 'correo' para el backend
+      const payload = {
+        ...form,
+        correo: form.email,
+      };
+      const result = await authService.updateProfile(payload);
 
       if (result.success) {
-        const updatedUser = { ...user, ...form };
+        const updatedUser = { ...user, ...form, correo: form.email };
         updateUser(updatedUser);
         setCurrentUser(updatedUser);
         setSuccessMsg("¡Información actualizada exitosamente!");
@@ -298,7 +337,7 @@ const EditProfilePage = () => {
                 <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
                   <FaEnvelope className="text-gray-400 w-3 h-3 flex-shrink-0" />
                   <span className="text-gray-700 truncate">
-                    {currentUser.email}
+                    {currentUser.correo || currentUser.email}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg">
