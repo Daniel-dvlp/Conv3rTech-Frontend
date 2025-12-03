@@ -7,7 +7,7 @@ class ProjectsService {
       const response = await api.get("/projects");
       return {
         success: true,
-        data: response.data,
+        data: response.data.data,
       };
     } catch (error) {
       console.error("Error fetching projects:", error);
@@ -24,7 +24,7 @@ class ProjectsService {
       const response = await api.get(`/projects/${id}`);
       return {
         success: true,
-        data: response.data,
+        data: response.data.data,
       };
     } catch (error) {
       console.error("Error fetching project:", error);
@@ -42,7 +42,7 @@ class ProjectsService {
       const response = await api.post("/projects", projectData);
       return {
         success: true,
-        data: response.data,
+        data: response.data.data,
       };
     } catch (error) {
       console.error("Error creating project:", error);
@@ -59,7 +59,7 @@ class ProjectsService {
       const response = await api.put(`/projects/${id}`, projectData);
       return {
         success: true,
-        data: response.data,
+        data: response.data.data,
       };
     } catch (error) {
       console.error("Error updating project:", error);
