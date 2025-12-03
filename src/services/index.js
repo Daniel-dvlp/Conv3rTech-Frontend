@@ -1,0 +1,19 @@
+// Exportar todos los servicios
+export { default as authService } from "./authService";
+export { default as clientsService } from "./clientsService";
+export { default as usersService } from "./usersService";
+export { default as productsService } from "./productsService";
+export { default as productsCategoryService } from "./productsCategoryService";
+export { default as suppliersService } from "./suppliersService";
+export { default as purchasesService } from "./purchasesService";
+export { default as servicesService } from "./servicesService";
+export { default as servicesCategoryService } from "./servicesCategoryService";
+export { default as salesService } from "./salesService";
+export { default as quotesService } from "./quotesService";
+export { default as appointmentsService } from "./appointmentsService";
+export { default as laborSchedulingService } from "./laborSchedulingService";
+export { default as paymentsInstallmentsService } from "./paymentsInstallmentsService";
+export { default as healthCheckService } from "./healthCheck";
+export { default as projectsService } from "./projectsService";
+export { default as rolesService } from "./rolesService";
+export { default as dashboardService } from "./dashboardService";
