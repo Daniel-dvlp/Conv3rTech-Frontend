@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { FaTimes, FaTrash, FaPlus, FaReply, FaSpinner } from 'react-icons/fa';
 import { featuresService } from '../services/productsService';
 import cloudinaryService from '../../../../../services/cloudinaryService';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 // Componentes funcionales auxiliares
 const FormSection = ({ title, children }) => (
@@ -38,6 +39,25 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
     const [uploadingImages, setUploadingImages] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [loading, setLoading] = useState(false);
+
+    // Hook para el lector de código de barras
+    // Solo activo cuando el modal está abierto
+    useBarcodeScanner(
+        (scannedCode) => {
+            // Callback que se ejecuta cuando se escanea un código
+            setProductData((prev) => ({
+                ...prev,
+                codigo_barra: scannedCode
+            }));
+            // Opcional: mostrar feedback visual
+            console.log('Código escaneado:', scannedCode);
+        },
+        {
+            minLength: 3,        // Longitud mínima del código
+            scanDuration: 100,  // Tiempo máximo entre caracteres (ms)
+            enabled: isOpen     // Solo activo cuando el modal está abierto
+        }
+    );
 
     const validateField = (name, value) => {
         const newErrors = { ...errors };

@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from 'react-router-dom';
-import { FaTimes, FaPlus, FaTrash, FaEdit, FaBarcode } from "react-icons/fa";
+import { FaTimes, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
 import { toast } from 'react-hot-toast';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 // Componentes reutilizables del diseño estándar (sin cambios aquí)
 const FormSection = ({ title, children }) => (
@@ -66,6 +67,46 @@ const NewPurchasesModal = ({
   const [errors, setErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
   const [editingProductIndex, setEditingProductIndex] = useState(null);
+
+  // Hook para el lector de código de barras
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Buscar producto por código de barras
+      // Normalizar el código escaneado
+      const codigoNormalizado = scannedCode.trim();
+      
+      const productoEncontrado = productos.find(p => {
+        if (!p.codigo_barra) return false;
+        
+        // Normalizar el código del producto (puede ser string, null, o "n/a")
+        const codigoProducto = p.codigo_barra.toString().trim().toLowerCase();
+        
+        // Ignorar valores vacíos o "n/a"
+        if (!codigoProducto || codigoProducto === 'n/a' || codigoProducto === 'null') {
+          return false;
+        }
+        
+        // Comparar códigos normalizados
+        return codigoProducto === codigoNormalizado.toLowerCase();
+      });
+
+      if (productoEncontrado) {
+        // Seleccionar el producto automáticamente
+        setNuevoProductoSeleccionado((prev) => ({
+          ...prev,
+          idProducto: productoEncontrado.id_producto.toString(),
+        }));
+        toast.success(`Producto encontrado: ${productoEncontrado.nombre}`);
+      } else {
+        toast.error(`No se encontró un producto con el código: ${codigoNormalizado}`);
+      }
+    },
+    {
+      minLength: 3,
+      scanDuration: 100,
+      enabled: isOpen
+    }
+  );
 
   useEffect(() => {
     if (!isOpen && isClosingIntentionally) {
@@ -210,23 +251,6 @@ const NewPurchasesModal = ({
     }));
   };
 
-  const generateRandomBarcode = () => {
-    let code = '';
-    for (let i = 0; i < 10; i++) {
-      code += Math.floor(Math.random() * 10);
-    }
-    setNuevoProductoSeleccionado(prev => ({
-      ...prev,
-      codigoDeBarras: code,
-    }));
-  };
-
-  const clearBarcode = () => {
-    setNuevoProductoSeleccionado(prev => ({
-      ...prev,
-      codigoDeBarras: "N/A",
-    }));
-  };
 
   const handleAddProduct = () => {
     const { idProducto, cantidad, precioUnitarioCompra, codigoDeBarras } = nuevoProductoSeleccionado;
@@ -671,29 +695,20 @@ const NewPurchasesModal = ({
                   <p className="text-red-500 text-sm mt-1">{errors.nuevoProducto}</p>
                 )}
               </div>
-              <div className="md:col-span-2 flex items-end gap-2">
-                <div className="flex-1">
-                  <FormLabel>Código de barras:</FormLabel>
-                  <input
-                    type="text"
-                    name="codigoDeBarras"
-                    value={nuevoProductoSeleccionado.codigoDeBarras}
-                    readOnly
-                    className={`${inputBaseStyle} bg-gray-200 text-gray-700 cursor-not-allowed`}
-                    ref={nuevoProductoCodigoBarrasRef}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? generateRandomBarcode : clearBarcode}
-                  className={`flex-shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98] h-[42px] ${
-                    nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-red-600 hover:bg-red-700'
-                  }`}
-                  title={nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? "Generar código de barras" : "Eliminar código de barras"}
-                >
-                  <FaBarcode size={14} />
-                  {nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? '' : <FaTimes size={14} />}
-                </button>
+              <div className="md:col-span-2">
+                <FormLabel>Código de barras:</FormLabel>
+                <input
+                  type="text"
+                  name="codigoDeBarras"
+                  value={nuevoProductoSeleccionado.codigoDeBarras}
+                  readOnly
+                  className={`${inputBaseStyle} bg-gray-200 text-gray-700 cursor-not-allowed`}
+                  ref={nuevoProductoCodigoBarrasRef}
+                  placeholder="Se mostrará al seleccionar un producto"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Escanea el código de barras para seleccionar el producto automáticamente
+                </p>
               </div>
               <div className="md:col-span-4 flex justify-end">
                 <button

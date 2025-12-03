@@ -3,6 +3,7 @@ import { FaTimes, FaTrash, FaPlus, FaReply, FaSpinner } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
 import { featuresService } from '../services/productsService';
 import cloudinaryService from '../../../../../services/cloudinaryService';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -54,6 +55,25 @@ const ProductEditModal = ({
   const [uploadingImages, setUploadingImages] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // Hook para el lector de código de barras
+  // Solo activo cuando el modal está abierto
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Callback que se ejecuta cuando se escanea un código
+      setProductData((prev) => ({
+        ...prev,
+        codigo_barra: scannedCode
+      }));
+      // Opcional: mostrar feedback visual
+      console.log('Código escaneado:', scannedCode);
+    },
+    {
+      minLength: 3,        // Longitud mínima del código
+      scanDuration: 100,  // Tiempo máximo entre caracteres (ms)
+      enabled: isOpen     // Solo activo cuando el modal está abierto
+    }
+  );
 
   // Función para formatear número a formato con puntos y comas
   const formatPrecio = (value) => {
