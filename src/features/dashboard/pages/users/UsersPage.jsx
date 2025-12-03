@@ -283,7 +283,7 @@ const UsuariosPage = () => {
           </div>
           <button
             onClick={handleExportUsers}
-            className="flex items-center gap-2 bg-green-400 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-all"
+            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
           >
             <FaDownload /> Reporte de Usuarios
           </button>
