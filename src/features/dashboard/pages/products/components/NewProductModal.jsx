@@ -78,7 +78,10 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                 }
                 break;
             case 'precio':
-                if (!value || Number(value) <= 0) {
+                // Parsear precio formateado para validación
+                const precioLimpioVal = value ? parsePrecio(value) : '';
+                const precioNumericoVal = precioLimpioVal ? parseFloat(precioLimpioVal) : 0;
+                if (!value || precioNumericoVal <= 0 || isNaN(precioNumericoVal)) {
                     newErrors.precio = 'Ingresa un precio válido mayor a 0';
                 } else {
                     delete newErrors.precio;
@@ -129,8 +132,87 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
       }
     };
 
+    // Función para formatear número a formato con puntos y comas
+    const formatPrecio = (value) => {
+      if (!value || value === '') return '';
+      // Si ya está formateado, retornarlo
+      if (typeof value === 'string' && value.includes('.')) {
+        return value;
+      }
+      // Convertir número a string y formatear
+      const numValue = typeof value === 'number' ? value : parseFloat(value);
+      if (isNaN(numValue)) return '';
+      
+      const parts = numValue.toString().split('.');
+      const integerPart = parts[0];
+      const decimalPart = parts[1] || '';
+      
+      const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return decimalPart ? `${formattedInteger},${decimalPart.substring(0, 2)}` : formattedInteger;
+    };
+
+    // Función para parsear precio formateado a número
+    const parsePrecio = (formattedValue) => {
+      if (!formattedValue || formattedValue === '') return '';
+      // Quitar puntos y cambiar coma por punto
+      const cleanValue = formattedValue.replace(/\./g, '').replace(',', '.');
+      return cleanValue;
+    };
+
+    const handlePrecioChange = (e) => {
+      // 1. Obtener el valor limpio (sin símbolos ni puntos, solo números y comas)
+      let rawValue = e.target.value.replace(/[^0-9,]/g, '');
+
+      // 2. Evitar múltiples comas: solo permitir la primera
+      const parts = rawValue.split(',');
+      if (parts.length > 2) {
+        rawValue = parts[0] + ',' + parts.slice(1).join('');
+      }
+
+      if (rawValue === '') {
+        setProductData((prev) => ({
+          ...prev,
+          precio: '',
+        }));
+        validateField('precio', '');
+        return;
+      }
+
+      // 3. Separar enteros y decimales
+      const partsFinal = rawValue.split(',');
+      let integerPart = partsFinal[0];
+      // Limitar decimales a 2 dígitos
+      const decimalPart = partsFinal.length > 1 ? ',' + partsFinal[1].substring(0, 2) : '';
+
+      // 4. Formatear la parte entera con puntos
+      // Eliminar ceros a la izquierda si no es solo "0"
+      if (integerPart.length > 1 && integerPart.startsWith('0')) {
+        integerPart = integerPart.replace(/^0+/, '');
+      }
+      if (integerPart === '') integerPart = '0';
+
+      const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      const formattedValue = formattedInteger + decimalPart;
+
+      setProductData((prev) => ({
+        ...prev,
+        precio: formattedValue,
+      }));
+
+      // Validar con el valor parseado
+      const parsedValue = parsePrecio(formattedValue);
+      validateField('precio', parsedValue);
+    };
+
     const handleChange = (e) => {
       const { name, value, type, checked } = e.target;
+      
+      // Si es precio, usar el handler especial
+      if (name === 'precio') {
+        handlePrecioChange(e);
+        return;
+      }
+      
       const finalValue = type === 'checkbox' ? checked : value;
       setProductData((prev) => ({
         ...prev,
@@ -278,7 +360,10 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
             errs.unidad_medida = 'Selecciona una unidad de medida';
         }
         
-        if (!productData.precio || Number(productData.precio) <= 0) {
+        // Parsear precio formateado para validación
+        const precioLimpio = productData.precio ? parsePrecio(productData.precio) : '';
+        const precioNumerico = precioLimpio ? parseFloat(precioLimpio) : 0;
+        if (!productData.precio || precioNumerico <= 0 || isNaN(precioNumerico)) {
             errs.precio = 'Ingresa un precio válido mayor a 0';
         }
         
@@ -359,14 +444,18 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                 }
             }
 
+            // Parsear precio formateado a número
+            const precioLimpio = productData.precio ? parsePrecio(productData.precio) : '';
+            const precioNumerico = precioLimpio ? parseFloat(precioLimpio) : 0;
+
             const newProduct = {
                 ...productData,
                 // Conversiones a número para el cuerpo principal
                 id_categoria: Number(productData.id_categoria),
-                precio: Number(productData.precio),
+                precio: precioNumerico,
                 stock: Number(productData.stock),
                 garantia: Number(productData.garantia),
-                codigo_barra: productData.codigo_barra?.trim() || null,
+                codigo_barra: productData.codigo_barra?.trim() || 'n/a',
                 fichas_tecnicas: fichasProcesadas, // Array de IDs numéricos
                 estado: !!productData.estado,
                 // Asegurar que fotos sea un array válido
@@ -585,7 +674,19 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                             </div>
                             <div>
                                 <FormLabel htmlFor="precio"><span className="text-red-500">*</span> Precio:</FormLabel>
-                                <input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} onKeyDown={handleKeyDown} className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}  />
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-sm">$</span>
+                                    <input 
+                                        type="text" 
+                                        id="precio" 
+                                        name="precio" 
+                                        value={productData.precio} 
+                                        onChange={handlePrecioChange} 
+                                        onKeyDown={handleKeyDown} 
+                                        className={`${inputBaseStyle} pl-6 ${errors.precio ? 'border-red-500' : ''}`}
+                                        placeholder="0,00"
+                                    />
+                                </div>
                                 {errors.precio && (
                                     <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
                                 )}

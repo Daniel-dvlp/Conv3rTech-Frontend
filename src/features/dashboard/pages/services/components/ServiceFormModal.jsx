@@ -58,6 +58,33 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
   const [errors, setErrors] = useState({});
   const fileInputRef = useRef();
 
+  // Función para formatear número a formato con puntos y comas
+  const formatPrecio = (value) => {
+    if (!value || value === '') return '';
+    // Si ya está formateado, retornarlo
+    if (typeof value === 'string' && value.includes('.') && !value.includes(',')) {
+      return value;
+    }
+    // Convertir número a string y formatear
+    const numValue = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numValue)) return '';
+    
+    const parts = numValue.toString().split('.');
+    const integerPart = parts[0];
+    const decimalPart = parts[1] || '';
+    
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return decimalPart ? `${formattedInteger},${decimalPart.substring(0, 2)}` : formattedInteger;
+  };
+
+  // Función para parsear precio formateado a número
+  const parsePrecio = (formattedValue) => {
+    if (!formattedValue || formattedValue === '') return '';
+    // Quitar puntos y cambiar coma por punto
+    const cleanValue = formattedValue.replace(/\./g, '').replace(',', '.');
+    return cleanValue;
+  };
+
   useEffect(() => {
     loadCategories();
   }, []);
@@ -92,7 +119,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
       setFormData({
         nombre: servicio.nombre || '',
         categoriaId: categoriaId || '',
-        precio: servicio.precio || '',
+        precio: formatPrecio(servicio.precio) || '',
         descripcion: servicio.descripcion || '',
         url_imagen: servicio.url_imagen || '',
         horas: horas,
@@ -127,8 +154,72 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
     }
   };
 
+  const handlePrecioChange = (e) => {
+    // 1. Obtener el valor limpio (sin símbolos ni puntos, solo números y comas)
+    let rawValue = e.target.value.replace(/[^0-9,]/g, '');
+
+    // 2. Evitar múltiples comas: solo permitir la primera
+    const parts = rawValue.split(',');
+    if (parts.length > 2) {
+      rawValue = parts[0] + ',' + parts.slice(1).join('');
+    }
+
+    if (rawValue === '') {
+      setFormData((prev) => ({
+        ...prev,
+        precio: '',
+      }));
+      // Limpiar error del campo
+      if (errors.precio) {
+        setErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors.precio;
+          return newErrors;
+        });
+      }
+      return;
+    }
+
+    // 3. Separar enteros y decimales
+    const partsFinal = rawValue.split(',');
+    let integerPart = partsFinal[0];
+    // Limitar decimales a 2 dígitos
+    const decimalPart = partsFinal.length > 1 ? ',' + partsFinal[1].substring(0, 2) : '';
+
+    // 4. Formatear la parte entera con puntos
+    // Eliminar ceros a la izquierda si no es solo "0"
+    if (integerPart.length > 1 && integerPart.startsWith('0')) {
+      integerPart = integerPart.replace(/^0+/, '');
+    }
+    if (integerPart === '') integerPart = '0';
+
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const formattedValue = formattedInteger + decimalPart;
+
+    setFormData((prev) => ({
+      ...prev,
+      precio: formattedValue,
+    }));
+
+    // Limpiar error del campo cuando el usuario escribe
+    if (errors.precio) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.precio;
+        return newErrors;
+      });
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Si es precio, usar el handler especial
+    if (name === 'precio') {
+      handlePrecioChange(e);
+      return;
+    }
+    
     setFormData((prev) => ({ ...prev, [name]: value }));
 
     // Limpiar error del campo cuando el usuario escribe
@@ -233,10 +324,14 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
 
     const duracionFormateada = formatDuration(formData.horas, formData.minutos);
 
+    // Parsear precio formateado a número
+    const precioLimpio = formData.precio ? parsePrecio(formData.precio) : '';
+    const precioNumerico = precioLimpio ? parseFloat(precioLimpio) : 0;
+
     const datosAEnviar = {
       nombre: formData.nombre,
       descripcion: formData.descripcion,
-      precio: formData.precio,
+      precio: precioNumerico,
       estado: formData.estado ? 'activo' : 'inactivo',
       id_categoria_servicio: parseInt(formData.categoriaId),
       categoriaId: parseInt(formData.categoriaId),
@@ -448,19 +543,20 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
               {/* Precio */}
               <div>
                 <FormLabel htmlFor="precio" required>Precio:</FormLabel>
-                <input
-                  type="number"
-                  id="precio"
-                  name="precio"
-                  placeholder="0.00"
-                  value={formData.precio}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
-                  className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}
-                  step="0.01"
-                  min="0"
-                  required
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-sm">$</span>
+                  <input
+                    type="text"
+                    id="precio"
+                    name="precio"
+                    placeholder="0,00"
+                    value={formData.precio}
+                    onChange={handlePrecioChange}
+                    onKeyDown={handleKeyDown}
+                    className={`${inputBaseStyle} pl-6 ${errors.precio ? 'border-red-500' : ''}`}
+                    required
+                  />
+                </div>
                 {errors.precio && (
                   <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
                 )}
