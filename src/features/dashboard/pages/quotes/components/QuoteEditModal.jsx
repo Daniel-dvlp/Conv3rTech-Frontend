@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { FaTimes, FaTrash } from 'react-icons/fa';
 import SearchSelector from '../../products_sale/components/SearchSelector';
 import { quotesService } from '../services/quotesService';
-import { showError } from '../../../../../shared/utils/alerts';
+import { projectsService } from '../../../../../services';
+import { showError, showSuccess } from '../../../../../shared/utils/alerts';
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -39,6 +40,13 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
   const [observaciones, setObservaciones] = useState('');
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState({});
+
+  const handleKeyDown = (e) => {
+    // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+      e.preventDefault();
+    }
+  };
 
   useEffect(() => {
     if (!quoteToEdit || !isOpen) return;
@@ -336,9 +344,62 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
       // 2. Si hubo cambio de estado, llamamos al endpoint específico que maneja la lógica de negocio (stock, proyectos, email)
       if (isStateChanging) {
         const statusData = { estado: newState };
-        // Si es rechazada/anulada y tuviera motivo (aunque en este modal no se pide motivo explícito para Aprobar/Rechazar, se asume null)
-        // Si quisieras manejar motivo de rechazo aquí, deberías pedirlo en el UI. Por ahora enviamos solo el estado.
         
+        // Lógica específica: Si se aprueba, crear Proyecto y eliminar Cotización
+        if (newState === 'Aprobada') {
+          try {
+             // 1. Crear Proyecto
+             const projectPayload = {
+              nombre: quoteData.nombre_cotizacion,
+              cliente: cliente ? `${cliente.nombre} ${cliente.apellido}` : (quoteData.cliente_nombre || ''),
+              id_cliente: cliente ? cliente.id_cliente : quoteData.id_cliente,
+              estado: 'Alerta',
+              fechaInicio: new Date().toISOString().split('T')[0],
+              fechaFin: quoteData.fecha_vencimiento ? new Date(quoteData.fecha_vencimiento).toISOString().split('T')[0] : '',
+              prioridad: 'Alta',
+              descripcion: `Proyecto generado desde cotización ${quoteData.nombre_cotizacion}. ${quoteData.observaciones || ''}`,
+              observaciones: quoteData.observaciones || '',
+              empleadosAsociados: [], // Se asignarán en el dashboard
+              materiales: productosAgregados.map(p => ({
+                  item: p.nombre,
+                  cantidad: p.cantidad,
+                  precio: p.precio,
+                  id_producto: p.id_producto
+              })),
+              servicios: serviciosAgregados.map(s => ({
+                  servicio: s.nombre,
+                  cantidad: s.cantidad,
+                  precio: s.precio,
+                  id_servicio: s.id_servicio
+              })),
+              costos: { manoDeObra: 0 },
+              sedes: [], 
+              cotizacion_id: quoteData.id_cotizacion
+            };
+    
+            const projectResponse = await projectsService.createProject(projectPayload);
+            
+            if (projectResponse && (projectResponse.success || projectResponse.id)) {
+               // 2. Eliminar Cotización
+               await quotesService.deleteQuote(quoteData.id_cotizacion);
+               
+               // 3. Notificar y cerrar
+               showSuccess('Cotización aprobada. Proyecto creado en estado "Alerta".');
+               onSave({ ...quoteData, _deleted: true });
+               onClose();
+               return;
+            } else {
+               throw new Error(projectResponse?.message || 'Error al crear el proyecto automático.');
+            }
+          } catch (err) {
+             console.error('Error en flujo de aprobación:', err);
+             showError('Error al procesar la aprobación: ' + (err.message || 'Intente nuevamente'));
+             // No cerramos el modal para permitir reintento
+             return; 
+          }
+        }
+
+        // Si es otro estado (Rechazada, Anulada, etc.), flujo normal
         const stateChangeResult = await quotesService.changeQuoteState(quoteData.id_cotizacion, newState);
         // El resultado final debe ser la cotización con el nuevo estado
         resultQuote = stateChangeResult.data || stateChangeResult; 
@@ -488,6 +549,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       type="number"
                       value={cantidadProducto}
                       onChange={(e) => setCantidadProducto(e.target.value)}
+                      onKeyDown={handleKeyDown}
                       className={inputBaseStyle}
                       placeholder="Cantidad"
                     />
@@ -581,6 +643,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       type="number"
                       value={cantidadServicio}
                       onChange={(e) => setCantidadServicio(e.target.value)}
+                      onKeyDown={handleKeyDown}
                       className={inputBaseStyle}
                       placeholder="Cantidad"
                     />

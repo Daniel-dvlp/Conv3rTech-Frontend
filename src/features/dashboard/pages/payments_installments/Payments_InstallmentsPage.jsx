@@ -531,7 +531,7 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
     <div className="p-4 md:p-8">
       {/* Encabezado */}
       <div className="flex flex-col md:flex-row justify-between items-center mb-2">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestión de Pagos e Cuotas</h1>
+        <h1 className="text-2xl font-bold text-gray-800 mb-4 md:mb-0">Gestión de Pagos y Cuotas</h1>
         <div className="flex space-x-3">
           <div className="relative">
           <input
@@ -548,7 +548,7 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
         </div>
           <button
             onClick={handleExport}
-            className="flex items-center gap-2 bg-green-400 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-all"
+            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
           >
             <FaDownload /> Exportar
           </button>

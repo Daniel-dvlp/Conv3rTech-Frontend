@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaFileExcel, FaSearch } from 'react-icons/fa';
+import { FaFileExcel, FaSearch, FaPlus } from 'react-icons/fa';
 import QuotesTable from './components/QuotesTable';
 import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../shared/components/Pagination';
@@ -19,10 +19,12 @@ import {
   addGenericTable
 } from '../../../../shared/utils/pdf/pdfTemplate';
 import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 const ITEMS_PER_PAGE = 5;
 
 const QuotesPage = () => {
+  const { checkManage } = usePermissions();
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -98,6 +100,17 @@ const QuotesPage = () => {
 
   const handleSaveQuoteChanges = async (updatedQuote) => {
     try {
+      if (updatedQuote?._deleted) {
+        setQuotes((prev) => prev.filter((q) => {
+          const qId = q.id_cotizacion ?? q.id;
+          const updatedId = updatedQuote.id_cotizacion ?? updatedQuote.id;
+          return qId !== updatedId;
+        }));
+        showSuccess('Cotización procesada y eliminada de la lista');
+        setQuoteToEdit(null);
+        return;
+      }
+
       if (updatedQuote?.id_cotizacion) {
         setQuotes((prev) =>
           prev.map((q) => {
@@ -455,6 +468,7 @@ const QuotesPage = () => {
             onClick={() => setIsCreateOpen(true)}
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors"
           >
+            <FaPlus />
             Crear cotización
           </button>
         </div>

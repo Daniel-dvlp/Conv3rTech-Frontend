@@ -122,6 +122,13 @@ const ProductEditModal = ({
     setErrors(newErrors);
   };
 
+  const handleKeyDown = (e) => {
+    // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+      e.preventDefault();
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
@@ -488,6 +495,7 @@ const ProductEditModal = ({
                   name="precio"
                   value={productData.precio}
                   onChange={handleChange}
+                  onKeyDown={handleKeyDown}
                   className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}
                 />
                 {errors.precio && (

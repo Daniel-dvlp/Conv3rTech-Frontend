@@ -235,7 +235,7 @@ const ProductsPage = () => {
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
           >
             <FaPlus />
-            Nuevo producto
+            Registrar producto
           </button>
         </div>
       </div>
