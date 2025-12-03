@@ -16,7 +16,6 @@ const FormLabel = ({ htmlFor, children }) => (
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
-
 const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => {
     const [clienteSeleccionado, setClienteSeleccionado] = useState('');
     const [cliente, setCliente] = useState(null);
@@ -27,6 +26,13 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
     const [metodoPago, setMetodoPago] = useState('');
     const [fechaVenta, setFechaVenta] = useState('');
     const [errores, setErrores] = useState({});
+
+    const handleKeyDown = (e) => {
+        // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
+        if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+            e.preventDefault();
+        }
+    };
 
     // Inicializar fecha y hora con la fecha actual cuando se abre el modal
     useEffect(() => {
@@ -295,6 +301,7 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
                                             setCantidad(e.target.value);
                                             setErrores(prev => ({ ...prev, producto: null }));
                                         }}
+                                        onKeyDown={handleKeyDown}
                                         className={`${inputBaseStyle} ${errores.producto ? 'border-red-500' : 'border-gray-300'}`}
                                         placeholder="Cantidad"
                                     />
