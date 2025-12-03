@@ -119,10 +119,10 @@ const SuppliersPage = () => {
           <button
             onClick={() => setIsNewSupplierModalOpen(true)}
             className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-            aria-label="Crear nuevo proveedor"
+            aria-label="Registrar nuevo proveedor"
           >
             <FaPlus />
-            Nuevo proveedor
+            Registrar proveedor
           </button>
         </div>
       </div>

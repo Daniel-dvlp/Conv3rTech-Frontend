@@ -212,7 +212,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
           ref={formRef}
           onSubmit={handleSubmit}
           noValidate
-          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow"
+          className="p-6 overflow-y-auto space-y-6 custom-scroll flex-grow"
         >
           <FormSection title="Información Entidad">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">

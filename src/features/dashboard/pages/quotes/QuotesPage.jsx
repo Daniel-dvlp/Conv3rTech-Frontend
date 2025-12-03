@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { FaFileExcel, FaSearch } from 'react-icons/fa';
+import { FaFileExcel, FaSearch, FaPlus } from 'react-icons/fa';
 import QuotesTable from './components/QuotesTable';
 import SkeletonRow from './components/SkeletonRow';
 import Pagination from '../../../../shared/components/Pagination';
@@ -464,14 +464,13 @@ const QuotesPage = () => {
             <FaFileExcel />
             Exportar
           </button>
-          {checkManage('cotizaciones') && (
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors"
-            >
-              Crear cotización
-            </button>
-          )}
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-colors"
+          >
+            <FaPlus />
+            Crear cotización
+          </button>
         </div>
       </div>
 

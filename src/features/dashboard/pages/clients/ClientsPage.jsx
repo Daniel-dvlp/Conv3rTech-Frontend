@@ -110,13 +110,11 @@ const ClientsPage = () => {
             />
             <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          {checkManage('clientes') && (
-            <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-              onClick={() => setOpenModal(true)}  >
-              <FaPlus />
-              Crear Cliente
-            </button>
-          )}
+          <button className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+            onClick={() => setOpenModal(true)}  >
+            <FaPlus />
+            Registrar cliente
+          </button>
         </div>
       </div>
 
