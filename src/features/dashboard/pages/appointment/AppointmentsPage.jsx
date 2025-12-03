@@ -52,9 +52,10 @@ const AppointmentsPage = () => {
       setIsModalOpen(false);
       setSelectedAppointment(null);
       setIsEditMode(false);
+    
     } catch (error) {
-      // El error ya se maneja en el hook con toast
-      console.error('Error al guardar cita:', error);
+      // El error ya se maneja en el hook con toast, pero logueamos detalle para debug
+      console.error('Error al guardar cita:', error.response?.data || error.message);
     }
   };
 
