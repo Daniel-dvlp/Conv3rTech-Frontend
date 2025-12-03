@@ -39,6 +39,13 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
   const [errores, setErrores] = useState({});
   const [loading, setLoading] = useState(false);
 
+  const handleKeyDown = (e) => {
+    // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+      e.preventDefault();
+    }
+  };
+
   const validateField = (name, value) => {
     const newErrors = { ...errores };
     // Limpiar errores del servidor cuando el usuario modifica campos
@@ -472,6 +479,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                         return newErrs;
                       });
                     }}
+                    onKeyDown={handleKeyDown}
                     className={`${inputBaseStyle} ${errores.producto || errores.cantidadProducto ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Cantidad"
                   />
@@ -647,6 +655,7 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                         return newErrs;
                       });
                     }}
+                    onKeyDown={handleKeyDown}
                     className={`${inputBaseStyle} ${errores.servicio || errores.cantidadServicio ? 'border-red-500' : 'border-gray-300'}`}
                     placeholder="Cantidad"
                   />

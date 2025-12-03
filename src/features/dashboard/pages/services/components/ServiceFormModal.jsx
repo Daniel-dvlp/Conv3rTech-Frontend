@@ -120,6 +120,13 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
     setErrors({});
   }, [esEdicion, servicio, categories]);
 
+  const handleKeyDown = (e) => {
+    // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+      e.preventDefault();
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -448,6 +455,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
                   placeholder="0.00"
                   value={formData.precio}
                   onChange={handleChange}
+                  onKeyDown={handleKeyDown}
                   className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}
                   step="0.01"
                   min="0"

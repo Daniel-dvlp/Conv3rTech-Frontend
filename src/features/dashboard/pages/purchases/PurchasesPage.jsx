@@ -314,7 +314,7 @@ const PaginaCompras = () => {
             aria-label="Crear nueva compra"
           >
             <FaPlus />
-            Nueva Compra
+            Registrar compra
           </button>
         </div>
       </div>

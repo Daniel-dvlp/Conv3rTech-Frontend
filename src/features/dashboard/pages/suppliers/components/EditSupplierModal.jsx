@@ -237,7 +237,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
           onSubmit={handleSubmit}
           noValidate
           // Aplicamos el overflow-y-auto y max-height directamente al formulario
-          className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300 flex-grow" // Añadimos flex-grow para que ocupe el espacio disponible
+          className="p-6 overflow-y-auto space-y-6 custom-scroll flex-grow" // Añadimos flex-grow para que ocupe el espacio disponible
         >
           <FormSection title="Información Entidad">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">

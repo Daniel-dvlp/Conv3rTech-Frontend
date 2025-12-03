@@ -480,7 +480,7 @@ const NewPurchasesModal = ({
         </header>
 
         {/* El formulario es la parte desplazable */}
-        <form ref={formRef} onSubmit={handleSubmit} noValidate className="p-6 space-y-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-300">
+        <form ref={formRef} onSubmit={handleSubmit} noValidate className="p-6 space-y-6 overflow-y-auto flex-grow custom-scroll">
           <FormSection title="Información General">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>

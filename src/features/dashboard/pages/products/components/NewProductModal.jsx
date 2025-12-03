@@ -122,6 +122,13 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
         setErrors(newErrors);
     };
 
+    const handleKeyDown = (e) => {
+      // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
+      if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+        e.preventDefault();
+      }
+    };
+
     const handleChange = (e) => {
       const { name, value, type, checked } = e.target;
       const finalValue = type === 'checkbox' ? checked : value;
@@ -578,14 +585,14 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
                             </div>
                             <div>
                                 <FormLabel htmlFor="precio"><span className="text-red-500">*</span> Precio:</FormLabel>
-                                <input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}  />
+                                <input type="number" id="precio" name="precio" value={productData.precio} onChange={handleChange} onKeyDown={handleKeyDown} className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}  />
                                 {errors.precio && (
                                     <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
                                 )}
                             </div>
                             <div>
                                 <FormLabel htmlFor="stock"><span className="text-red-500">*</span> Cantidad:</FormLabel>
-                                <input type="number" id="stock" name="stock" value={productData.stock} onChange={handleChange} className={`${inputBaseStyle} ${errors.stock ? 'border-red-500' : ''}`}  />
+                                <input type="number" id="stock" name="stock" value={productData.stock} onChange={handleChange} onKeyDown={handleKeyDown} className={`${inputBaseStyle} ${errors.stock ? 'border-red-500' : ''}`}  />
                                 {errors.stock && (
                                     <p className="text-red-500 text-sm mt-1">{errors.stock}</p>
                                 )}

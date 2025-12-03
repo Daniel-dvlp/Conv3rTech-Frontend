@@ -54,7 +54,7 @@ const SupplierDetailModal = ({ supplier, onClose }) => {
           </button>
         </header>
 
-        <div className="p-4 sm:p-6 overflow-y-auto flex-grow scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100 space-y-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-grow custom-scroll space-y-6">
 
           {/* Información de la Entidad */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">

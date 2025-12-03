@@ -40,6 +40,13 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState({});
 
+  const handleKeyDown = (e) => {
+    // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+      e.preventDefault();
+    }
+  };
+
   useEffect(() => {
     if (!quoteToEdit || !isOpen) return;
 
@@ -488,6 +495,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       type="number"
                       value={cantidadProducto}
                       onChange={(e) => setCantidadProducto(e.target.value)}
+                      onKeyDown={handleKeyDown}
                       className={inputBaseStyle}
                       placeholder="Cantidad"
                     />
@@ -581,6 +589,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
                       type="number"
                       value={cantidadServicio}
                       onChange={(e) => setCantidadServicio(e.target.value)}
+                      onKeyDown={handleKeyDown}
                       className={inputBaseStyle}
                       placeholder="Cantidad"
                     />
