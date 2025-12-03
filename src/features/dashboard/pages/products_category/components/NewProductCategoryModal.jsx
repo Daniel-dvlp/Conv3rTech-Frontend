@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
 import { FaTimes } from 'react-icons/fa';
 
-const inputBaseStyle = "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
+// Componentes reutilizables del diseño estándar
+const FormSection = ({ title, children }) => (
+  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
+    <div className="space-y-4">{children}</div>
+  </div>
+);
+
+const FormLabel = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
+);
+
+const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
 const normalizeText = (text) =>
   (text ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -90,45 +102,53 @@ const handleSubmit = (e) => {
 // ...existing code...
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-20" onClick={onClose}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12" onClick={onClose}>
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         <header className="flex justify-between items-center p-4 border-b">
-          <h2 className="text-xl font-bold text-gray-800">Crear Categoría</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl p-2">
+          <h2 className="text-2xl font-bold text-gray-800">Crear categoría</h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-2xl p-2">
             <FaTimes />
           </button>
         </header>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          <div>
-            <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1"><span className="text-red-500">*</span> Nombre:</label>
-            <input
-              id="nombre"
-              name="nombre"
-              type="text"
-              value={categoryData.nombre}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={inputBaseStyle}
-            />
-            {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
-          </div>
+        <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scroll flex-grow">
+          <FormSection>
+            <div className="grid grid-cols-1 gap-4">
+              <div>
+                <FormLabel htmlFor="nombre">
+                  <span className="text-red-500">*</span> Nombre:
+                </FormLabel>
+                <input
+                  id="nombre"
+                  name="nombre"
+                  type="text"
+                  value={categoryData.nombre}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500' : ''}`}
+                />
+                {errors.nombre && <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>}
+              </div>
 
-          <div>
-            <label htmlFor="descripcion" className="block text-sm font-medium text-gray-700 mb-1"><span className="text-red-500">*</span> Descripción:</label>
-            <textarea
-              id="descripcion"
-              name="descripcion"
-              value={categoryData.descripcion}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              rows="4"
-              className={`${inputBaseStyle} resize-none`}
-            ></textarea>
-            {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
-          </div>
+              <div>
+                <FormLabel htmlFor="descripcion">
+                  <span className="text-red-500">*</span> Descripción:
+                </FormLabel>
+                <textarea
+                  id="descripcion"
+                  name="descripcion"
+                  value={categoryData.descripcion}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  rows="4"
+                  className={`${inputBaseStyle} resize-none ${errors.descripcion ? 'border-red-500' : ''}`}
+                ></textarea>
+                {errors.descripcion && <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>}
+              </div>
+            </div>
+          </FormSection>
 
-          <div className="flex justify-end gap-4 pt-4">
+          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button
               type="button"
               onClick={onClose}

@@ -281,14 +281,12 @@ const UsuariosPage = () => {
             />
             <FaSearch className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          {hasPrivilege('usuarios', 'Exportar') && (
-            <button
-              onClick={handleExportUsers}
-              className="flex items-center gap-2 bg-green-400 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-600 transition-all"
-            >
-              <FaDownload /> Reporte de Usuarios
-            </button>
-          )}
+          <button
+            onClick={handleExportUsers}
+            className="flex items-center gap-2 bg-green-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-green-700 transition-colors"
+          >
+            <FaDownload /> Reporte de Usuarios
+          </button>
           {hasPrivilege('usuarios', 'Crear') && (
             <button
               className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"

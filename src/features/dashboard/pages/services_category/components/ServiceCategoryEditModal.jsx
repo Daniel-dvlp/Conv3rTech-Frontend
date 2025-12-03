@@ -3,9 +3,19 @@ import { FaTimes } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
 import { serviceCategoryService } from '../services/serviceCategoryService';
 
-const inputBaseStyle =
-    "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
-const labelStyle = "block text-sm font-medium text-gray-700 mb-1";
+// Componentes reutilizables del diseño estándar
+const FormSection = ({ title, children }) => (
+  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
+    <h3 className="text-lg font-bold text-gray-800 mb-4 border-b border-gray-200 pb-3">{title}</h3>
+    <div className="space-y-4">{children}</div>
+  </div>
+);
+
+const FormLabel = ({ htmlFor, children }) => (
+  <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-700 mb-1">{children}</label>
+);
+
+const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
 const normalizeText = (text) =>
     text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
@@ -34,7 +44,7 @@ const ServiceCategoryEditModal = ({
     const [categoryData, setCategoryData] = useState({
         nombre: '',
         descripcion: '',
-        estado: 'Activo',
+        estado: true,
         id: null,
     });
 
@@ -45,7 +55,7 @@ const ServiceCategoryEditModal = ({
             setCategoryData({
                 nombre: categoryToEdit.nombre || '',
                 descripcion: categoryToEdit.descripcion || '',
-                estado: categoryToEdit.estado || 'Activo',
+                estado: typeof categoryToEdit.estado === 'boolean' ? categoryToEdit.estado : categoryToEdit.estado === 'Activo',
                 id: categoryToEdit.id,
             });
             setErrors({});
@@ -108,21 +118,28 @@ const ServiceCategoryEditModal = ({
         }, 0);
     };
 
-    const handleEstadoPatch = async (id, nuevoEstado) => {
-        try {
-            await serviceCategoryService.changeStateCategory(id, nuevoEstado);
-            setCategoryData((prev) => ({
-                ...prev,
-                estado: nuevoEstado,
-            }));
-        } catch (error) {
-            // Opcional: mostrar error
-            setCategoryData((prev) => ({
-                ...prev,
-                estado: prev.estado === 'Activo' ? 'Inactivo' : 'Activo', // Revierte el cambio si falla
-            }));
-        }
+    const handleEstadoPatch = (id, nuevoEstado) => {
+        fetch(`${API_URL}/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: nuevoEstado }),
+        })
+            .then(res => res.json())
+            .then(() => {
+                setCategoryData((prev) => ({
+                    ...prev,
+                    estado: nuevoEstado,
+                }));
+            })
+            .catch(() => {
+                // Opcional: mostrar error
+                setCategoryData((prev) => ({
+                    ...prev,
+                    estado: !nuevoEstado, // Revierte el cambio si falla
+                }));
+            });
     };
+
 
     return (
         <div
@@ -130,7 +147,7 @@ const ServiceCategoryEditModal = ({
             onClick={onClose}
         >
             <div
-                className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto flex flex-col"
+                className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
                 onClick={(e) => e.stopPropagation()}
             >
                 <header className="flex justify-between items-center p-4 border-b">
@@ -143,18 +160,13 @@ const ServiceCategoryEditModal = ({
                     </button>
                 </header>
 
-                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 scrollbar-thin scrollbar-thumb-gray-300">
-                    {/* Información de la Categoría */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Información de la Categoría</h3>
+                <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-6 custom-scroll flex-grow">
+                    <FormSection title="Información de la Categoría">
                         <div className="grid grid-cols-1 gap-4">
                             <div>
-                                <label
-                                    htmlFor="nombre"
-                                    className={labelStyle}
-                                >
-                                    Nombre
-                                </label>
+                                <FormLabel htmlFor="nombre">
+                                    <span className="text-red-500">*</span> Nombre
+                                </FormLabel>
                                 <input
                                     id="nombre"
                                     name="nombre"
@@ -162,7 +174,7 @@ const ServiceCategoryEditModal = ({
                                     value={categoryData.nombre}
                                     onChange={handleChange}
                                     onBlur={handleBlur}
-                                    className={inputBaseStyle}
+                                    className={`${inputBaseStyle} ${errors.nombre ? 'border-red-500' : ''}`}
                                 />
                                 {errors.nombre && (
                                     <p className="text-red-500 text-sm mt-1">{errors.nombre}</p>
@@ -170,12 +182,9 @@ const ServiceCategoryEditModal = ({
                             </div>
 
                             <div>
-                                <label
-                                    htmlFor="descripcion"
-                                    className={labelStyle}
-                                >
-                                    Descripción
-                                </label>
+                                <FormLabel htmlFor="descripcion">
+                                    <span className="text-red-500">*</span> Descripción
+                                </FormLabel>
                                 <textarea
                                     id="descripcion"
                                     name="descripcion"
@@ -183,34 +192,27 @@ const ServiceCategoryEditModal = ({
                                     onChange={handleChange}
                                     onBlur={handleBlur}
                                     rows="4"
-                                    className={inputBaseStyle}
+                                    className={`${inputBaseStyle} resize-none ${errors.descripcion ? 'border-red-500' : ''}`}
                                 ></textarea>
                                 {errors.descripcion && (
                                     <p className="text-red-500 text-sm mt-1">{errors.descripcion}</p>
                                 )}
                             </div>
                         </div>
-                    </div>
+                    </FormSection>
 
-                    {/* Estado */}
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-2 md:p-6">
-                        <h3 className="text-lg font-bold text-gray-800 mb-0 border-gray-200 pb-3">Estado</h3>
+                    <FormSection title="Estado">
                         <div className="flex items-center gap-4">
-                            <label className={labelStyle}>Estado</label>
-                            <div className="flex items-center gap-4">
-                                <span className="text-sm text-gray-700 font-medium">
-                                    {categoryData.estado === 'Activo' ? 'Activo' : 'Inactivo'}
-                                </span>
-                                <ToggleSwitch
-                                    checked={categoryData.estado === 'Activo'}
-                                    onChange={() => {
-                                        const nuevoEstado = categoryData.estado === 'Activo' ? 'Inactivo' : 'Activo';
-                                        handleEstadoPatch(categoryData.id, nuevoEstado);
-                                    }}
-                                />
-                            </div>
+                            <FormLabel>Estado:</FormLabel>
+                            <ToggleSwitch
+                                checked={categoryData.estado}
+                                onChange={() => {
+                                    const nuevoEstado = !categoryData.estado;
+                                    handleEstadoPatch(categoryData.id, nuevoEstado);
+                                }}
+                            />
                         </div>
-                    </div>
+                    </FormSection>
 
                     <div className="flex justify-end gap-4 pt-6 border-t mt-6">
                         <button

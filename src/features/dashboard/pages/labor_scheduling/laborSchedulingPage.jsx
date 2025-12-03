@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import LaborSchedulingSidebar from './components/LaborSchedulingSidebar';
-import LaborSchedulingCalendar from './components/LaborSchedulingCalendar';
+import LaborSchedulingSidebar from './components/laborSchedulingSidebar';
+import LaborSchedulingCalendar from './components/laborSchedulingCalendar';
 import NewScheduleModal from './components/NewScheduleModal';
 import CreateNovedadModal from './components/CreateNovedadModal';
 import { showToast } from '../../../../shared/utils/alertas';
