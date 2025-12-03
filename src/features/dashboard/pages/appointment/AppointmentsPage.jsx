@@ -1,94 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CalendarView from "./components/CalendarView";
 import AppointmentModal from "./components/AppointmentModal";
 import AppointmentDetailModal from "./components/AppointmentDetailModal";
-import { v4 as uuidv4 } from "uuid";
 import Swal from "sweetalert2";
-import mockAppointments from "./data/mockAppointments";
-import { toast } from 'react-hot-toast';
+import { useAppointments } from "./hooks/useAppointments";
 
 const AppointmentsPage = () => {
-  const [appointments, setAppointments] = useState(mockAppointments);
+  const {
+    appointments,
+    loading,
+    fetchAppointments,
+    createAppointment,
+    updateAppointment,
+    deleteAppointment
+  } = useAppointments();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
+  // Cargar citas al montar el componente
+  useEffect(() => {
+    fetchAppointments();
+  }, [fetchAppointments]);
+
   const handleDateClick = (arg) => {
     setSelectedDate(arg.dateStr);
     setIsEditMode(false);
+    setSelectedAppointment(null);
     setIsModalOpen(true);
   };
 
   const handleEventClick = (info) => {
     const appointment = {
       ...info.event.extendedProps,
-      id: info.event.id || info.event.extendedProps.id,
+      id: info.event.id || info.event.extendedProps.id_cita,
     };
     setSelectedAppointment(appointment);
     setShowDetailsModal(true);
   };
 
-  const addAppointment = (appointmentData) => {
-    const fecha = new Date(appointmentData.fechaHora);
-    const isoDate = fecha.toISOString();
-
-    const citaDuplicada = appointments.some(
-      (cita) =>
-        cita.id !== appointmentData.id &&
-        new Date(cita.start).toISOString() === isoDate
-    );
-
-    if (citaDuplicada) {
-      Swal.fire({
-        icon: "error",
-        title: "Conflicto de horario",
-        text: "Ya existe una cita en esa fecha y hora. Por favor, elige otro momento.",
-        confirmButtonColor: "#FACC15",
-      });
-      return;
+  const handleSaveAppointment = async (appointmentData) => {
+    try {
+      if (isEditMode && selectedAppointment) {
+        await updateAppointment(selectedAppointment.id_cita, appointmentData);
+      } else {
+        await createAppointment(appointmentData);
+      }
+      setIsModalOpen(false);
+      setSelectedAppointment(null);
+      setIsEditMode(false);
+    } catch (error) {
+      // El error ya se maneja en el hook con toast
+      console.error('Error al guardar cita:', error);
     }
-
-    if (isEditMode) {
-      const updated = appointments.map((appt) =>
-        appt.id === appointmentData.id
-          ? {
-              ...appt,
-              title: appointmentData.cliente,
-              start: isoDate,
-              extendedProps: {
-                ...appointmentData,
-                fechaHora: isoDate,
-                id: appointmentData.id,
-              },
-            }
-          : appt
-      );
-      setAppointments(updated);
-      
-    } else {
-      const newId = uuidv4();
-      const newAppointment = {
-        id: newId,
-        title: appointmentData.cliente,
-        start: isoDate,
-        extendedProps: {
-          ...appointmentData,
-          fechaHora: isoDate,
-          id: newId,
-        },
-      };
-      setAppointments((prev) => [...prev, newAppointment]);
-    }
-    setIsModalOpen(false);
-    setSelectedAppointment(null);
-    setIsEditMode(false);
   };
 
   const handleEdit = () => {
     setIsEditMode(true);
-    setSelectedDate(selectedAppointment.fechaHora);
+    setSelectedDate(selectedAppointment.fecha);
     setIsModalOpen(true);
     setShowDetailsModal(false);
   };
@@ -106,55 +78,140 @@ const AppointmentsPage = () => {
     });
 
     if (result.isConfirmed) {
-      setAppointments((prev) =>
-        prev.filter((cita) => cita.id !== selectedAppointment.id)
-      );
-      setShowDetailsModal(false);
-      toast.success("Cita eliminada correctamente");
+      try {
+        await deleteAppointment(selectedAppointment.id_cita);
+        setShowDetailsModal(false);
+        setSelectedAppointment(null);
+      } catch (error) {
+        // El error ya se maneja en el hook con toast
+        console.error('Error al eliminar cita:', error);
+      }
     }
   };
 
+  // Calcular estadísticas
+  const stats = {
+    total: appointments.length,
+    pendientes: appointments.filter(a => a.extendedProps?.estado === 'Pendiente').length,
+    confirmadas: appointments.filter(a => a.extendedProps?.estado === 'Confirmada').length,
+    completadas: appointments.filter(a => a.extendedProps?.estado === 'Completada').length,
+  };
+
   return (
-    <div className="p-4 md:p-6 w-full h-full overflow-x-hidden">
-      <div className="relative flex items-center justify-center mb-6">
-        <h2 className="text-3xl md:text-4xl font-bold text-[#00012A] text-center">
-          Citas
-        </h2>
+    <div className="p-4 md:p-6 w-full h-full flex flex-col gap-4">
+      {/* Header con título y botón */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl md:text-4xl font-bold text-[#00012A]">
+            Gestión de Citas
+          </h2>
+          <p className="text-gray-600 mt-1">
+            Administra y programa las citas de tus clientes
+          </p>
+        </div>
         <button
           onClick={() => {
             setIsModalOpen(true);
             setIsEditMode(false);
+            setSelectedAppointment(null);
+            setSelectedDate(null);
           }}
-          className="absolute right-0 bg-yellow-400 hover:bg-yellow-500 text-[#00012A] font-semibold py-2 px-4 rounded-lg shadow transition"
+          className="bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-[#00012A] font-bold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 flex items-center gap-2"
         >
-          + Asignar cita
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Nueva Cita
         </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4 overflow-x-auto max-w-full">
-        <div className="min-w-[700px]">
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="flex items-center justify-between rounded-lg p-2 bg-white border border-gray-200">
+          <div className="flex flex-col">
+            <p className="text-gray-900 tracking-tight text-xl font-bold">{stats.total}</p>
+            <span className="text-gray-500 text-xs font-medium">Total Citas</span>
+          </div>
+          <div className="h-8 w-8 rounded-md flex items-center justify-center bg-blue-50">
+            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg p-2 bg-white border border-gray-200">
+          <div className="flex flex-col">
+            <p className="text-gray-900 tracking-tight text-xl font-bold">{stats.pendientes}</p>
+            <span className="text-gray-500 text-xs font-medium">Pendientes</span>
+          </div>
+          <div className="h-8 w-8 rounded-md flex items-center justify-center bg-yellow-50">
+            <svg className="w-4 h-4 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg p-2 bg-white border border-gray-200">
+          <div className="flex flex-col">
+            <p className="text-gray-900 tracking-tight text-xl font-bold">{stats.confirmadas}</p>
+            <span className="text-gray-500 text-xs font-medium">Confirmadas</span>
+          </div>
+          <div className="h-8 w-8 rounded-md flex items-center justify-center bg-green-50">
+            <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between rounded-lg p-2 bg-white border border-gray-200">
+          <div className="flex flex-col">
+            <p className="text-gray-900 tracking-tight text-xl font-bold">{stats.completadas}</p>
+            <span className="text-gray-500 text-xs font-medium">Completadas</span>
+          </div>
+          <div className="h-8 w-8 rounded-md flex items-center justify-center bg-purple-50">
+            <svg className="w-4 h-4 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Calendario */}
+      {loading ? (
+        <div className="flex-1 flex justify-center items-center bg-white rounded-xl shadow-lg">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-yellow-400 mx-auto"></div>
+            <p className="mt-4 text-gray-600 font-medium">Cargando citas...</p>
+          </div>
+        </div>
+      ) : (
+        <div className="flex-1 bg-white rounded-xl shadow-lg overflow-hidden">
           <CalendarView
             events={appointments}
             onDateClick={handleDateClick}
             onEventClick={handleEventClick}
           />
         </div>
-      </div>
+      )}
 
       <AppointmentModal
         isOpen={isModalOpen}
         onClose={() => {
           setIsModalOpen(false);
           setIsEditMode(false);
+          setSelectedAppointment(null);
         }}
-        onSave={addAppointment}
+        onSave={handleSaveAppointment}
         selectedDate={selectedDate}
         initialData={isEditMode ? selectedAppointment : null}
       />
 
       <AppointmentDetailModal
         isOpen={showDetailsModal}
-        onClose={() => setShowDetailsModal(false)}
+        onClose={() => {
+          setShowDetailsModal(false);
+          setSelectedAppointment(null);
+        }}
         appointment={selectedAppointment}
         onEdit={handleEdit}
         onDelete={handleDelete}

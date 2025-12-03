@@ -50,48 +50,6 @@ class AppointmentsService {
       throw error;
     }
   }
-
-  // Cambiar estado de la cita
-  async changeAppointmentStatus(id, statusData) {
-    try {
-      const response = await api.put(`/appointments/${id}/status`, statusData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Obtener citas por cliente
-  async getAppointmentsByClient(clientId) {
-    try {
-      const response = await api.get(`/appointments/client/${clientId}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Obtener citas por fecha
-  async getAppointmentsByDate(date) {
-    try {
-      const response = await api.get(`/appointments/date/${date}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // Obtener citas por rango de fechas
-  async getAppointmentsByDateRange(startDate, endDate) {
-    try {
-      const response = await api.get(
-        `/appointments/date-range?start=${startDate}&end=${endDate}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
 }
 
 export default new AppointmentsService();
