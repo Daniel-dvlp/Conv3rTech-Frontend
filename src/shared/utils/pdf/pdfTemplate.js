@@ -103,7 +103,10 @@ const isHeaderRow = (row) => {
     
     // Lista de palabras comunes en encabezados
     const headerKeywords = [
-        'servicios', 'productos'
+        'servicios',
+        'productos',
+        'pagos',
+        'abonos'
     ];
     
     // Verificar si la fila contiene palabras clave de encabezado

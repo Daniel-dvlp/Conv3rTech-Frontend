@@ -43,6 +43,15 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
   // Hook para el lector de código de barras
   useBarcodeScanner(
     (scannedCode) => {
+      // Verificar que products esté disponible y no esté vacío
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        setErrores(prev => ({ 
+          ...prev, 
+          producto: 'No hay productos disponibles para buscar' 
+        }));
+        return;
+      }
+
       // Limpiar errores previos
       setErrores(prev => ({ ...prev, producto: null }));
       
@@ -50,8 +59,8 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
       // Normalizar el código escaneado
       const codigoNormalizado = scannedCode.trim();
       
-      const productoEncontrado = products?.find(p => {
-        if (!p.codigo_barra) return false;
+      const productoEncontrado = products.find(p => {
+        if (!p || !p.codigo_barra) return false;
         
         // Normalizar el código del producto (puede ser string, null, o "n/a")
         const codigoProducto = p.codigo_barra.toString().trim().toLowerCase();
@@ -67,8 +76,17 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
 
       if (productoEncontrado) {
         // Seleccionar el producto automáticamente en el SearchSelector
-        setMetodoProductoSeleccionado(productoEncontrado.id_producto.toString());
-        setErrores(prev => ({ ...prev, producto: null }));
+        // Asegurar que el ID sea un número para la comparación correcta
+        const productId = productoEncontrado.id_producto || productoEncontrado.id;
+        if (productId) {
+          setMetodoProductoSeleccionado(String(productId));
+          setErrores(prev => ({ ...prev, producto: null }));
+        } else {
+          setErrores(prev => ({ 
+            ...prev, 
+            producto: 'El producto encontrado no tiene un ID válido' 
+          }));
+        }
       } else {
         // Solo mostrar error en el SearchSelector, no duplicar
         setErrores(prev => ({ 
