@@ -58,27 +58,27 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
   // const mouseDownTarget = useRef(null);
 
   // Precargar los datos del proveedor cuando supplierToEdit cambie o el modal se abra
-   useEffect(() => {
-     if (isOpen && supplierToEdit) {
-       setFormData({
-         id: supplierToEdit.id,
-         nit: supplierToEdit.nit || "",
-         nombre_empresa: supplierToEdit.empresa || "",
-         nombre_encargado: supplierToEdit.encargado || "",
-         telefono_entidad: supplierToEdit.telefono_entidad || "",
-         telefono_encargado: supplierToEdit.telefono_encargado || "",
-         correo_principal: supplierToEdit.correo_principal || "",
-         correo_secundario: supplierToEdit.correo_secundario || "",
-         direccion: supplierToEdit.direccion || "",
-         observaciones: supplierToEdit.observaciones || "",
-         estado: supplierToEdit.estado || "Activo",
-       });
-       setErrors({});
-       setFormSubmitted(false);
-     } else if (!isOpen) {
-         setFormData(initialState);
-     }
-   }, [isOpen, supplierToEdit]);
+  useEffect(() => {
+    if (isOpen && supplierToEdit) {
+      setFormData({
+        id: supplierToEdit.id,
+        nit: supplierToEdit.nit || "",
+        nombre_empresa: supplierToEdit.empresa || "",
+        nombre_encargado: supplierToEdit.encargado || "",
+        telefono_entidad: supplierToEdit.telefono_entidad || "",
+        telefono_encargado: supplierToEdit.telefono_encargado || "",
+        correo_principal: supplierToEdit.correo_principal || "",
+        correo_secundario: supplierToEdit.correo_secundario || "",
+        direccion: supplierToEdit.direccion || "",
+        observaciones: supplierToEdit.observaciones || "",
+        estado: supplierToEdit.estado || "Activo",
+      });
+      setErrors({});
+      setFormSubmitted(false);
+    } else if (!isOpen) {
+      setFormData(initialState);
+    }
+  }, [isOpen, supplierToEdit]);
 
   // Validaciones
   const validateField = (name, value) => {
@@ -88,7 +88,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
         if (value.trim() && !/^[a-zA-Z0-9]+$/.test(value)) {
           error = "El NIT debe ser alfanumérico.";
         } else if (existingNits.includes(value) && supplierToEdit && value !== supplierToEdit.nit) {
-            error = "Este NIT ya está registrado por otro proveedor.";
+          error = "Este NIT ya está registrado por otro proveedor.";
         }
         break;
       case "nombre_empresa":
@@ -134,9 +134,9 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (formSubmitted) {
-        validateField(name, value);
+      validateField(name, value);
     } else {
-        setErrors((prev) => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -169,11 +169,11 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
 
     Object.keys(formData).forEach(name => {
       if (name !== 'id' && name !== 'estado') {
-          const error = validateField(name, formData[name]);
-          if (error) {
-              newErrors[name] = error;
-              formIsValid = false;
-          }
+        const error = validateField(name, formData[name]);
+        if (error) {
+          newErrors[name] = error;
+          formIsValid = false;
+        }
       }
     });
 
@@ -217,7 +217,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12"
-      // Eliminamos onMouseDown y onMouseUp de aquí
+    // Eliminamos onMouseDown y onMouseUp de aquí
     >
       <div
         // Ya no necesitamos ref en este div para el clic fuera
@@ -243,7 +243,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <FormLabel htmlFor="nombre_empresa">
-                  <span className="text-red-500">*</span> Nombre Entidad
+                  <span className="text-red-500">*</span> Nombre entidad:
                 </FormLabel>
                 <input
                   id="nombre_empresa"
@@ -261,7 +261,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
 
               <div>
                 <FormLabel htmlFor="nit">
-                  NIT
+                  NIT:
                 </FormLabel>
                 <input
                   id="nit"
@@ -278,7 +278,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
 
               <div className="sm:col-span-2">
                 <FormLabel htmlFor="telefono_entidad">
-                  Teléfono Entidad
+                  Teléfono entidad:
                 </FormLabel>
                 <input
                   id="telefono_entidad"
@@ -302,12 +302,12 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <FormLabel htmlFor="nombre_encargado">
-                  <span className="text-red-500">*</span> Nombre Encargado
+                  <span className="text-red-500">*</span> Nombre encargado:
                 </FormLabel>
                 <input
                   id="nombre_encargado"
                   type="text"
-                  name="nombre_encargado"
+                  name="nombre_encargado" 
                   value={formData.nombre_encargado}
                   onChange={handleChange}
                   onBlur={handleBlur}
@@ -320,7 +320,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
 
               <div>
                 <FormLabel htmlFor="telefono_encargado">
-                  Teléfono Encargado
+                  Teléfono encargado:
                 </FormLabel>
                 <input
                   id="telefono_encargado"
@@ -339,7 +339,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
 
               <div>
                 <FormLabel htmlFor="correo_principal">
-                  <span className="text-red-500">*</span> Correo Principal
+                  <span className="text-red-500">*</span> Correo principal:
                 </FormLabel>
                 <input
                   id="correo_principal"
@@ -358,7 +358,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
 
               <div>
                 <FormLabel htmlFor="correo_secundario">
-                  Correo Secundario
+                  Correo secundario:
                 </FormLabel>
                 <input
                   id="correo_secundario"
@@ -380,7 +380,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div className="sm:col-span-2">
                 <FormLabel htmlFor="direccion">
-                  Dirección
+                  Dirección:
                 </FormLabel>
                 <input
                   id="direccion"
@@ -421,7 +421,7 @@ const EditSupplierModal = ({ isOpen, onClose, onSave, supplierToEdit, existingNi
             </div>
           </FormSection>
 
-        <div className="flex justify-end gap-4 pt-6 border-t mt-6">
+          <div className="flex justify-end gap-4 pt-6 border-t mt-6">
             <button
               type="button"
               onClick={onClose}
