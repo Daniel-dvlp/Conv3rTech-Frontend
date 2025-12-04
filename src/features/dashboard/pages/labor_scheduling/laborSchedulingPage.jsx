@@ -35,6 +35,11 @@ const LaborSchedulingPage = () => {
 
   const flattenedEvents = useMemo(() => events, [events]);
 
+  const hasMember = (set, id) => {
+    if (id === undefined || id === null) return true;
+    return set.has(id) || set.has(Number(id)) || set.has(String(id));
+  };
+
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -45,7 +50,7 @@ const LaborSchedulingPage = () => {
             ? response.data
             : response?.users || [];
         const parsed = dataset.map((user) => ({
-          id: user.id_usuario,
+          id: user.id_usuario ?? user.id ?? user.idUsuario,
           nombre: user.nombre,
           apellido: user.apellido,
           documento: user.documento,
@@ -84,8 +89,13 @@ const LaborSchedulingPage = () => {
 
   const expandAllDayEvent = (event) => {
     const startDate = ensureDate(event.start);
-    const endExclusive = event.end ? ensureDate(event.end) : addDays(startDate, 1);
+    let endExclusive = event.end ? ensureDate(event.end) : addDays(startDate, 1);
+    if (!endExclusive || endExclusive <= startDate) {
+      endExclusive = addDays(startDate, 1);
+    }
     const segments = [];
+
+    console.log('[LaborScheduling] expandAllDayEvent', { id: event.id, start: event.start, end: event.end, startDate, endExclusive });
 
     for (let cursor = new Date(startDate); cursor < endExclusive; cursor = addDays(cursor, 1)) {
       const dayStr = cursor.toISOString().split('T')[0];
@@ -113,7 +123,9 @@ const LaborSchedulingPage = () => {
         rangeStart: dateRange.start,
         rangeEnd: dateRange.end,
       };
+      console.log('[LaborSchedulingPage] loadEvents payload', payload);
       const rawEvents = await laborSchedulingService.getEvents(payload);
+      console.log('[LaborSchedulingPage] rawEvents length', Array.isArray(rawEvents) ? rawEvents.length : 0);
 
       const normalizedEvents = [];
 
@@ -125,9 +137,13 @@ const LaborSchedulingPage = () => {
         }
       });
 
+      console.log('[LaborScheduling] normalizedEvents', normalizedEvents.length);
+
       const formattedEvents = normalizedEvents.map((event) => {
         const color = event.backgroundColor || event.color || '#2563EB';
         const isConvertedAllDay = !!event.extendedProps?.originalAllDay;
+        const ep = event.extendedProps || {};
+        const meta = ep.meta || {};
         return {
           id: event.id,
           title: event.title,
@@ -138,10 +154,10 @@ const LaborSchedulingPage = () => {
           backgroundColor: color,
           borderColor: event.borderColor || color,
           extendedProps: {
-            type: event.type,
-            meta: event.meta || {},
-            descripcion: event.meta?.descripcion,
-            usuarioId: event.meta?.usuarioId,
+            type: ep.type,
+            meta,
+            descripcion: meta.descripcion,
+            usuarioId: meta.usuarioId,
           },
         };
       });
@@ -177,47 +193,75 @@ const LaborSchedulingPage = () => {
         }
       });
 
-      const schedulesList = Array.from(schedulesMap.values());
-      const novedadesList = Array.from(novedadesMap.values());
-      const usersForSidebar = allUsers
-        .filter((user) => usersWithSchedules.has(user.id))
-        .map((user) => ({
-          id: user.id,
-          name: `${user.nombre} ${user.apellido}`,
-          documento: user.documento,
-          color: '#2563EB',
-        }));
+      const nextSchedulesList = Array.from(schedulesMap.values());
+      const nextNovedadesList = Array.from(novedadesMap.values());
+      const nextUserList = allUsers.map((user) => ({
+        id: user.id,
+        name: `${user.nombre} ${user.apellido}`,
+        documento: user.documento,
+        color: '#2563EB',
+      }));
 
       setEvents(formattedEvents);
-      setUniqueSchedules(schedulesList);
-      setNovedadesList(novedadesList);
-      setUserList(usersForSidebar);
+      setUniqueSchedules(nextSchedulesList);
+      setNovedadesList(nextNovedadesList);
+      setUserList(nextUserList);
 
       setVisibleScheduleIds((prev) => {
-        if (!prev.size) return new Set(schedulesList.map((item) => item.id));
+        const oldIds = new Set(uniqueSchedules.map((item) => item.id));
         const next = new Set();
-        schedulesList.forEach((item) => {
-          if (prev.has(item.id)) next.add(item.id);
+        nextSchedulesList.forEach((item) => {
+          // Si es nuevo (no estaba en la lista anterior), mostrarlo por defecto
+          if (!hasMember(oldIds, item.id)) {
+            next.add(item.id);
+          }
+          // Si ya existía y estaba visible, mantenerlo visible
+          else if (hasMember(prev, item.id)) {
+            next.add(item.id);
+          }
         });
-        return next.size ? next : new Set(schedulesList.map((item) => item.id));
+        return next;
       });
 
       setVisibleNovedadIds((prev) => {
-        if (!prev.size) return new Set(novedadesList.map((item) => item.id));
+        const oldIds = new Set(novedadesList.map((item) => item.id));
         const next = new Set();
-        novedadesList.forEach((item) => {
-          if (prev.has(item.id)) next.add(item.id);
+        nextNovedadesList.forEach((item) => {
+          if (!hasMember(oldIds, item.id)) {
+            next.add(item.id);
+          } else if (hasMember(prev, item.id)) {
+            next.add(item.id);
+          }
         });
-        return next.size ? next : new Set(novedadesList.map((item) => item.id));
+        return next;
       });
 
+      const eventUserIds = new Set();
+      formattedEvents.forEach((e) => {
+        const uid = e?.extendedProps?.meta?.usuarioId;
+        if (uid !== undefined && uid !== null) eventUserIds.add(uid);
+      });
+      const allUserIds = new Set(allUsers.map((u) => u.id));
+      const unionIds = new Set([...Array.from(allUserIds), ...Array.from(eventUserIds)]);
+      
       setVisibleUserIds((prev) => {
-        if (!prev.size) return new Set(usersWithSchedules);
+        const oldIds = new Set(userList.map((u) => u.id));
         const next = new Set();
-        usersWithSchedules.forEach((id) => {
-          if (prev.has(id)) next.add(id);
+        unionIds.forEach((id) => {
+          if (!hasMember(oldIds, id)) {
+            next.add(id);
+          } else if (hasMember(prev, id)) {
+            next.add(id);
+          }
         });
-        return next.size ? next : new Set(usersWithSchedules);
+        return next;
+      });
+      console.log('[LaborScheduling] userIds', { allUsers: Array.from(allUserIds), eventUserIds: Array.from(eventUserIds), visibleUserIds: Array.from(unionIds) });
+
+      console.log('[LaborScheduling] sidebar counts', {
+        schedules: nextSchedulesList.length,
+        novedades: nextNovedadesList.length,
+        users: nextUserList.length,
       });
     } catch (error) {
       console.error('Error cargando eventos:', error);
@@ -259,12 +303,31 @@ const LaborSchedulingPage = () => {
   const handleSaveProgramacion = async (payload) => {
     try {
       setLoading(true);
+      console.log('[LaborSchedulingPage] handleSaveProgramacion payload', payload);
       if (modalMode === 'edit' && modalData?.id) {
         await laborSchedulingService.updateProgramacion(modalData.id, payload);
         showToast('Programación actualizada', 'success');
       } else {
-        await laborSchedulingService.createProgramacion(payload);
+        const created = await laborSchedulingService.createProgramacion(payload);
+        console.log('[LaborSchedulingPage] createProgramacion result', created);
         showToast(`Programación creada para ${payload.usuarioIds.length} usuario(s)`, 'success');
+        
+        // Asegurar que las nuevas programaciones y usuarios sean visibles
+        if (Array.isArray(created)) {
+            setVisibleScheduleIds((prev) => {
+                const next = new Set(prev);
+                created.forEach((c) => next.add(c.id));
+                return next;
+            });
+        }
+        
+        if (payload.usuarioIds && Array.isArray(payload.usuarioIds)) {
+            setVisibleUserIds((prev) => {
+                const next = new Set(prev);
+                payload.usuarioIds.forEach((uid) => next.add(uid));
+                return next;
+            });
+        }
       }
       setShowModal(false);
       await loadEvents();
@@ -279,12 +342,29 @@ const LaborSchedulingPage = () => {
   const handleSaveNovedad = async (payload) => {
     try {
       setLoading(true);
+      console.log('[LaborSchedulingPage] handleSaveNovedad payload', payload);
       if (modalMode === 'edit' && modalData?.id) {
         await laborSchedulingService.updateNovedad(modalData.id, payload);
         showToast('Novedad actualizada', 'success');
       } else {
-        await laborSchedulingService.createNovedad(payload);
+        const created = await laborSchedulingService.createNovedad(payload);
+        console.log('[LaborSchedulingPage] createNovedad result', created);
         showToast(`Novedad creada para ${payload.usuarioIds.length} usuario(s)`, 'success');
+        
+        // Asegurar que las nuevas novedades sean visibles
+        if (Array.isArray(created)) {
+            setVisibleNovedadIds((prev) => {
+                const next = new Set(prev);
+                created.forEach((c) => next.add(c.id_novedad)); // Asumiendo que devuelve el objeto creado con id_novedad
+                return next;
+            });
+        } else if (created && created.id_novedad) {
+             setVisibleNovedadIds((prev) => {
+                const next = new Set(prev);
+                next.add(created.id_novedad);
+                return next;
+            });
+        }
       }
       setShowNovedadModal(false);
       await loadEvents();
@@ -434,17 +514,19 @@ const LaborSchedulingPage = () => {
 
   const filteredEvents = flattenedEvents.filter((event) => {
     const { type, meta } = event.extendedProps;
-    if (type === 'programacion' && meta?.programacionId && !visibleScheduleIds.has(meta.programacionId)) {
+    if (type === 'programacion' && meta?.programacionId && !hasMember(visibleScheduleIds, meta.programacionId)) {
       return false;
     }
-    if (type === 'novedad' && meta?.novedadId && !visibleNovedadIds.has(meta.novedadId)) {
+    if (type === 'novedad' && meta?.novedadId && !hasMember(visibleNovedadIds, meta.novedadId)) {
       return false;
     }
-    if (meta?.usuarioId && !visibleUserIds.has(meta.usuarioId)) {
+    if (meta?.usuarioId && !hasMember(visibleUserIds, meta.usuarioId)) {
       return false;
     }
     return true;
   });
+
+  console.log('[LaborScheduling] filteredEvents length', filteredEvents.length);
 
   const handleUserEdit = (item) => {
     if (item?.documento) {

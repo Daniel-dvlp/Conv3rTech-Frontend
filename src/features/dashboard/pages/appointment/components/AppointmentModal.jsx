@@ -1,35 +1,70 @@
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import { showSuccess } from '../../../../../shared/utils/alerts';
+import clientsService from '../../../../../services/clientsService';
+import usersService from '../../../../../services/usersService';
+import servicesService from '../../../../../services/servicesService';
 
 const AppointmentModal = ({ isOpen, onClose, onSave, selectedDate, initialData }) => {
   const [formData, setFormData] = useState({
-    cliente: "",
-    telefono: "",
-    servicio: "",
+    clienteId: null,
+    usuarioId: null,
+    servicioId: null,
+    direccionId: null,
     direccion: "",
     fechaHora: "",
-    encargado: "",
+    fechaHoraFin: "",
     id: null,
   });
+  const [clientes, setClientes] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
+  const [servicios, setServicios] = useState([]);
+  const [direcciones, setDirecciones] = useState([]);
 
   useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [cl, us, se] = await Promise.all([
+          clientsService.getAllClients(),
+          usersService.getAllUsers(),
+          servicesService.getAllServices(),
+        ]);
+        setClientes(Array.isArray(cl) ? cl : cl?.data || []);
+        setUsuarios(Array.isArray(us) ? us : us?.data || []);
+        setServicios(Array.isArray(se) ? se : se?.data || []);
+      } catch {}
+    };
     if (isOpen) {
+      fetchData();
       if (initialData) {
         setFormData({
-          ...initialData,
-          fechaHora: initialData.fechaHora?.substring(0, 16) || "", // formato para input datetime-local
+          clienteId: initialData.id_cliente ?? null,
+          usuarioId: initialData.id_usuario ?? null,
+          servicioId: initialData.id_servicio ?? null,
+          direccionId: initialData.id_direccion ?? null,
+          direccion: initialData.direccion || "",
+          fechaHora: initialData.fechaHora?.substring(0, 16) || "",
+          fechaHoraFin: initialData.end ? String(initialData.end).substring(0, 16) : "",
+          id: initialData.id ?? null,
         });
+        const clienteSel = initialData.clienteData || null;
+        const dirs = clienteSel?.AddressClients || [];
+        setDirecciones(dirs);
       } else {
+        const now = selectedDate || "";
+        const endDefault = now ? new Date(now) : null;
+        const endStr = endDefault ? new Date(endDefault.getTime() + 60 * 60 * 1000).toISOString().substring(0, 16) : "";
         setFormData({
-          cliente: "",
-          telefono: "",
-          servicio: "",
+          clienteId: null,
+          usuarioId: null,
+          servicioId: null,
+          direccionId: null,
           direccion: "",
-          fechaHora: selectedDate || "",
-          encargado: "",
+          fechaHora: now,
+          fechaHoraFin: endStr,
           id: null,
         });
+        setDirecciones([]);
       }
     }
   }, [isOpen, selectedDate, initialData]);
@@ -37,6 +72,11 @@ const AppointmentModal = ({ isOpen, onClose, onSave, selectedDate, initialData }
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    if (name === 'clienteId') {
+      const clienteObj = clientes.find(c => String(c.id_cliente) === String(value));
+      const dirs = clienteObj?.AddressClients || [];
+      setDirecciones(dirs);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -59,42 +99,69 @@ const AppointmentModal = ({ isOpen, onClose, onSave, selectedDate, initialData }
         </h3>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            name="cliente"
-            placeholder="Nombre del cliente"
-            value={formData.cliente}
+          <select
+            name="clienteId"
+            value={formData.clienteId ?? ''}
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          />
-          <input
-            type="text"
-            name="telefono"
-            placeholder="Teléfono del cliente"
-            value={formData.telefono}
+          >
+            <option value="">Selecciona cliente</option>
+            {clientes.map((c) => (
+              <option key={c.id_cliente} value={c.id_cliente}>
+                {[c.nombre, c.apellido].filter(Boolean).join(' ')}
+              </option>
+            ))}
+          </select>
+          <select
+            name="direccionId"
+            value={formData.direccionId ?? ''}
             onChange={handleChange}
-            required
             className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          />
-          <input
-            type="text"
-            name="servicio"
-            placeholder="Servicio a realizar"
-            value={formData.servicio}
-            onChange={handleChange}
-            required
-            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          />
+          >
+            <option value="">Selecciona dirección (opcional)</option>
+            {direcciones.map((d) => (
+              <option key={d.id_direccion} value={d.id_direccion}>
+                {d.nombre_direccion ? `${d.nombre_direccion} - ${d.direccion}` : d.direccion}
+              </option>
+            ))}
+          </select>
           <input
             type="text"
             name="direccion"
             placeholder="Dirección del servicio"
             value={formData.direccion}
             onChange={handleChange}
-            required
             className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
+          <select
+            name="servicioId"
+            value={formData.servicioId ?? ''}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <option value="">Selecciona servicio</option>
+            {servicios.map((s) => (
+              <option key={s.id_servicio} value={s.id_servicio}>
+                {s.nombre}
+              </option>
+            ))}
+          </select>
+          <select
+            name="usuarioId"
+            value={formData.usuarioId ?? ''}
+            onChange={handleChange}
+            required
+            className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
+          >
+            <option value="">Selecciona técnico</option>
+            {usuarios.map((u) => (
+              <option key={u.id_usuario} value={u.id_usuario}>
+                {[u.nombre, u.apellido].filter(Boolean).join(' ')}
+              </option>
+            ))}
+          </select>
           <input
             type="datetime-local"
             name="fechaHora"
@@ -104,10 +171,9 @@ const AppointmentModal = ({ isOpen, onClose, onSave, selectedDate, initialData }
             className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
           />
           <input
-            type="text"
-            name="encargado"
-            placeholder="Encargado"
-            value={formData.encargado}
+            type="datetime-local"
+            name="fechaHoraFin"
+            value={formData.fechaHoraFin}
             onChange={handleChange}
             required
             className="w-full p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-400"
