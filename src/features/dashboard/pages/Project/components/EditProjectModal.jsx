@@ -71,17 +71,28 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [usersResponse, clientsData] = await Promise.all([
-        usersService.getAllUsers(),
+      const [coordinadoresResponse, tecnicosResponse, clientsData] = await Promise.all([
+        usersService.getUsersByRole("Coordinador"),
+        usersService.getUsersByRole("Tecnico"),
         clientsApi.getAllClients()
       ]);
 
-      if (usersResponse.success) {
-        const allUsers = usersResponse.data;
-        setCoordinadores(allUsers.filter(u => u.rol === "Coordinador"));
-        setTecnicos(allUsers.filter(u => u.rol === "Tecnico"));
+      // Manejar respuesta de Coordinadores
+      if (Array.isArray(coordinadoresResponse)) {
+        setCoordinadores(coordinadoresResponse);
+      } else if (coordinadoresResponse.success && Array.isArray(coordinadoresResponse.data)) {
+        setCoordinadores(coordinadoresResponse.data);
       } else {
-        showToast("Error al cargar usuarios", "error");
+        console.error("Formato de coordinadores inválido:", coordinadoresResponse);
+      }
+
+      // Manejar respuesta de Técnicos
+      if (Array.isArray(tecnicosResponse)) {
+        setTecnicos(tecnicosResponse);
+      } else if (tecnicosResponse.success && Array.isArray(tecnicosResponse.data)) {
+        setTecnicos(tecnicosResponse.data);
+      } else {
+        console.error("Formato de técnicos inválido:", tecnicosResponse);
       }
 
       if (clientsData) {

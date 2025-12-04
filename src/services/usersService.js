@@ -11,6 +11,16 @@ class UsersService {
     }
   }
 
+  // Obtener usuarios por rol
+  async getUsersByRole(roleName) {
+    try {
+      const response = await api.get(`/users/role/${roleName}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Obtener usuario por ID
   async getUserById(id) {
     try {

@@ -260,15 +260,6 @@ const ProjectPage = () => {
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          {checkManage('proyectos_servicios') && (
-            <button
-              onClick={() => setShowNewModal(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors text-sm"
-            >
-              <FaPlus />
-              Nuevo Proyecto
-            </button>
-          )}
           {hasPrivilege('proyectos_servicios', 'Exportar') && (
             <button
               onClick={handleExport}
