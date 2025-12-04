@@ -4,7 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { FaPlus, FaSearch } from 'react-icons/fa';
 import SuppliersTable from './components/SuppliersTable';
 import SkeletonRow from './components/SkeletonRow';
-import Pagination from '../../../../../src/shared/components/Pagination';
+import Pagination from '../../../../shared/components/Pagination';
 import NewProviderModal from './components/NewSuppliersModal';
 import EditSupplierModal from './components/EditSupplierModal';
 import SupplierDetailModal from './components/SupplierDetailModal';
@@ -99,10 +99,10 @@ const SuppliersPage = () => {
   return (
     <div className="p-4 md:p-8">
       {/* Encabezado del módulo */}
-      <div className="flex justify-between items-center mb-8 flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Proveedores</h1>
-        <div className="flex gap-4 flex-wrap">
-          <div className="relative">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
+          <div className="relative w-full sm:w-80">
             <input
               type="text"
               placeholder="Buscar"
@@ -111,7 +111,7 @@ const SuppliersPage = () => {
                 setSearchTerm(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Buscar proveedor"
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />

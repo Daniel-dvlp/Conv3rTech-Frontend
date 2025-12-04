@@ -733,29 +733,33 @@ const NewPurchasesModal = ({
             {purchaseData.productosComprados.length > 0 && (
               <div className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="w-full text-sm text-center border border-gray-200">
+                    <thead className="bg-conv3r-dark text-white">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio Unitario Compra</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cód. Barras</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
+                        <th className="p-3 font-semibold">Producto</th>
+                        <th className="font-semibold">Unidad</th>
+                        <th className="font-semibold">Cantidad</th>
+                        <th className="font-semibold">Precio Unitario Compra</th>
+                        <th className="font-semibold">Subtotal</th>
+                        <th className="font-semibold">Cód. Barras</th>
+                        <th className="p-3 font-semibold">Acción</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="bg-white text-gray-700">
                       {purchaseData.productosComprados.map((item, index) => (
-                        <tr key={index}>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.nombre}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.unidadDeMedida}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.cantidad}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${item.precioUnitarioCompra.toLocaleString('es-CO')}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${(item.precioUnitarioCompra * item.cantidad).toLocaleString('es-CO')}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.codigoDeBarras || 'N/A'}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            <div className="flex gap-2">
+                        <tr key={index} className="border-t border-gray-200">
+                          <td className="p-3">{item.nombre}</td>
+                          <td className="p-3">{item.unidadDeMedida}</td>
+                          <td className="p-3">{item.cantidad}</td>
+                          <td className="p-3">
+                            ${item.precioUnitarioCompra.toLocaleString('es-CO')}
+                          </td>
+                          <td className="p-3">
+                            ${(item.precioUnitarioCompra * item.cantidad).toLocaleString('es-CO')}
+                          </td>
+                          <td className="p-3">{item.codigoDeBarras || 'N/A'}</td>
+                          <td className="p-3">
+                            <div className="flex justify-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleEditProduct(index)}
@@ -777,30 +781,30 @@ const NewPurchasesModal = ({
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                      <tr>
+                        <td colSpan="5" className="text-right font-semibold px-4 py-2">Subtotal:</td>
+                        <td colSpan="2" className="font-bold px-4 py-2 text-right text-conv3r-dark">
+                          ${purchaseData.subtotalProductos.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan="5" className="text-right font-semibold px-4 py-2">IVA (19%):</td>
+                        <td colSpan="2" className="font-bold px-4 py-2 text-right text-conv3r-dark">
+                          ${purchaseData.iva.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan="5" className="text-right font-semibold px-4 py-2">Total:</td>
+                        <td colSpan="2" className="font-bold text-conv3r-gold text-lg px-4 py-2 text-right">
+                          ${purchaseData.total.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </div>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h4 className="font-medium text-gray-700 mb-2">Detalles</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Subtotal productos:</span>
-                    <span className="text-sm font-semibold">${purchaseData.subtotalProductos.toLocaleString('es-CO')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">IVA (19%):</span>
-                    <span className="text-sm font-semibold">${purchaseData.iva.toLocaleString('es-CO')}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="md:col-span-1 bg-white border border-gray-300 text-gray-800 p-4 rounded-lg flex flex-col items-center justify-center h-full">
-                <span className="text-sm font-bold uppercase mb-1">Total compra:</span>
-                <span className="text-3xl font-extrabold">${purchaseData.total.toLocaleString('es-CO')}</span>
-              </div>
-            </div>
           </FormSection>
 
           <FormSection title="Observaciones">
@@ -809,7 +813,8 @@ const NewPurchasesModal = ({
               value={purchaseData.observaciones}
               onChange={handleChange}
               rows={3}
-              className={inputBaseStyle}
+              className={`${inputBaseStyle} resize-none`}
+              style={{ resize: 'none' }}
               maxLength="500"
             ></textarea>
           </FormSection>
