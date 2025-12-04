@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FaTimes, FaPlus, FaFilePdf, FaMinusCircle } from 'react-icons/fa';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
 import { toast } from 'react-hot-toast'; // Importar react-hot-toast
 import Swal from 'sweetalert2'; // Importar Swal para el modal de motivo
 // Asegúrate de que esta ruta sea correcta para tu utilidad de alertas
 import { confirmDelete } from '../../../../../shared/utils/alerts';
+import { createBasePDF, addHeader, addFooter, addGenericTable } from '../../../../../shared/utils/pdf/pdfTemplate';
 
 const inputBase = 'w-full p-2.5 border rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -198,43 +197,148 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
   };
 
   const handleDescargarPDF = () => {
-    // Es seguro usar contractData.contrato.pagos aquí porque ya pasamos la validación
-    if (!contractData.contrato || contractData.contrato.pagos.length === 0) {
-      toast.error('No hay datos de pagos para generar el PDF de este contrato.');
+    if (!contractData?.contrato) {
+      toast.error('No hay datos del contrato disponibles para generar el PDF.');
       return;
     }
 
-    const doc = new jsPDF();
-    const cliente = contractData.cliente;
-    const contrato = contractData.contrato;
+    const pagos = contractData.contrato.pagos || [];
+    if (pagos.length === 0) {
+      toast.error('No hay pagos registrados para este contrato.');
+      return;
+    }
 
-    doc.setFontSize(16);
-    doc.text('Historial de Pagos del Contrato', 14, 20);
-    doc.setFontSize(12);
-    doc.text(`Cliente: ${cliente?.nombre} ${cliente?.apellido}`, 14, 30);
-    doc.text(`Documento: ${cliente?.documento || 'N/A'}`, 14, 38); // Añadir fallback
-    doc.text(`Contrato: ${contrato?.numero}`, 14, 46);
-    doc.text(`Monto Total Contrato: ${formatCurrency(contrato?.montoTotal)}`, 14, 54);
-    doc.text(`Monto Abonado Total: ${formatCurrency(contrato?.montoAbonado)}`, 14, 62);
-    doc.text(`Monto Restante: ${formatCurrency(contrato?.montoRestante)}`, 14, 70);
+    const doc = createBasePDF();
+    const cliente = contractData.cliente || {};
+    const contrato = contractData.contrato || {};
+    const clienteNombre = `${cliente.nombre || ''} ${cliente.apellido || ''}`.trim() || 'Cliente no especificado';
+    const documentoCliente = cliente.documento || 'Sin documento';
+    const telefonoCliente = cliente.telefono || 'No registrado';
+    const proyectoNombre = contrato.nombreProyecto || contrato?.proyecto?.nombre || contrato.id_proyecto || 'Sin proyecto asignado';
+    const estadoContrato = contrato.estado || 'Sin estado';
 
+    const parseAmount = (value) => {
+      if (typeof value === 'number') return value;
+      if (typeof value === 'string') {
+        const parsed = parseFloat(value.replace(/[^\d.-]/g, ''));
+        return Number.isNaN(parsed) ? 0 : parsed;
+      }
+      return 0;
+    };
 
-    autoTable(doc, {
-      startY: 80, // Ajusta el inicio Y para después de la info del contrato
-      head: [['Fecha', 'Concepto', 'Monto Total', 'Monto Abono', 'Restante (Contrato)', 'Método', 'Estado']],
-      body: contrato.pagos.map(p => [
-        p.fecha,
-        p.concepto,
-        formatCurrency(p.montoTotal), // Monto total del CONTRATO para ese registro de abono
-        formatCurrency(p.montoAbonado), // Monto de ESE abono
-        formatCurrency(p.montoRestante), // Restante del CONTRATO después de ese abono
-        p.metodoPago,
-        p.estado
-      ]),
-      styles: { fontSize: 10 }
+    const totalPagos = pagos.reduce((acc, pago) => acc + parseAmount(pago.montoAbonado), 0);
+    const ultimaFechaMovimiento = pagos[pagos.length - 1]?.fecha || 'Sin movimientos';
+    const montoTotalContrato = parseAmount(contrato.montoTotal);
+    const montoAbonadoContrato = parseAmount(contrato.montoAbonado);
+    const montoRestanteContrato = parseAmount(contrato.montoRestante);
+    const totalAbonadoMostrar = montoAbonadoContrato > 0 ? montoAbonadoContrato : totalPagos;
+
+    let y = addHeader(doc, `Pagos contrato ${contrato.numero || ''}`.trim());
+
+    // Información general
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(55, 65, 81);
+    doc.text('Información del contrato', 14, y);
+    y += 8;
+
+    const LEFT_X = 14;
+    const RIGHT_X = 110;
+    const LINE_HEIGHT = 7;
+    let leftY = y;
+    let rightY = y;
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+
+    doc.text(`Cliente: ${clienteNombre}`, LEFT_X, leftY);
+    leftY += LINE_HEIGHT;
+    doc.text(`Documento: ${documentoCliente}`, LEFT_X, leftY);
+    leftY += LINE_HEIGHT;
+    doc.text(`Teléfono: ${telefonoCliente}`, LEFT_X, leftY);
+
+    doc.text(`Contrato: ${contrato.numero || 'N/A'}`, RIGHT_X, rightY);
+    rightY += LINE_HEIGHT;
+    doc.text(`Proyecto: ${proyectoNombre}`, RIGHT_X, rightY);
+    rightY += LINE_HEIGHT;
+    doc.text(`Estado: ${estadoContrato}`, RIGHT_X, rightY);
+
+    y = Math.max(leftY, rightY) + 6;
+
+    // Estado financiero
+    const stats = [
+      { label: 'Monto total contrato', value: formatCurrency(montoTotalContrato) },
+      { label: 'Total abonado', value: formatCurrency(totalAbonadoMostrar) },
+      { label: 'Saldo pendiente', value: formatCurrency(montoRestanteContrato) },
+    ];
+
+    doc.setFillColor(249, 250, 251);
+    doc.setDrawColor(229, 231, 235);
+    doc.rect(14, y, 182, 38, 'F');
+
+    const STAT_WIDTH = 182 / stats.length;
+    doc.setFontSize(10);
+
+    stats.forEach((stat, index) => {
+      const statX = 20 + (STAT_WIDTH * index);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(107, 114, 128);
+      doc.text(stat.label, statX, y + 12);
+
+      doc.setFont('helvetica', 'bold');
+      const isSaldo = stat.label === 'Saldo pendiente';
+      const saldoColor = montoRestanteContrato === 0 ? [22, 163, 74] : [190, 18, 60];
+      const valueColor = isSaldo ? saldoColor : [0, 1, 42];
+      doc.setTextColor(...valueColor);
+      doc.setFontSize(12);
+      doc.text(stat.value, statX, y + 24);
+      doc.setFontSize(10);
     });
 
-    doc.save(`Pagos_Contrato_${contrato.numero}.pdf`);
+    y += 48;
+
+    // Tabla de pagos
+    const tableRows = [
+      [
+        {
+          content: 'Historial de pagos y abonos',
+          colSpan: 7,
+          styles: { halign: 'center', fillColor: [249, 250, 251], fontStyle: 'bold', textColor: [0, 1, 42] }
+        }
+      ],
+      ['Fecha', 'Concepto', 'Monto contrato', 'Abono', 'Restante', 'Método', 'Estado']
+    ];
+
+    pagos.forEach((pago) => {
+      tableRows.push([
+        pago.fecha || 'N/A',
+        pago.concepto || 'Sin descripción',
+        formatCurrency(parseAmount(pago.montoTotal ?? montoTotalContrato)),
+        formatCurrency(parseAmount(pago.montoAbonado)),
+        formatCurrency(parseAmount(pago.montoRestante ?? montoRestanteContrato)),
+        pago.metodoPago || 'N/A',
+        pago.estado || 'N/A'
+      ]);
+    });
+
+    y = addGenericTable(doc, tableRows, y);
+
+    // Resumen final
+    const resumenY = y + 10;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(55, 65, 81);
+    doc.text('Resumen de movimientos', 14, resumenY);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(75, 85, 99);
+    doc.text(`Total de registros: ${pagos.length}`, 14, resumenY + 8);
+    doc.text(`Total abonado registrado: ${formatCurrency(totalPagos)}`, 14, resumenY + 16);
+    doc.text(`Último movimiento: ${ultimaFechaMovimiento}`, 14, resumenY + 24);
+
+    addFooter(doc);
+    doc.save(`Pagos_Contrato_${contrato.numero || 'sin_numero'}.pdf`);
   };
 
   return (

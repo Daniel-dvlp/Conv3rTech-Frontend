@@ -172,7 +172,7 @@ const handleAddCategory = async (newCategory) => {
   return (
     <div className="p-4 md:p-8 relative">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-        <h1 className="text-3xl font-bold text-gray-800">Categorías de Productos</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Categorías de productos</h1>
         <div className="flex gap-4 flex-wrap items-center">
           <div className="relative">
             <input

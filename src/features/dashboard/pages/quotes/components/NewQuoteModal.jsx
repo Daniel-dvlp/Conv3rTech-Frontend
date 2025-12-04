@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FaTimes, FaTrash, FaPlus, FaMinus } from 'react-icons/fa';
 import SearchSelector from '../../products_sale/components/SearchSelector';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -38,6 +39,68 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
   const [observaciones, setObservaciones] = useState('');
   const [errores, setErrores] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // Hook para el lector de código de barras
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Verificar que products esté disponible y no esté vacío
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        setErrores(prev => ({ 
+          ...prev, 
+          producto: 'No hay productos disponibles para buscar' 
+        }));
+        return;
+      }
+
+      // Limpiar errores previos
+      setErrores(prev => ({ ...prev, producto: null }));
+      
+      // Buscar producto por código de barras
+      // Normalizar el código escaneado
+      const codigoNormalizado = scannedCode.trim();
+      
+      const productoEncontrado = products.find(p => {
+        if (!p || !p.codigo_barra) return false;
+        
+        // Normalizar el código del producto (puede ser string, null, o "n/a")
+        const codigoProducto = p.codigo_barra.toString().trim().toLowerCase();
+        
+        // Ignorar valores vacíos o "n/a"
+        if (!codigoProducto || codigoProducto === 'n/a' || codigoProducto === 'null') {
+          return false;
+        }
+        
+        // Comparar códigos normalizados
+        return codigoProducto === codigoNormalizado.toLowerCase();
+      });
+
+      if (productoEncontrado) {
+        // Seleccionar el producto automáticamente en el SearchSelector
+        // Asegurar que el ID sea un número para la comparación correcta
+        const productId = productoEncontrado.id_producto || productoEncontrado.id;
+        if (productId) {
+          setMetodoProductoSeleccionado(String(productId));
+          setErrores(prev => ({ ...prev, producto: null }));
+        } else {
+          setErrores(prev => ({ 
+            ...prev, 
+            producto: 'El producto encontrado no tiene un ID válido' 
+          }));
+        }
+      } else {
+        // Solo mostrar error en el SearchSelector, no duplicar
+        setErrores(prev => ({ 
+          ...prev, 
+          producto: `No se encontró un producto con el código: ${codigoNormalizado}` 
+        }));
+      }
+    },
+    {
+      minLength: 3,
+      scanDuration: 100,
+      enabled: isOpen
+    }
+  );
 
   const handleKeyDown = (e) => {
     // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
@@ -617,7 +680,6 @@ const NewQuoteModal = ({ isOpen, onClose, onSave, clients, products, services })
                 </tfoot>
               </table>
               {errores.productos && <p className="text-red-500 text-sm mt-2">{errores.productos}</p>}
-              {errores.producto && <p className="text-red-500 text-sm mt-2">{errores.producto}</p>}
             </div>
           </FormSection>
 

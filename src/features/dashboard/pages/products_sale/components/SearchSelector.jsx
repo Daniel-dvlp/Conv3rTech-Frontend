@@ -15,35 +15,50 @@ const SearchSelector = ({
 }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filteredOptions, setFilteredOptions] = useState(options);
+    // Asegurar que options sea siempre un array
+    const safeOptions = Array.isArray(options) ? options : [];
+    const [filteredOptions, setFilteredOptions] = useState(safeOptions);
     const [selectedOption, setSelectedOption] = useState(null);
     const inputRef = useRef(null);
     const dropdownRef = useRef(null);
 
-    // Filtrar opciones basado en el término de búsqueda
+    // Filtrar opciones basado en el término de búsqueda y actualizar cuando cambian las opciones
     useEffect(() => {
+        const currentOptions = Array.isArray(options) ? options : [];
+        
         if (!searchTerm.trim()) {
-            setFilteredOptions(options);
+            setFilteredOptions(currentOptions);
         } else {
-            const filtered = options.filter(option =>
-                searchKeys.some(key => {
+            const filtered = currentOptions.filter(option => {
+                if (!option) return false;
+                return searchKeys.some(key => {
                     const fieldValue = option[key];
                     return fieldValue && fieldValue.toString().toLowerCase().includes(searchTerm.toLowerCase());
-                })
-            );
+                });
+            });
             setFilteredOptions(filtered);
         }
     }, [searchTerm, options, searchKeys]);
 
     // Actualizar opción seleccionada cuando cambia el value
     useEffect(() => {
-        if (value) {
-            const option = options.find(opt => (
-                opt.id === value ||
-                opt.id_cliente === value ||
-                opt.id_producto === value ||
-                opt.id_servicio === value
-            ));
+        const currentOptions = Array.isArray(options) ? options : [];
+        
+        if (value && currentOptions.length > 0) {
+            // Convertir value a número y string para comparación flexible
+            const valueNum = Number(value);
+            const valueStr = String(value);
+            
+            const option = currentOptions.find(opt => {
+                if (!opt) return false;
+                // Comparar tanto como número como string para manejar ambos casos
+                return (
+                    opt.id === value || opt.id === valueNum || String(opt.id) === valueStr ||
+                    opt.id_cliente === value || opt.id_cliente === valueNum || String(opt.id_cliente) === valueStr ||
+                    opt.id_producto === value || opt.id_producto === valueNum || String(opt.id_producto) === valueStr ||
+                    opt.id_servicio === value || opt.id_servicio === valueNum || String(opt.id_servicio) === valueStr
+                );
+            });
             setSelectedOption(option || null);
         } else {
             setSelectedOption(null);

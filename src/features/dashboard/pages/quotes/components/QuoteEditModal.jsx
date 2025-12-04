@@ -4,6 +4,7 @@ import SearchSelector from '../../products_sale/components/SearchSelector';
 import { quotesService } from '../services/quotesService';
 import { projectsService } from '../../../../../services';
 import { showError, showSuccess } from '../../../../../shared/utils/alerts';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -40,6 +41,68 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
   const [observaciones, setObservaciones] = useState('');
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState({});
+
+  // Hook para el lector de código de barras
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Verificar que products esté disponible y no esté vacío
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        setErrores(prev => ({ 
+          ...prev, 
+          producto: 'No hay productos disponibles para buscar' 
+        }));
+        return;
+      }
+
+      // Limpiar errores previos
+      setErrores(prev => ({ ...prev, producto: null }));
+      
+      // Buscar producto por código de barras
+      // Normalizar el código escaneado
+      const codigoNormalizado = scannedCode.trim();
+      
+      const productoEncontrado = products.find(p => {
+        if (!p || !p.codigo_barra) return false;
+        
+        // Normalizar el código del producto (puede ser string, null, o "n/a")
+        const codigoProducto = p.codigo_barra.toString().trim().toLowerCase();
+        
+        // Ignorar valores vacíos o "n/a"
+        if (!codigoProducto || codigoProducto === 'n/a' || codigoProducto === 'null') {
+          return false;
+        }
+        
+        // Comparar códigos normalizados
+        return codigoProducto === codigoNormalizado.toLowerCase();
+      });
+
+      if (productoEncontrado) {
+        // Seleccionar el producto automáticamente en el SearchSelector
+        // Asegurar que el ID sea un número para la comparación correcta
+        const productId = productoEncontrado.id_producto || productoEncontrado.id;
+        if (productId) {
+          setProductoSeleccionado(String(productId));
+          setErrores(prev => ({ ...prev, producto: null }));
+        } else {
+          setErrores(prev => ({ 
+            ...prev, 
+            producto: 'El producto encontrado no tiene un ID válido' 
+          }));
+        }
+      } else {
+        // Solo mostrar error en el SearchSelector, no duplicar
+        setErrores(prev => ({ 
+          ...prev, 
+          producto: `No se encontró un producto con el código: ${codigoNormalizado}` 
+        }));
+      }
+    },
+    {
+      minLength: 3,
+      scanDuration: 100,
+      enabled: isOpen
+    }
+  );
 
   const handleKeyDown = (e) => {
     // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos

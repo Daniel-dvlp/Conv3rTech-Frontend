@@ -3,6 +3,7 @@ import { FaTimes, FaTrash, FaPlus, FaReply, FaSpinner } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
 import { featuresService } from '../services/productsService';
 import cloudinaryService from '../../../../../services/cloudinaryService';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -55,6 +56,52 @@ const ProductEditModal = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // Hook para el lector de código de barras
+  // Solo activo cuando el modal está abierto
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Callback que se ejecuta cuando se escanea un código
+      setProductData((prev) => ({
+        ...prev,
+        codigo_barra: scannedCode
+      }));
+      // Opcional: mostrar feedback visual
+      console.log('Código escaneado:', scannedCode);
+    },
+    {
+      minLength: 3,        // Longitud mínima del código
+      scanDuration: 100,  // Tiempo máximo entre caracteres (ms)
+      enabled: isOpen     // Solo activo cuando el modal está abierto
+    }
+  );
+
+  // Función para formatear número a formato con puntos y comas
+  const formatPrecio = (value) => {
+    if (!value || value === '') return '';
+    // Si ya está formateado, retornarlo
+    if (typeof value === 'string' && value.includes('.') && !value.includes(',')) {
+      return value;
+    }
+    // Convertir número a string y formatear
+    const numValue = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numValue)) return '';
+    
+    const parts = numValue.toString().split('.');
+    const integerPart = parts[0];
+    const decimalPart = parts[1] || '';
+    
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return decimalPart ? `${formattedInteger},${decimalPart.substring(0, 2)}` : formattedInteger;
+  };
+
+  // Función para parsear precio formateado a número
+  const parsePrecio = (formattedValue) => {
+    if (!formattedValue || formattedValue === '') return '';
+    // Quitar puntos y cambiar coma por punto
+    const cleanValue = formattedValue.replace(/\./g, '').replace(',', '.');
+    return cleanValue;
+  };
+
   const validateField = (name, value) => {
     const newErrors = { ...errors };
     // Limpiar errores del servidor cuando el usuario modifica campos
@@ -78,8 +125,14 @@ const ProductEditModal = ({
         else delete newErrors.unidad_medida;
         break;
       case 'precio':
-        if (!value || value <= 0) newErrors.precio = 'Ingresa un precio válido mayor a 0';
-        else delete newErrors.precio;
+        // Parsear precio formateado para validación
+        const precioLimpioVal = value ? parsePrecio(value) : '';
+        const precioNumericoVal = precioLimpioVal ? parseFloat(precioLimpioVal) : 0;
+        if (!value || precioNumericoVal <= 0 || isNaN(precioNumericoVal)) {
+          newErrors.precio = 'Ingresa un precio válido mayor a 0';
+        } else {
+          delete newErrors.precio;
+        }
         break;
       case 'garantia':
         if (!value || ![6, 12, 24, 36].includes(Number(value))) {
@@ -96,7 +149,11 @@ const ProductEditModal = ({
 
   useEffect(() => {
     if (productToEdit) {
-      setProductData(productToEdit);
+      const productDataFormatted = {
+        ...productToEdit,
+        precio: formatPrecio(productToEdit.precio) // Formatear precio al cargar
+      };
+      setProductData(productDataFormatted);
       setErrors({});
     }
   }, [productToEdit]);
@@ -129,11 +186,62 @@ const ProductEditModal = ({
     }
   };
 
+  const handlePrecioChange = (e) => {
+    // 1. Obtener el valor limpio (sin símbolos ni puntos, solo números y comas)
+    let rawValue = e.target.value.replace(/[^0-9,]/g, '');
+
+    // 2. Evitar múltiples comas: solo permitir la primera
+    const parts = rawValue.split(',');
+    if (parts.length > 2) {
+      rawValue = parts[0] + ',' + parts.slice(1).join('');
+    }
+
+    if (rawValue === '') {
+      setProductData((prev) => ({
+        ...prev,
+        precio: '',
+      }));
+      validateField('precio', '');
+      return;
+    }
+
+    // 3. Separar enteros y decimales
+    const partsFinal = rawValue.split(',');
+    let integerPart = partsFinal[0];
+    // Limitar decimales a 2 dígitos
+    const decimalPart = partsFinal.length > 1 ? ',' + partsFinal[1].substring(0, 2) : '';
+
+    // 4. Formatear la parte entera con puntos
+    // Eliminar ceros a la izquierda si no es solo "0"
+    if (integerPart.length > 1 && integerPart.startsWith('0')) {
+      integerPart = integerPart.replace(/^0+/, '');
+    }
+    if (integerPart === '') integerPart = '0';
+
+    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    const formattedValue = formattedInteger + decimalPart;
+
+    setProductData((prev) => ({
+      ...prev,
+      precio: formattedValue,
+    }));
+
+    // Validar con el valor parseado
+    const parsedValue = parsePrecio(formattedValue);
+    validateField('precio', parsedValue);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
 
     // No permitir cambios en stock por seguridad
     if (name === 'stock') {
+      return;
+    }
+
+    // Si es precio, usar el handler especial
+    if (name === 'precio') {
+      handlePrecioChange(e);
       return;
     }
 
@@ -326,12 +434,16 @@ const ProductEditModal = ({
         }
       }
 
+      // Parsear precio formateado a número
+      const precioLimpio = productData.precio ? parsePrecio(productData.precio) : '';
+      const precioNumerico = precioLimpio ? parseFloat(precioLimpio) : 0;
+
       const updatedProduct = {
         ...productData,
         id_categoria: Number(productData.id_categoria),
-        precio: Number(productData.precio),
+        precio: precioNumerico,
         garantia: Number(productData.garantia),
-        codigo_barra: productData.codigo_barra?.trim() || null,
+        codigo_barra: productData.codigo_barra?.trim() || 'n/a',
         fichas_tecnicas: fichasProcesadas,
         estado: !!productData.estado,
         fotos: Array.isArray(productData.fotos) ? productData.fotos : []
@@ -489,15 +601,19 @@ const ProductEditModal = ({
               {/* Precio */}
               <div>
                 <FormLabel htmlFor="precio"><span className="text-red-500">*</span> Precio:</FormLabel>
-                <input
-                  type="number"
-                  id="precio"
-                  name="precio"
-                  value={productData.precio}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
-                  className={`${inputBaseStyle} ${errors.precio ? 'border-red-500' : ''}`}
-                />
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-semibold text-sm">$</span>
+                  <input
+                    type="text"
+                    id="precio"
+                    name="precio"
+                    value={productData.precio}
+                    onChange={handlePrecioChange}
+                    onKeyDown={handleKeyDown}
+                    className={`${inputBaseStyle} pl-6 ${errors.precio ? 'border-red-500' : ''}`}
+                    placeholder="0,00"
+                  />
+                </div>
                 {errors.precio && (
                   <p className="text-red-500 text-sm mt-1">{errors.precio}</p>
                 )}

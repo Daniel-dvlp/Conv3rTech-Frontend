@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FaArrowLeft, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
 import { usersService } from '../../../../../services';
+import { showToast } from '../../../../../shared/utils/alertas';
 
 const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
     const isEditing = Boolean(initialData?.id);
@@ -85,24 +86,33 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
 
     const handleSubmit = () => {
         if (!formData.usuarioIds.length) {
-            alert('Seleccione al menos un usuario');
+            showToast('Seleccione al menos un usuario', 'warning');
             return;
         }
         if (!formData.titulo) {
-            alert('Ingrese un título');
+            showToast('Ingrese un título', 'warning');
             return;
         }
         if (!formData.fechaInicio) {
-            alert('Ingrese la fecha de inicio');
+            showToast('Ingrese la fecha de inicio', 'warning');
+            return;
+        }
+        if (formData.fechaFin && formData.fechaFin < formData.fechaInicio) {
+            showToast('La fecha fin no puede ser anterior a la fecha inicio', 'error');
+            return;
+        }
+        const isHexColor = /^#[0-9A-F]{6}$/i.test(formData.color);
+        if (!isHexColor) {
+            showToast('El color debe tener formato #RRGGBB', 'error');
             return;
         }
         if (!formData.allDay) {
             if (!formData.horaInicio || !formData.horaFin) {
-                alert('Defina horario de inicio y fin');
+                showToast('Defina horario de inicio y fin', 'warning');
                 return;
             }
             if (formData.horaInicio >= formData.horaFin) {
-                alert('La hora fin debe ser mayor a la hora inicio');
+                showToast('La hora fin debe ser mayor a la hora inicio', 'error');
                 return;
             }
         }

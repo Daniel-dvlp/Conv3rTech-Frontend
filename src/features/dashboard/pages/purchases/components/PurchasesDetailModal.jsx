@@ -88,52 +88,58 @@ const PurchaseDetailModal = ({ compra, onClose }) => {
             </h3>
             {compra.productos?.length > 0 ? (
               <div className="overflow-x-auto">
-                <table className="w-full text-sm text-left border">
-                  <thead className="bg-gray-100 text-gray-700">
+                <table className="w-full text-sm text-center border border-gray-200">
+                  <thead className="bg-conv3r-dark text-white">
                     <tr>
-                      <th className="px-3 py-2 border">Producto</th>
-                      <th className="px-3 py-2 border">Modelo</th>
-                      <th className="px-3 py-2 border">Unidad</th>
-                      <th className="px-3 py-2 border text-right">Cantidad</th> {/* Alineado a la derecha */}
-                      <th className="px-3 py-2 border text-right">Precio Unitario</th> {/* Alineado a la derecha */}
-                      <th className="px-3 py-2 border text-right">Total</th> {/* Alineado a la derecha */}
+                      <th className="p-3 font-semibold">Producto</th>
+                      <th className="font-semibold">Modelo</th>
+                      <th className="font-semibold">Unidad</th>
+                      <th className="font-semibold">Cantidad</th>
+                      <th className="font-semibold">Precio Unit.</th>
+                      <th className="font-semibold">Subtotal</th>
                     </tr>
                   </thead>
-                  <tbody>
+                  <tbody className="bg-white text-gray-700">
                     {compra.productos.map((item, index) => (
-                      <tr key={index} className="border-t">
-                        <td className="px-3 py-2 border">{item.nombre || 'Desconocido'}</td>
-                        <td className="px-3 py-2 border">{item.modelo || 'N/A'}</td>
-                        <td className="px-3 py-2 border">{item.unidadDeMedida || 'N/A'}</td>
-                        <td className="px-3 py-2 border text-right">{item.cantidad}</td> {/* Alineado a la derecha */}
-                        <td className="px-3 py-2 border text-right"> {/* Alineado a la derecha */}
+                      <tr key={index} className="border-t border-gray-200">
+                        <td className="p-3">{item.nombre || 'Desconocido'}</td>
+                        <td className="p-3">{item.modelo || 'N/A'}</td>
+                        <td className="p-3">{item.unidadDeMedida || 'N/A'}</td>
+                        <td className="p-3">{item.cantidad}</td>
+                        <td className="p-3">
                           ${item.precioUnitarioCompra?.toLocaleString('es-CO') || '0'}
                         </td>
-                        <td className="px-3 py-2 border text-right"> {/* Alineado a la derecha */}
+                        <td className="p-3">
                           ${(item.cantidad * (item.precioUnitarioCompra || 0)).toLocaleString('es-CO')}
                         </td>
                       </tr>
                     ))}
                   </tbody>
+                  <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                    <tr>
+                      <td colSpan="5" className="text-right font-semibold px-4 py-2">Subtotal:</td>
+                      <td className="font-bold px-4 py-2 text-conv3r-dark">
+                        ${compra.subtotal?.toLocaleString('es-CO') || '0'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="5" className="text-right font-semibold px-4 py-2">IVA (19%):</td>
+                      <td className="font-bold px-4 py-2 text-conv3r-dark">
+                        ${compra.iva?.toLocaleString('es-CO') || '0'}
+                      </td>
+                    </tr>
+                    <tr>
+                      <td colSpan="5" className="text-right font-semibold px-4 py-2">Total:</td>
+                      <td className="font-bold text-conv3r-gold text-lg px-4 py-2">
+                        ${compra.total?.toLocaleString('es-CO') || '0'}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             ) : (
-              <p className="text-gray-600 italic">No hay productos registrados.</p>
+              <p className="text-sm text-gray-500 italic">No hay productos registrados.</p>
             )}
-          </div>
-
-          {/* Totales */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-3">
-            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3">
-              <FaMoneyBillWave className="text-gray-500" />
-              <span>Totales</span>
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {/* Usando alignRight para los valores numéricos */}
-              <InfoRow icon={<></>} label="Subtotal" alignRight>${compra.subtotal?.toLocaleString('es-CO') || '0'}</InfoRow>
-              <InfoRow icon={<></>} label="IVA" alignRight>${compra.iva?.toLocaleString('es-CO') || '0'}</InfoRow>
-              <InfoRow icon={<></>} label="Total" alignRight>${compra.total?.toLocaleString('es-CO') || '0'}</InfoRow>
-            </div>
           </div>
 
           {/* Observaciones (mostrar siempre la nueva columna aunque esté vacía) */}
