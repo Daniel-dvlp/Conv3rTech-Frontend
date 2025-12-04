@@ -194,6 +194,10 @@ const NewPurchasesModal = ({
         break;
       case 'fechaRegistro':
         if (!value) error = 'Fecha de registro es obligatoria.';
+        else {
+          const today = new Date().toISOString().slice(0, 10);
+          if (value > today) error = 'La fecha de registro no puede ser mayor a la fecha actual.';
+        }
         break;
       case 'numeroRecibo':
         if (!value || value.trim() === '') {
@@ -547,6 +551,7 @@ const NewPurchasesModal = ({
                   }`}
                   required
                   ref={fechaRegistroRef}
+                  max={new Date().toISOString().slice(0, 10)}
                 />
                 {errors.fechaRegistro && (
                   <p className="text-red-500 text-sm mt-1">{errors.fechaRegistro}</p>
