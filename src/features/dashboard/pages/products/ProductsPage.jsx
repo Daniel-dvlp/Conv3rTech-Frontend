@@ -107,8 +107,13 @@ const ProductsPage = () => {
   const handleUpdateProduct = async (updatedProduct) => {
     try {
       const saved = await productsService.updateProduct(updatedProduct.id_producto, updatedProduct);
+      
+      // Ajuste: a veces updateProduct devuelve directamente el producto o un objeto { data: ... }
+      // Si el servicio devuelve { success: true, data: ... } hay que extraer
+      const savedData = saved.data || saved;
+      
       setProducts((prev) =>
-        prev.map((p) => (p.id_producto === saved.id_producto ? saved : p))
+        prev.map((p) => (p.id_producto === savedData.id_producto ? savedData : p))
       );
       setIsEditing(false);
       setSelectedProduct(null);
@@ -140,7 +145,17 @@ const ProductsPage = () => {
       showSuccess('Producto eliminado exitosamente');
     } catch (err) {
       console.error('Error al eliminar producto:', err);
-      showError('No se pudo eliminar el producto');
+      let errorMessage = 'No se pudo eliminar el producto';
+      
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        errorMessage = err.response.data.errors.map(e => e.msg).join(', ');
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      showError(errorMessage);
     }
   };
 

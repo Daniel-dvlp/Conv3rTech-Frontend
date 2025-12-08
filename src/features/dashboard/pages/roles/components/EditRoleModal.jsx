@@ -216,15 +216,31 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
     try {
       // Convertir permisos a formato esperado por la función updateRole
       const formattedPermissions = {};
+      
       Object.keys(permissions).forEach((key) => {
         const selectedPrivileges = Object.keys(permissions[key]).filter(
           (priv) => permissions[key][priv]
         );
+        
         if (selectedPrivileges.length > 0) {
-          // Enviamos solo la parte final del key (ej: "Proveedores" en vez de "Compras.Proveedores")
-          // Esto depende de cómo el backend espera recibir los permisos. 
-          // Si el backend usa "flat" names, usamos split.
-          const permissionName = key.includes('.') ? key.split('.').pop() : key;
+          // Buscar la key correcta en la configuración (mapeo a DB)
+          let permissionName = key;
+          
+          if (key.includes('.')) {
+            const [modName, subName] = key.split('.');
+            const modConfig = MODULES_CONFIG.find(m => m.name === modName);
+            if (modConfig && modConfig.submodules) {
+              const subConfig = modConfig.submodules.find(s => s.name === subName);
+              // Usar la key configurada (ej: "servicios") o el nombre como fallback
+              permissionName = subConfig?.key || subName;
+            } else {
+              permissionName = subName;
+            }
+          } else {
+            const modConfig = MODULES_CONFIG.find(m => m.name === key);
+            permissionName = modConfig?.key || key;
+          }
+          
           formattedPermissions[permissionName] = selectedPrivileges;
         }
       });

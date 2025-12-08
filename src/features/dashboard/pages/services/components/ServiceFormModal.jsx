@@ -92,7 +92,9 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
   const loadCategories = async () => {
     try {
       const response = await serviceCategoryService.getAllCategories();
-      const categoriesData = response?.data || response || [];
+      let categoriesData = response?.data || response || [];
+      // Filtrar solo categorías activas
+      categoriesData = categoriesData.filter(cat => (cat.estado || '').toLowerCase() === 'activo');
       setCategories(categoriesData);
     } catch (error) {
       console.error('Error al cargar categorías:', error);

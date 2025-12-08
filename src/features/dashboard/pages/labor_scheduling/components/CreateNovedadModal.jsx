@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FaArrowLeft, FaArrowRight, FaCheck, FaTimes } from 'react-icons/fa';
-import { usersService } from '../../../../../services';
+import usersService from '../../../../../services/usersService';
+import laborSchedulingService from '../../../../../services/laborSchedulingService';
 import { showToast } from '../../../../../shared/utils/alertas';
 
-const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
+const CreateNovedadModal = ({ isOpen, onClose, onSave, onSuccess, initialData, initialDate }) => {
     const isEditing = Boolean(initialData?.id);
     const [step, setStep] = useState(isEditing ? 2 : 1);
     const [loading, setLoading] = useState(false);
@@ -27,7 +28,7 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
         initializeForm();
         loadUsers();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOpen, initialData]);
+    }, [isOpen, initialData, initialDate]);
 
     const initializeForm = () => {
         if (isEditing && initialData) {
@@ -39,8 +40,8 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                 fechaInicio: initialData.fechaInicio || new Date().toISOString().split('T')[0],
                 fechaFin: initialData.fechaFin || '',
                 allDay: !!initialData.allDay,
-                horaInicio: initialData.horaInicio || '09:00',
-                horaFin: initialData.horaFin || '17:00',
+                horaInicio: initialData.horaInicio ? initialData.horaInicio.substring(0, 5) : '09:00',
+                horaFin: initialData.horaFin ? initialData.horaFin.substring(0, 5) : '17:00',
             });
         } else {
             setFormData({
@@ -48,7 +49,7 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                 titulo: '',
                 descripcion: '',
                 color: '#10B981',
-                fechaInicio: new Date().toISOString().split('T')[0],
+                fechaInicio: initialDate ? initialDate.split('T')[0] : new Date().toISOString().split('T')[0],
                 fechaFin: '',
                 allDay: false,
                 horaInicio: '09:00',
@@ -66,7 +67,16 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                 : Array.isArray(response?.data)
                     ? response.data
                     : response?.users || [];
-            setUsers(list);
+            
+            const activeUsers = list.filter(user => user.estado_usuario === 'Activo');
+            
+            // Normalize IDs
+            const normalized = activeUsers.map(u => ({
+                ...u,
+                id: u.id_usuario ?? u.id ?? u.idUsuario
+            }));
+            
+            setUsers(normalized);
         } catch (error) {
             console.error('Error loading users', error);
         } finally {
@@ -84,7 +94,7 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
         });
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!formData.usuarioIds.length) {
             showToast('Seleccione al menos un usuario', 'warning');
             return;
@@ -128,7 +138,27 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
             horaInicio: formData.allDay ? null : formData.horaInicio,
             horaFin: formData.allDay ? null : formData.horaFin,
         };
-        onSave(payload);
+
+        if (onSave) {
+            onSave(payload);
+        } else {
+            try {
+                setLoading(true);
+                if (isEditing) {
+                    await laborSchedulingService.updateNovedad(initialData.id, payload);
+                    showToast('Novedad actualizada correctamente', 'success');
+                } else {
+                    await laborSchedulingService.createNovedad(payload);
+                    showToast('Novedad creada correctamente', 'success');
+                }
+                if (onSuccess) onSuccess();
+            } catch (error) {
+                console.error('Error saving novedad', error);
+                showToast('Error al guardar la novedad', 'error');
+            } finally {
+                setLoading(false);
+            }
+        }
     };
 
     const filteredUsers = useMemo(() => {
@@ -181,14 +211,14 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                                                     disabled={loading}
                                                     onChange={(e) => {
                                                         if (e.target.checked) {
-                                                            setFormData((prev) => ({ ...prev, usuarioIds: filteredUsers.map((u) => u.id_usuario) }));
+                                                            setFormData((prev) => ({ ...prev, usuarioIds: filteredUsers.map((u) => u.id) }));
                                                         } else {
                                                             setFormData((prev) => ({ ...prev, usuarioIds: [] }));
                                                         }
                                                     }}
                                                     checked={
                                                         filteredUsers.length > 0 &&
-                                                        filteredUsers.every((u) => formData.usuarioIds.includes(u.id_usuario))
+                                                        filteredUsers.every((u) => formData.usuarioIds.includes(u.id))
                                                     }
                                                     className="text-green-600 focus:ring-green-500"
                                                 />
@@ -200,48 +230,33 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                                     <tbody className="divide-y divide-gray-100">
                                         {filteredUsers.map((user) => (
                                             <tr
-                                                key={user.id_usuario}
-                                                className={`hover:bg-green-50 cursor-pointer ${formData.usuarioIds.includes(user.id_usuario) ? 'bg-green-50' : ''
-                                                    }`}
-                                                onClick={() => handleUserToggle(user.id_usuario)}
+                                                key={user.id}
+                                                className="hover:bg-gray-50 transition-colors cursor-pointer"
+                                                onClick={() => handleUserToggle(user.id)}
                                             >
-                                                <td className="px-4 py-3">
+                                                <td className="px-4 py-2">
                                                     <input
                                                         type="checkbox"
-                                                        readOnly
-                                                        checked={formData.usuarioIds.includes(user.id_usuario)}
-                                                        className="rounded text-green-600 focus:ring-green-500"
+                                                        checked={formData.usuarioIds.includes(user.id)}
+                                                        onChange={() => handleUserToggle(user.id)}
+                                                        className="text-green-600 focus:ring-green-500"
+                                                        onClick={(e) => e.stopPropagation()}
                                                     />
                                                 </td>
-                                                <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                                                    {user.nombre} {user.apellido}
-                                                </td>
-                                                <td className="px-4 py-3 text-sm text-gray-500">{user.documento || '—'}</td>
+                                                <td className="px-4 py-2 text-sm text-gray-700">{user.nombre} {user.apellido}</td>
+                                                <td className="px-4 py-2 text-sm text-gray-500">{user.documento}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
                             </div>
-                            <div className="text-right text-sm text-gray-500">
-                                {formData.usuarioIds.length} usuario(s) seleccionado(s)
-                            </div>
                         </div>
                     )}
 
-                    {isEditing && step === 1 && (
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-semibold text-gray-700">Empleado asignado</h3>
-                            <div className="p-4 border border-green-100 rounded-lg bg-green-50 text-sm text-gray-700">
-                                {initialData?.usuario
-                                    ? `${initialData.usuario.nombre} ${initialData.usuario.apellido} - ${initialData.usuario.documento || 'Sin documento'}`
-                                    : 'Usuario no disponible'}
-                            </div>
-                        </div>
-                    )}
-
-                    {step === 2 && (
+                    {(isEditing || step === 2) && (
                         <div className="space-y-6">
-                            <h3 className="text-lg font-semibold text-gray-700">2. Información de la Novedad</h3>
+                            <h3 className="text-lg font-semibold text-gray-700">2. Detalles de la Novedad</h3>
+                            
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-4">
                                     <div>
@@ -251,13 +266,13 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                                             value={formData.titulo}
                                             onChange={(e) => setFormData((prev) => ({ ...prev, titulo: e.target.value }))}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
-                                            placeholder="Ej. Permiso médico"
+                                            placeholder="Ej: Permiso médico, Vacaciones..."
                                         />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
                                         <div className="flex gap-2 flex-wrap">
-                                            {['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#6366F1'].map((c) => (
+                                            {['#10B981', '#F59E0B', '#EF4444', '#3B82F6', '#8B5CF6', '#EC4899', '#6366F1'].map((c) => (
                                                 <button
                                                     key={c}
                                                     type="button"
@@ -272,7 +287,7 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                                 </div>
                                 <div className="space-y-4">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de inicio</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
                                         <input
                                             type="date"
                                             value={formData.fechaInicio}
@@ -281,50 +296,54 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha fin (opcional)</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin (Opcional)</label>
                                         <input
                                             type="date"
-                                            value={formData.fechaFin || ''}
+                                            value={formData.fechaFin}
+                                            min={formData.fechaInicio}
                                             onChange={(e) => setFormData((prev) => ({ ...prev, fechaFin: e.target.value }))}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                                         />
                                     </div>
                                 </div>
                             </div>
+
                             <div className="flex items-center gap-2">
                                 <input
                                     type="checkbox"
                                     id="allDay"
                                     checked={formData.allDay}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, allDay: e.target.checked }))}
-                                    className="rounded text-green-600 focus:ring-green-500"
+                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                                 />
-                                <label htmlFor="allDay" className="text-sm text-gray-700">Todo el día</label>
+                                <label htmlFor="allDay" className="text-sm font-medium text-gray-700">Todo el día</label>
                             </div>
+
                             {!formData.allDay && (
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs text-gray-500">Hora inicio</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Hora Inicio</label>
                                         <input
                                             type="time"
                                             value={formData.horaInicio}
                                             onChange={(e) => setFormData((prev) => ({ ...prev, horaInicio: e.target.value }))}
-                                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-xs text-gray-500">Hora fin</label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Hora Fin</label>
                                         <input
                                             type="time"
                                             value={formData.horaFin}
                                             onChange={(e) => setFormData((prev) => ({ ...prev, horaFin: e.target.value }))}
-                                            className="w-full px-2 py-1 border border-gray-300 rounded"
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none"
                                         />
                                     </div>
                                 </div>
                             )}
+
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción / Observaciones</label>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                                 <textarea
                                     value={formData.descripcion}
                                     onChange={(e) => setFormData((prev) => ({ ...prev, descripcion: e.target.value }))}
@@ -337,7 +356,7 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                 </div>
 
                 <div className="bg-gray-50 px-6 py-4 border-t border-gray-200 flex justify-between">
-                    {step > 1 ? (
+                    {step > 1 && !isEditing ? (
                         <button
                             onClick={() => setStep(step - 1)}
                             className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors font-medium"
@@ -348,11 +367,11 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                         <div />
                     )}
 
-                    {step < 2 ? (
+                    {!isEditing && step === 1 ? (
                         <button
                             onClick={() => {
-                                if (step === 1 && !formData.usuarioIds.length) {
-                                    alert('Seleccione al menos un usuario');
+                                if (!formData.usuarioIds.length) {
+                                    showToast('Seleccione al menos un usuario', 'warning');
                                     return;
                                 }
                                 setStep(step + 1);
@@ -364,9 +383,10 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
                     ) : (
                         <button
                             onClick={handleSubmit}
-                            className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-md"
+                            disabled={loading}
+                            className={`flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium shadow-md ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                            <FaCheck /> Guardar Novedad
+                            {loading ? 'Guardando...' : <><FaCheck /> Guardar Novedad</>}
                         </button>
                     )}
                 </div>
@@ -376,4 +396,3 @@ const CreateNovedadModal = ({ isOpen, onClose, onSave, initialData }) => {
 };
 
 export default CreateNovedadModal;
-

@@ -8,7 +8,7 @@ import {
     FaTrash
 } from 'react-icons/fa';
 import laborSchedulingService from '../../../../../services/laborSchedulingService';
-import { usersService } from '../../../../../services';
+import usersService from '../../../../../services/usersService';
 
 const DEFAULT_DAYS = {
     lunes: [],
@@ -22,7 +22,7 @@ const DEFAULT_DAYS = {
 
 const dayLabels = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
 
-const NewScheduleModal = ({ isOpen, onClose, onSave, initialData }) => {
+const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) => {
     const isEditing = Boolean(initialData?.id);
     const [step, setStep] = useState(isEditing ? 2 : 1);
     const [loading, setLoading] = useState(false);
@@ -83,7 +83,9 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, initialData }) => {
             else if (Array.isArray(response?.data)) list = response.data;
             else if (Array.isArray(response?.users)) list = response.users;
 
-            const normalized = (list || []).map((user) => ({
+            const activeUsers = (list || []).filter(user => user.estado_usuario === 'Activo');
+
+            const normalized = activeUsers.map((user) => ({
                 id: user.id ?? user.id_usuario,
                 nombre: user.nombre,
                 apellido: user.apellido,
@@ -137,16 +139,14 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, initialData }) => {
         });
     };
 
-    const handleSubmit = () => {
-        if (!formData.usuarioIds.length) {
-            alert('Seleccione al menos un usuario');
-            return;
-        }
+    const handleSubmit = async () => {
         if (!formData.titulo) {
-            alert('Ingrese un título');
+            alert('El título es obligatorio');
             return;
         }
 
+        console.log('[NewScheduleModal] Submitting with formData:', formData);
+        
         const payload = {
             usuarioIds: formData.usuarioIds,
             titulo: formData.titulo,
@@ -155,7 +155,24 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, initialData }) => {
             fechaInicio: formData.fechaInicio,
             dias: formData.dias,
         };
-        onSave(payload);
+        
+        console.log('[NewScheduleModal] Final payload:', payload);
+
+        if (onSave) {
+            onSave(payload);
+        } else {
+            // Default submit logic if onSave is not provided (or use onSuccess)
+            try {
+                setLoading(true);
+                await laborSchedulingService.createRecurringSchedule(payload);
+                if (onSuccess) onSuccess();
+            } catch (error) {
+                console.error('Error creating schedule', error);
+                alert('Error al crear la programación');
+            } finally {
+                setLoading(false);
+            }
+        }
     };
 
     const filteredUsers = useMemo(() => {
@@ -301,6 +318,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, initialData }) => {
                                         <input
                                             type="date"
                                             value={formData.fechaInicio}
+                                            min={new Date().toISOString().split('T')[0]}
                                             onChange={(e) => setFormData((prev) => ({ ...prev, fechaInicio: e.target.value }))}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         />

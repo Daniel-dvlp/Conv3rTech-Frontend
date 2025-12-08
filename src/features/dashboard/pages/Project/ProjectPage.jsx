@@ -20,7 +20,11 @@ const ITEMS_PER_PAGE = 5;
 
 const ProjectPage = () => {
   const { checkManage } = usePermissions();
-  const { hasPermission, hasPrivilege } = useAuth();
+  const { hasPermission, hasPrivilege, user } = useAuth();
+  
+  // Verificar si es Técnico
+  const isTecnico = user?.id_rol === 2 || user?.rol?.toLowerCase().includes('tecnico');
+  const canCreate = !isTecnico && (hasPrivilege('Proyectos', 'Crear') || hasPrivilege('proyectos', 'Crear'));
   // --- TODA TU LÓGICA DE ESTADO Y FUNCIONES PERMANECE EXACTAMENTE IGUAL ---
   const [loading, setLoading] = useState(true);
   const [allProjects, setAllProjects] = useState([]);
@@ -270,6 +274,14 @@ const ProjectPage = () => {
             </button>
           )}
 
+          {canCreate && (
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-2 bg-conv3r-gold hover:bg-yellow-500 text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm"
+            >
+              <FaPlus /> Nuevo Proyecto
+            </button>
+          )}
         </div>
       </div>
 

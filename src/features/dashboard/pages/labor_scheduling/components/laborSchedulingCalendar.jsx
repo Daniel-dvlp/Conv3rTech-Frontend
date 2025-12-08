@@ -4,59 +4,74 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 
-const LaborSchedulingCalendar = ({ events, onSelect, onEventClick, onDatesSet, calendarRef }) => {
+const LaborSchedulingCalendar = ({ events, onSelect, onEventClick, onEventDrop, onDatesSet, calendarRef }) => {
 
   // Custom event content renderer
   const renderEventContent = (eventInfo) => {
-    const { event, view } = eventInfo;
-    const isMonthView = view.type === 'dayGridMonth';
-    const isAllDay = event.allDay || event.extendedProps?.originalAllDay;
-    const backgroundColor = event.backgroundColor;
+    try {
+        const { event, view } = eventInfo;
+        const isMonthView = view.type === 'dayGridMonth';
+        const isAllDay = event.allDay;
+        const backgroundColor = event.backgroundColor;
+        
+        // Month view rendering (Chips)
+        if (isMonthView) {
+          return (
+            <div
+              className="w-full h-full px-2 py-0.5 rounded text-xs truncate font-medium text-white shadow-sm cursor-pointer"
+              style={{ backgroundColor: backgroundColor, borderLeft: `3px solid rgba(0,0,0,0.2)` }}
+              title={event.title}
+            >
+              {event.title}
+            </div>
+          );
+        }
 
-    // Month view rendering (Chips)
-    if (isMonthView) {
-      return (
-        <div
-          className="w-full h-full px-2 py-0.5 rounded text-xs truncate font-medium text-white shadow-sm"
-          style={{ backgroundColor: backgroundColor, borderLeft: `3px solid rgba(0,0,0,0.2)` }}
-        >
-          {event.title}
-        </div>
-      );
+        // All Day rendering (Pills)
+        if (isAllDay) {
+          return (
+            <div
+              className="w-full h-full px-2 py-1 rounded text-xs font-semibold text-white flex items-center gap-1 cursor-pointer"
+              style={{ backgroundColor, borderLeft: '4px solid rgba(0,0,0,0.15)' }}
+              title={event.title}
+            >
+              {event.title}
+            </div>
+          );
+        }
+
+        // Time view rendering (Cards)
+        return (
+          <div
+            className="w-full h-full p-1 rounded overflow-hidden flex flex-col border-l-4 shadow-sm cursor-pointer hover:opacity-90 transition-opacity"
+            style={{
+              backgroundColor: `${backgroundColor}20`, // Light background (20% opacity)
+              borderColor: backgroundColor,
+              color: '#1f2937'
+            }}
+            title={event.title}
+          >
+            <div className="text-xs font-semibold truncate" style={{ color: backgroundColor }}>
+              {event.title}
+            </div>
+            <div className="text-xs text-gray-500 truncate">
+              {event.timeText}
+            </div>
+            {event.extendedProps?.meta?.usuario && (
+                <div className="text-[10px] text-gray-400 mt-auto truncate">
+                    {event.extendedProps.meta.usuario.nombre} {event.extendedProps.meta.usuario.apellido}
+                </div>
+            )}
+          </div>
+        );
+    } catch (error) {
+        console.error('Error rendering event content', error);
+        return <div>{eventInfo.event.title}</div>;
     }
-
-    if (isAllDay) {
-      return (
-        <div
-          className="w-full h-full px-2 py-1 rounded text-xs font-semibold text-white flex items-center gap-1 allday-pill"
-          style={{ backgroundColor, borderLeft: '4px solid rgba(0,0,0,0.15)' }}
-        >
-          {event.title}
-        </div>
-      );
-    }
-
-    // Time view rendering (Cards)
-    return (
-      <div
-        className="w-full h-full p-1 rounded overflow-hidden flex flex-col border-l-4 shadow-sm"
-        style={{
-          backgroundColor: `${backgroundColor}20`, // Light background
-          borderColor: backgroundColor,
-          color: '#1f2937'
-        }}
-      >
-        <div className="text-xs font-semibold truncate" style={{ color: backgroundColor }}>
-          {event.title}
-        </div>
-        <div className="text-xs text-gray-500">
-          {event.timeText}
-        </div>
-      </div>
-    );
   };
 
   useEffect(() => {
+    // Inject custom styles for FullCalendar overrides
     const style = document.createElement('style');
     style.innerHTML = `
       .calendar-wrapper {
@@ -72,167 +87,134 @@ const LaborSchedulingCalendar = ({ events, onSelect, onEventClick, onDatesSet, c
       
       .fc-toolbar-title {
         font-size: 1.25rem !important;
-        font-weight: 400 !important;
-        color: #3c4043 !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
       }
 
       .fc-button-primary {
         background-color: white !important;
-        border-color: #dadce0 !important;
-        color: #3c4043 !important;
+        border-color: #e5e7eb !important;
+        color: #374151 !important;
         font-weight: 500 !important;
         text-transform: capitalize !important;
         padding: 0.5rem 1rem !important;
-        box-shadow: none !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+        transition: all 0.2s !important;
       }
 
       .fc-button-primary:hover {
-        background-color: #f1f3f4 !important;
-        border-color: #dadce0 !important;
+        background-color: #f9fafb !important;
+        border-color: #d1d5db !important;
       }
 
       .fc-button-primary:not(:disabled).fc-button-active {
-        background-color: #e8f0fe !important;
-        color: #1967d2 !important;
-        border-color: #e8f0fe !important;
+        background-color: #eff6ff !important;
+        color: #2563eb !important;
+        border-color: #bfdbfe !important;
       }
 
       .fc-button-group > .fc-button {
-        border-radius: 4px !important;
-        margin: 0 2px !important;
+        margin-left: -1px;
       }
 
       /* Grid Styling */
-      .fc-theme-standard td, .fc-theme-standard th {
-        border-color: #e5e7eb !important; /* Soft gray */
+      .fc-view-harness {
+        background-color: white;
       }
 
-      .fc-col-header-cell-cushion {
-        color: #70757a !important;
-        font-weight: 500 !important;
-        text-transform: uppercase !important;
-        font-size: 11px !important;
-        padding: 8px 0 !important;
-      }
-
-      .fc-timegrid-slot-label-cushion {
-        color: #70757a !important;
-        font-size: 10px !important;
-      }
-
-      .fc-timegrid-slot {
-        height: 48px !important; /* Taller slots */
-      }
-
-      /* Today Highlighting */
       .fc-day-today {
-        background-color: transparent !important;
+        background-color: #f8fafc !important;
       }
 
-      .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
-        color: #1967d2 !important;
+      .fc-day-today .fc-daygrid-day-number {
+        background-color: #2563eb;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin: 4px;
       }
 
-      /* Current Time Indicator */
-      .fc-timegrid-now-indicator-line {
-        border-color: #ea4335 !important;
-        border-width: 2px !important;
+      .fc-col-header-cell {
+        padding: 12px 0;
+        font-weight: 600;
+        color: #4b5563;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        background-color: #f9fafb;
       }
 
-      .fc-timegrid-now-indicator-arrow {
-        border-color: #ea4335 !important;
-        border-width: 5px 0 5px 6px !important;
-        border-bottom-color: transparent !important;
-        border-top-color: transparent !important;
-      }
-
-      /* Events */
+      /* Time Grid Events - Remove default borders to let custom content handle it */
       .fc-timegrid-event {
-        border: none !important;
         background: transparent !important;
+        border: none !important;
         box-shadow: none !important;
       }
+      
+      .fc-v-event .fc-event-main {
+        padding: 0 !important;
+        overflow: hidden !important;
+      }
 
+      /* Month View Events */
       .fc-daygrid-event {
-        margin-top: 2px !important;
+        background: transparent !important;
         border: none !important;
-      }
-
-      /* Scrollbar */
-      .fc-scroller::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      .fc-scroller::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .fc-scroller::-webkit-scrollbar-thumb {
-        background-color: #dadce0;
-        border-radius: 4px;
-      }
-
-      .allday-pill,
-      .fc-event.allday-converted {
-        border-radius: 6px !important;
-        min-height: 28px;
-        align-items: center;
+        margin-top: 2px !important;
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   return (
-    <div className="flex-1 bg-white h-full">
-      <div className="calendar-wrapper">
-        <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{
-            start: 'prev,next today title',
-            center: '',
-            end: 'dayGridMonth,timeGridWeek,timeGridDay'
-          }}
-          events={events}
-          eventContent={renderEventContent}
-          selectable={true}
-          select={onSelect}
-          eventClick={onEventClick}
-          datesSet={onDatesSet}
-          height="100%"
-          allDaySlot={false}
-          locale="es"
-          slotMinTime="01:00:00"
-          slotMaxTime="23:00:00"
-          nowIndicator={true}
-          dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
-          slotLabelFormat={{
-            hour: 'numeric',
-            minute: '2-digit',
-            omitZeroMinute: false,
-            meridiem: 'short'
-          }}
-          buttonText={{
-            today: 'Hoy',
-            month: 'Mes',
-            week: 'Semana',
-            day: 'Día'
-          }}
-          views={{
-            timeGridWeek: {
-              titleFormat: { year: 'numeric', month: 'short', day: '2-digit' }
-            },
-            dayGridMonth: {
-              titleFormat: { year: 'numeric', month: 'long' }
-            }
-          }}
-          // Styling hooks
-          dayCellClassNames="hover:bg-gray-50 transition-colors"
-          slotLabelClassNames="text-xs text-gray-500 font-medium align-middle pr-2"
-          viewClassNames="bg-white"
-        />
-      </div>
+    <div className="calendar-wrapper shadow-sm rounded-lg border border-gray-200">
+      <FullCalendar
+        ref={calendarRef}
+        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        initialView="timeGridWeek"
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        }}
+        locale="es"
+        buttonText={{
+          today: 'Hoy',
+          month: 'Mes',
+          week: 'Semana',
+          day: 'Día'
+        }}
+        editable={false} // Disable D&D for now unless explicitly required, simplified for stability
+        droppable={false}
+        selectable={true}
+        selectMirror={true}
+        dayMaxEvents={true}
+        weekends={true}
+        events={events}
+        select={onSelect}
+        eventClick={onEventClick}
+        datesSet={onDatesSet}
+        eventContent={renderEventContent}
+        height="100%"
+        slotMinTime="06:00:00" // Standard work hours start
+        slotMaxTime="22:00:00"
+        allDaySlot={true}
+        allDayText="Todo el día"
+        nowIndicator={true}
+        slotLabelFormat={{
+          hour: 'numeric',
+          minute: '2-digit',
+          omitZeroMinute: false,
+          meridiem: 'short'
+        }}
+      />
     </div>
   );
 };

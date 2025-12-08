@@ -180,8 +180,25 @@ const NewProductModal = ({ isOpen, onClose, onSave, categories, existingProducts
     };
 
     const handlePrecioChange = (e) => {
+      let inputValue = e.target.value;
+
+      // Lógica para permitir punto como decimal
+      // 1. Si termina en punto, convertirlo a coma (para escritura manual)
+      if (inputValue.endsWith('.')) {
+          inputValue = inputValue.slice(0, -1) + ',';
+      }
+      // 2. Si tiene punto y no coma, intentar inferir si es decimal
+      else if (inputValue.includes('.') && !inputValue.includes(',')) {
+          const parts = inputValue.split('.');
+          // Si tiene un solo punto y la parte decimal no parece ser miles (no tiene 3 dígitos exactos)
+          // O si es un número pequeño como 1.5
+          if (parts.length === 2 && parts[1].length !== 3) {
+              inputValue = inputValue.replace('.', ',');
+          }
+      }
+
       // 1. Obtener el valor limpio (sin símbolos ni puntos, solo números y comas)
-      let rawValue = e.target.value.replace(/[^0-9,]/g, '');
+      let rawValue = inputValue.replace(/[^0-9,]/g, '');
 
       // 2. Evitar múltiples comas: solo permitir la primera
       const parts = rawValue.split(',');

@@ -8,92 +8,101 @@ const ServicesTable = ({
   onEliminar,
 }) => {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {servicios.map((servicio) => {
-        const servicioId = servicio.id_servicio || servicio.id;
-        const imagenUrl = servicio.url_imagen || servicio.imagen;
-        
-        return (
-          <div
-            key={servicioId}
-            className="bg-white rounded-lg shadow-md p-4 flex flex-col items-center text-center relative hover:shadow-lg transition-shadow"
-          >
-            {/* Imagen del servicio */}
-            <div className="w-full h-40 bg-gray-200 rounded-md mb-4 flex items-center justify-center overflow-hidden">
-              {imagenUrl ? (
-                <img
-                  src={imagenUrl}
-                  alt={servicio.nombre}
-                  className="object-cover w-full h-full rounded-md"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.src = 'https://placehold.co/400x300/e5e7eb/9ca3af?text=Sin+Imagen';
-                    e.target.onerror = null;
-                  }}
-                />
-              ) : (
-                <span className="text-gray-400 text-sm">Sin imagen</span>
-              )}
-            </div>
-
-            {/* Nombre, precio, descripción */}
-            <h3 className="text-base font-semibold text-gray-800 line-clamp-1 mb-0">
-              {servicio.nombre}
-            </h3>
-            <p className="text-xs text-gray-400 mt-0">
-              {servicio.categoria?.nombre || 'Sin categoría'}
-            </p>
+    <div className="bg-white rounded-lg shadow overflow-x-auto">
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Imagen</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Categoría</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Precio</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+            <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {servicios.map((servicio) => {
+            const servicioId = servicio.id_servicio || servicio.id;
+            const imagenUrl = servicio.url_imagen || servicio.imagen;
             
-            <div className="flex items-center justify-center mt-0">
-              {servicio.precio && (
-                <p className="text-sm font-semibold text-[#FFB800]">
-                  ${parseFloat(servicio.precio).toLocaleString('es-CO')}
-                </p>
-              )}
-            </div>
-            
-            <p className="text-sm text-gray-600 mt-0">
-              {servicio.descripcion?.length > 40 ? `${servicio.descripcion.substring(0, 60)}...` : servicio.descripcion}
-            </p>
-
-            {/* Estado */}
-            <div
-              className={`mt-0 text-xs font-medium px-2 py-1 rounded-full ${
-                (servicio.estado || '').toLowerCase() === "activo"
-                  ? "bg-green-100 text-green-700"
-                  : "bg-red-100 text-red-600"
-              }`}
-            >
-              {(servicio.estado || '').toLowerCase() === "activo" ? "Activo" : "Inactivo"}
-            </div>
-
-            {/* Acciones */}
-            <div className="flex gap-3 mt-2 text-gray-600">
-              <button
-                onClick={() => onVer(servicioId)}
-                className="hover:text-blue-600 transition"
-                title="Ver"
-              >
-                <FaEye size={18} />
-              </button>
-              <button
-                onClick={() => onEditar(servicioId)}
-                className="hover:text-green-600 transition"
-                title="Editar"
-              >
-                <FaEdit size={18} />
-              </button>
-              <button
-                onClick={() => onEliminar(servicioId)}
-                className="hover:text-red-600 transition"
-                title="Eliminar"
-              >
-                <FaTrashAlt size={18} />
-              </button>
-            </div>
-          </div>
-        );
-      })}
+            return (
+              <tr key={servicioId} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="h-12 w-12 rounded-md bg-gray-200 flex items-center justify-center overflow-hidden">
+                    {imagenUrl ? (
+                      <img
+                        src={imagenUrl}
+                        alt={servicio.nombre}
+                        className="object-cover w-full h-full"
+                        loading="lazy"
+                        onError={(e) => {
+                          e.target.src = 'https://placehold.co/400x300/e5e7eb/9ca3af?text=Sin+Imagen';
+                          e.target.onerror = null;
+                        }}
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-xs">N/A</span>
+                    )}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm font-medium text-gray-900">{servicio.nombre}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-500">{servicio.categoria?.nombre || 'Sin categoría'}</div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="text-sm text-gray-900">
+                    {servicio.precio ? `$${parseFloat(servicio.precio).toLocaleString('es-CO')}` : '-'}
+                  </div>
+                </td>
+                <td className="px-6 py-4">
+                  <div className="text-sm text-gray-500 line-clamp-2 max-w-xs">
+                    {servicio.descripcion || 'Sin descripción'}
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span
+                    className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                      (servicio.estado || '').toLowerCase() === "activo"
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {(servicio.estado || '').toLowerCase() === "activo" ? "Activo" : "Inactivo"}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
+                  <div className="flex justify-center items-center gap-2">
+                    <button
+                      onClick={() => onVer(servicioId)}
+                      className="text-blue-500 hover:text-blue-700  hover:blue-200 p-2 rounded-lg transition-colors"
+                      title="Ver detalle"
+                    >
+                      <FaEye size={16} />
+                    </button>
+                    <button
+                      onClick={() => onEditar(servicioId)}
+                      className="text-yellow-500 hover:text-yellow-700  hover:yellow-200 p-2 rounded-lg transition-colors"
+                      title="Editar"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                    <button
+                      onClick={() => onEliminar(servicioId)}
+                      className="text-red-500 hover:text-red-700  hover:red-200 p-2 rounded-lg transition-colors"
+                      title="Eliminar"
+                    >
+                      <FaTrashAlt size={16} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 };

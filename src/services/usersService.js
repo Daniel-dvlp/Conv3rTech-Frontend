@@ -64,7 +64,12 @@ class UsersService {
   // Cambiar estado del usuario
   async changeUserStatus(id, statusData) {
     try {
-      const response = await api.put(`/users/${id}/status`, statusData);
+      // Si statusData es string, convertirlo a objeto
+      const payload = typeof statusData === 'string' 
+        ? { estado_usuario: statusData } 
+        : statusData;
+        
+      const response = await api.put(`/users/${id}`, payload);
       return response.data;
     } catch (error) {
       throw error;

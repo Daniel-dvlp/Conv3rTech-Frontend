@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { showToast } from "../../../../../shared/utils/alertas";
-import { usersService } from "../../../../../services";
+import { usersService, servicesService } from "../../../../../services";
 import { clientsApi } from "../../clients/services/clientsApi";
 
 const FormSection = ({ title, children }) => (
@@ -59,6 +59,7 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
   const [coordinadores, setCoordinadores] = useState([]);
   const [tecnicos, setTecnicos] = useState([]);
   const [clientes, setClientes] = useState([]);
+  const [availableServices, setAvailableServices] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
 
   // Cargar usuarios y clientes desde la API cuando se abra el modal
@@ -71,11 +72,21 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [coordinadoresResponse, tecnicosResponse, clientsData] = await Promise.all([
+      const [coordinadoresResponse, tecnicosResponse, clientsData, servicesResponse] = await Promise.all([
         usersService.getUsersByRole("Coordinador"),
         usersService.getUsersByRole("Tecnico"),
-        clientsApi.getAllClients()
+        clientsApi.getAllClients(),
+        servicesService.getAllServices({ estado: 'activo' })
       ]);
+
+      // Manejar respuesta de Servicios
+      if (Array.isArray(servicesResponse)) {
+        setAvailableServices(servicesResponse);
+      } else if (servicesResponse?.data && Array.isArray(servicesResponse.data)) {
+        setAvailableServices(servicesResponse.data);
+      } else {
+        setAvailableServices([]);
+      }
 
       // Manejar respuesta de Coordinadores
       if (Array.isArray(coordinadoresResponse)) {
@@ -247,14 +258,33 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
               key={index}
               className="grid grid-cols-[1fr,auto,auto,auto] gap-3 items-center"
             >
-              <input
-                type="text"
-                name={listName === "materiales" ? "item" : "servicio"}
-                value={item[listName === "materiales" ? "item" : "servicio"]}
-                onChange={(e) => handleListChange(index, e, listName)}
-                className={inputBaseStyle}
-                required
-              />
+              {listName === "materiales" ? (
+                <input
+                  type="text"
+                  name="item"
+                  value={item.item}
+                  onChange={(e) => handleListChange(index, e, listName)}
+                  className={inputBaseStyle}
+                  required
+                />
+              ) : (
+                <select
+                  name="servicio"
+                  value={item.servicio}
+                  onChange={(e) => handleListChange(index, e, listName)}
+                  className={inputBaseStyle}
+                  required
+                >
+                  <option value="">Seleccione un servicio</option>
+                  {/* Se debe pasar la lista de servicios filtrados como prop o desde contexto */}
+                  {/* Por ahora asumimos que los servicios vienen filtrados */}
+                  {availableServices.map((s) => (
+                    <option key={s.id_servicio} value={s.nombre}>
+                      {s.nombre}
+                    </option>
+                  ))}
+                </select>
+              )}
               <input
                 type="number"
                 name="cantidad"
@@ -782,7 +812,7 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center z-50">
+      <div className="fixed inset-0 bg-black bg-opacity-25 flex justify-center items-center z-50">
         <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl p-6 relative max-h-[90vh] overflow-y-auto">
           <button
             className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl"

@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 
-const AppointmentsCalendar = ({ events, onSelect, onEventClick, onDatesSet, calendarRef }) => {
+const AppointmentsCalendar = ({ events, onSelect, onEventClick, onDatesSet, calendarRef, onEventDrop }) => {
 
   // Custom event content renderer
   const renderEventContent = (eventInfo) => {
@@ -98,142 +98,97 @@ const AppointmentsCalendar = ({ events, onSelect, onEventClick, onDatesSet, cale
       }
 
       .fc-button-group > .fc-button {
-        border-radius: 4px !important;
-        margin: 0 2px !important;
+        margin-left: -1px;
       }
 
       /* Grid Styling */
-      .fc-theme-standard td, .fc-theme-standard th {
-        border-color: #e5e7eb !important; /* Soft gray */
+      .fc-view-harness {
+        background-color: white;
       }
 
-      .fc-col-header-cell-cushion {
-        color: #70757a !important;
-        font-weight: 500 !important;
-        text-transform: uppercase !important;
-        font-size: 11px !important;
-        padding: 8px 0 !important;
-      }
-
-      .fc-timegrid-slot-label-cushion {
-        color: #70757a !important;
-        font-size: 10px !important;
-      }
-
-      .fc-timegrid-slot {
-        height: 48px !important; /* Taller slots */
-      }
-
-      /* Today Highlighting */
       .fc-day-today {
         background-color: transparent !important;
       }
 
-      .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
-        color: #1967d2 !important;
-      }
-
-      /* Current Time Indicator */
-      .fc-timegrid-now-indicator-line {
-        border-color: #ea4335 !important;
-        border-width: 2px !important;
-      }
-
-      .fc-timegrid-now-indicator-arrow {
-        border-color: #ea4335 !important;
-        border-width: 5px 0 5px 6px !important;
-        border-bottom-color: transparent !important;
-        border-top-color: transparent !important;
-      }
-
-      /* Events */
-      .fc-timegrid-event {
-        border: none !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
-
-      .fc-daygrid-event {
-        margin-top: 2px !important;
-        border: none !important;
-      }
-
-      /* Scrollbar */
-      .fc-scroller::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      .fc-scroller::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      .fc-scroller::-webkit-scrollbar-thumb {
-        background-color: #dadce0;
-        border-radius: 4px;
-      }
-
-      .allday-pill,
-      .fc-event.allday-converted {
-        border-radius: 6px !important;
-        min-height: 28px;
+      .fc-day-today .fc-daygrid-day-number {
+        background-color: #1a73e8;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
         align-items: center;
+        justify-content: center;
+        margin: 4px;
+      }
+
+      .fc-col-header-cell {
+        padding: 8px 0;
+        font-weight: 500;
+        color: #70757a;
+        text-transform: uppercase;
+        font-size: 11px;
+      }
+
+      /* Time Grid Events */
+      .fc-timegrid-event {
+        border-radius: 4px;
+        box-shadow: 0 1px 2px 0 rgba(60,64,67,0.3), 0 1px 3px 1px rgba(60,64,67,0.15);
+        border: none !important;
+      }
+
+      .fc-event-main {
+        padding: 2px 4px;
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   return (
-    <div className="flex-1 bg-white h-full">
-      <div className="calendar-wrapper">
-        <FullCalendar
-          ref={calendarRef}
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
-          headerToolbar={{
-            start: 'prev,next today title',
-            center: '',
-            end: 'dayGridMonth,timeGridWeek,timeGridDay'
-          }}
-          events={events}
-          eventContent={renderEventContent}
-          selectable={true}
-          select={onSelect} // Use select for range selection
-          dateClick={onSelect} // Use dateClick for single day click if needed, or just rely on select
-          eventClick={onEventClick}
-          datesSet={onDatesSet}
-          height="100%"
-          allDaySlot={false}
-          locale="es"
-          slotMinTime="06:00:00" // Adjusted to a reasonable start time
-          slotMaxTime="22:00:00"
-          nowIndicator={true}
-          dayHeaderFormat={{ weekday: 'short', day: 'numeric' }}
-          slotLabelFormat={{
-            hour: 'numeric',
-            minute: '2-digit',
-            omitZeroMinute: false,
-            meridiem: 'short'
-          }}
-          buttonText={{
-            today: 'Hoy',
-            month: 'Mes',
-            week: 'Semana',
-            day: 'Día'
-          }}
-          views={{
-            timeGridWeek: {
-              titleFormat: { year: 'numeric', month: 'short', day: '2-digit' }
-            },
-            dayGridMonth: {
-              titleFormat: { year: 'numeric', month: 'long' }
-            }
-          }}
-          // Styling hooks
-          dayCellClassNames="hover:bg-gray-50 transition-colors"
-          slotLabelClassNames="text-xs text-gray-500 font-medium align-middle pr-2"
-          viewClassNames="bg-white"
-        />
-      </div>
+    <div className="calendar-wrapper shadow-sm">
+      <FullCalendar
+        ref={calendarRef}
+        plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+        initialView="timeGridWeek"
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        }}
+        locale="es"
+        buttonText={{
+          today: 'Hoy',
+          month: 'Mes',
+          week: 'Semana',
+          day: 'Día'
+        }}
+        editable={true}
+        selectable={true}
+        selectMirror={true}
+        dayMaxEvents={true}
+        weekends={true}
+        events={events}
+        select={onSelect}
+        eventClick={onEventClick}
+        datesSet={onDatesSet}
+        eventContent={renderEventContent}
+        eventDrop={onEventDrop}
+        height="100%"
+        slotMinTime="06:00:00"
+        slotMaxTime="22:00:00"
+        allDaySlot={true}
+        allDayText="Todo el día"
+        nowIndicator={true}
+        slotLabelFormat={{
+          hour: 'numeric',
+          minute: '2-digit',
+          omitZeroMinute: false,
+          meridiem: 'short'
+        }}
+      />
     </div>
   );
 };

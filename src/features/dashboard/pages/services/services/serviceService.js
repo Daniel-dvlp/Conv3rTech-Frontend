@@ -45,8 +45,8 @@ export const serviceService = {
     if (precio < 0) {
       throw new Error('El precio no puede ser negativo.');
     }
-    if (precio > 9999999) {
-      throw new Error('El precio no puede superar los 9,999,999.');
+    if (precio > 9999999999999.99) {
+      throw new Error('El precio excede el límite permitido.');
     }
 
     // 🟩 VALIDACIÓN: Estado

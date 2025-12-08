@@ -93,7 +93,7 @@ export const serviceCategoryService = {
 
   changeStateCategory: async (id, state) => {
     const payload = { estado: state };
-    const response = await api.patch(`/service-categories/${id}`, payload);
+    const response = await api.patch(`/service-categories/${id}/state`, payload);
     return response.data;
   },
 };

@@ -27,10 +27,20 @@ const AppointmentModal = ({ isOpen, onClose, onSave, selectedDate, initialData }
         const [cl, us, se] = await Promise.all([
           clientsService.getAllClients(),
           usersService.getAllUsers(),
-          servicesService.getAllServices(),
+          servicesService.getAllServices({ estado: 'activo' }),
         ]);
         setClientes(Array.isArray(cl) ? cl : cl?.data || []);
-        setUsuarios(Array.isArray(us) ? us : us?.data || []);
+        
+        // Filtrar usuarios para mostrar solo Técnicos (rol Tecnico o id_rol 2/3 según configuración)
+        // Asumiendo que el rol se llama 'Tecnico' o 'Técnico'
+        const allUsers = Array.isArray(us) ? us : us?.data || [];
+        const tecnicos = allUsers.filter(u => 
+          u.rol?.nombre_rol?.toLowerCase().includes('tecnico') || 
+          u.rol?.nombre_rol?.toLowerCase().includes('técnico') ||
+          u.id_rol === 2 // Fallback ID común para técnico
+        );
+        setUsuarios(tecnicos.length > 0 ? tecnicos : allUsers); // Si no encuentra técnicos, muestra todos (fallback)
+
         setServicios(Array.isArray(se) ? se : se?.data || []);
       } catch {}
     };

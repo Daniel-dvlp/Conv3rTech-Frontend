@@ -241,11 +241,31 @@ const NewPurchasesModal = ({
     }
   };
 
+  const parsePrecio = (val) => {
+    if (!val) return 0;
+    // Remove dots (thousands), replace comma with dot (decimal)
+    const clean = val.toString().replace(/\./g, '').replace(',', '.');
+    return parseFloat(clean) || 0;
+  };
+
   const handleNuevoProductoChange = (e) => {
     const { name, value } = e.target;
+    let finalValue = value;
+
+    if (name === 'precioUnitarioCompra') {
+      if (value.endsWith('.')) {
+        finalValue = value.slice(0, -1) + ',';
+      } else if (value.includes('.') && !value.includes(',')) {
+        const parts = value.split('.');
+        if (parts.length === 2 && parts[1].length !== 3) {
+          finalValue = value.replace('.', ',');
+        }
+      }
+    }
+
     setNuevoProductoSeleccionado((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
     // Limpiar errores relacionados con el nuevo producto al cambiar sus valores
     setErrors(prev => ({
@@ -294,11 +314,11 @@ const NewPurchasesModal = ({
 
     const newProduct = {
       idProducto: parseInt(idProducto),
-      nombre: productoInfo.nombre,
-      modelo: productoInfo.modelo,
+      nombre: productoInfo.nombre || 'Desconocido',
+      modelo: productoInfo.modelo || 'N/A',
       unidadDeMedida: productoInfo.unidad_medida || "N/A",
       cantidad: parseInt(cantidad),
-      precioUnitarioCompra: parseFloat(precioUnitarioCompra),
+      precioUnitarioCompra: parsePrecio(precioUnitarioCompra),
       codigoDeBarras: codigoDeBarras === "N/A" ? "" : codigoDeBarras, // Guardar como string vacío si es N/A
     };
 

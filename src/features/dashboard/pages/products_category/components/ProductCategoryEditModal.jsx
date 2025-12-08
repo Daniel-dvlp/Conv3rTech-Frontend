@@ -33,8 +33,6 @@ const ToggleSwitch = ({ checked, onChange }) => (
     </Switch>
 );
 
-const API_URL = 'https://backend-conv3rtech.onrender.com/api/productsCategory';
-
 const ProductCategoryEditModal = ({
     isOpen,
     onClose,
@@ -117,28 +115,6 @@ const ProductCategoryEditModal = ({
                 onClose();
             }
         }, 0);
-    };
-
-    const handleEstadoPatch = (id_categoria, nuevoEstado) => {
-        fetch(`${API_URL}/${id_categoria}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estado: nuevoEstado }),
-        })
-            .then(res => res.json())
-            .then(() => {
-                setCategoryData((prev) => ({
-                    ...prev,
-                    estado: nuevoEstado,
-                }));
-            })
-            .catch(() => {
-                // Opcional: mostrar error
-                setCategoryData((prev) => ({
-                    ...prev,
-                    estado: !nuevoEstado, // Revierte el cambio si falla
-                }));
-            });
     };
 
     return (

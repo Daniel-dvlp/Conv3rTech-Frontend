@@ -10,10 +10,10 @@ import NewProductCategoryModal from './components/NewProductCategoryModal';
 import ProductCategoryDetailModal from './components/ProductCategoryDetailModal';
 import ProductCategoryEditModal from './components/ProductCategoryEditModal';
 import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
+import { categoriesService } from '../products/services/productsService';
 
 
 const ITEMS_PER_PAGE = 5;
-const API_URL = 'https://backend-conv3rtech.onrender.com/api/productsCategory';
 
 const ProductsCategoryPage = () => {
   const [categories, setCategories] = useState([]);
@@ -42,52 +42,51 @@ const ProductsCategoryPage = () => {
   });
 
   // Listar categorías
-useEffect(() => {
-  let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API_URL);
-      const json = await res.json().catch(() => ({}));
-      const listRaw = extractList(json);
-      const list = listRaw.map(normalizeCategory).filter(c => c.id_categoria != null);
-      if (!cancelled) {
-        setCategories(list);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await categoriesService.getAllCategories();
+        const listRaw = extractList(res);
+        const list = listRaw.map(normalizeCategory).filter(c => c.id_categoria != null);
+        if (!cancelled) {
+          setCategories(list);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          showError('Error al cargar las categorías');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    } catch (e) {
-      if (!cancelled) {
-        showError('Error al cargar las categorías');
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  load();
-  return () => { cancelled = true; };
-}, []);
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
-const normalize = (text) =>
-  text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+  const normalize = (text) =>
+    text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
-const filteredProductsCategory = useMemo(() => {
-  const normalizedSearch = normalize(searchTerm);
+  const filteredProductsCategory = useMemo(() => {
+    const normalizedSearch = normalize(searchTerm);
 
-  return (Array.isArray(categories) ? categories : []).filter((cat) => {
-    const nombre = cat?.nombre || '';
-    const descripcion = cat?.descripcion || '';
-    const estadoLegible = cat?.estado ? 'activo' : 'inactivo';
+    return (Array.isArray(categories) ? categories : []).filter((cat) => {
+      const nombre = cat?.nombre || '';
+      const descripcion = cat?.descripcion || '';
+      const estadoLegible = cat?.estado ? 'activo' : 'inactivo';
 
-    const nameIncludes = normalize(nombre).includes(normalizedSearch);
-    const descriptionIncludes = normalize(descripcion).includes(normalizedSearch);
-    const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch);
+      const nameIncludes = normalize(nombre).includes(normalizedSearch);
+      const descriptionIncludes = normalize(descripcion).includes(normalizedSearch);
+      const stateIncludes = normalize(estadoLegible).startsWith(normalizedSearch);
 
-    return nameIncludes || descriptionIncludes || stateIncludes;
-  });
-}, [categories, searchTerm]);
+      return nameIncludes || descriptionIncludes || stateIncludes;
+    });
+  }, [categories, searchTerm]);
 
   const totalPages = Math.ceil(filteredProductsCategory.length / ITEMS_PER_PAGE);
 
@@ -97,31 +96,31 @@ const filteredProductsCategory = useMemo(() => {
   }, [filteredProductsCategory, currentPage]);
 
   // Agregar categoría
-const handleAddCategory = async (newCategory) => {
-  try {
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+  const handleAddCategory = async (newCategory) => {
+    try {
+      const res = await categoriesService.createCategory({
         nombre: newCategory.nombre,
         descripcion: newCategory.descripcion,
         estado: true, // por compatibilidad si el backend lo requiere
-      }),
-    });
-    const json = await res.json().catch(() => ({}));
-    const created = normalizeCategory(json.data || json);
-    if (!created || created.id_categoria == null) {
-      showError('No se pudo crear la categoría');
+      });
+      
+      // Ajuste: a veces createCategory devuelve directamente la categoría o un objeto { data: ... }
+      // Si el servicio devuelve { success: true, data: ... } hay que extraer
+      const createdData = res.data || res; 
+      
+      const created = normalizeCategory(createdData);
+      if (!created || created.id_categoria == null) {
+        showError('No se pudo crear la categoría');
+        return false;
+      }
+      setCategories(prev => [created, ...prev]);
+      showSuccess('Categoría creada exitosamente');
+      return true;
+    } catch {
+      showError('Error al crear la categoría');
       return false;
     }
-    setCategories(prev => [created, ...prev]);
-    showSuccess('Categoría creada exitosamente');
-    return true;
-  } catch {
-    showError('Error al crear la categoría');
-    return false;
-  }
-};
+  };
 
   const handleEditCategory = (category) => {
     setSelectedCategory(category);
@@ -131,17 +130,15 @@ const handleAddCategory = async (newCategory) => {
   // Editar categoría
   const handleUpdateCategory = async (updatedCategory) => {
     try {
-      const res = await fetch(`${API_URL}/${updatedCategory.id_categoria}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: updatedCategory.nombre,
-          descripcion: updatedCategory.descripcion
-          // No envíes estado si la API no lo espera
-        }),
+      const res = await categoriesService.updateCategory(updatedCategory.id_categoria, {
+        nombre: updatedCategory.nombre,
+        descripcion: updatedCategory.descripcion
+        // No envíes estado si la API no lo espera
       });
-      const json = await res.json().catch(() => ({}));
-      const updated = normalizeCategory(json.data || json);
+      
+      const updatedData = res.data || res;
+      const updated = normalizeCategory(updatedData);
+      
       setCategories(prev =>
         prev.map(cat =>
           cat.id_categoria === updated.id_categoria ? updated : cat
@@ -161,12 +158,30 @@ const handleAddCategory = async (newCategory) => {
     const confirmed = await confirmDelete('¿Estás seguro de eliminar esta categoría?');
     if (!confirmed) return;
 
-    fetch(`${API_URL}/${categoryId}`, { method: 'DELETE' })
-      .then(() => {
-        setCategories(prev => prev.filter(cat => Number(cat.id_categoria) !== Number(categoryId)));
-        showSuccess('Categoría eliminada exitosamente');
-      })
-      .catch(() => showError('Error al eliminar la categoría'));
+    try {
+      await categoriesService.deleteCategory(categoryId);
+      setCategories(prev => prev.filter(cat => Number(cat.id_categoria) !== Number(categoryId)));
+      showSuccess('Categoría eliminada exitosamente');
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || error.message || 'Error al eliminar la categoría';
+      showError(errorMsg);
+    }
+  };
+
+  // Cambiar estado
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      await categoriesService.changeStateCategory(id, newStatus);
+      
+      setCategories(prev => prev.map(cat => 
+        (cat.id_categoria === id) ? { ...cat, estado: newStatus } : cat
+      ));
+      showSuccess(`Categoría ${newStatus ? 'activada' : 'desactivada'} exitosamente`);
+    } catch (error) {
+      console.error('Error al cambiar estado:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Error al cambiar el estado de la categoría';
+      showError(errorMsg);
+    }
   };
 
   return (
@@ -222,6 +237,7 @@ const handleAddCategory = async (newCategory) => {
             onViewDetails={(cat) => setSelectedCategory(cat)}
             onEditCategory={handleEditCategory}
             onDeleteCategory={handleDeleteCategory}
+            onStatusChange={handleStatusChange}
           />
           {totalPages > 1 && (
             <Pagination

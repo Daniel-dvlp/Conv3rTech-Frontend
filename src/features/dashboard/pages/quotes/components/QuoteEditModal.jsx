@@ -412,43 +412,53 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
         if (newState === 'Aprobada') {
           try {
              // 1. Crear Proyecto
+             const fechaInicio = new Date();
+             const fechaFin = quoteData.fecha_vencimiento 
+                ? new Date(quoteData.fecha_vencimiento) 
+                : new Date(fechaInicio);
+             
+             // Si no hay fecha de vencimiento, asignamos 30 días por defecto
+             if (!quoteData.fecha_vencimiento) {
+                fechaFin.setDate(fechaFin.getDate() + 30);
+             }
+
              const projectPayload = {
               nombre: quoteData.nombre_cotizacion,
-              cliente: cliente ? `${cliente.nombre} ${cliente.apellido}` : (quoteData.cliente_nombre || ''),
+              // Enviar el cliente como un objeto o string, dependiendo de lo que espera el backend.
+              // El backend espera id_cliente como campo obligatorio.
               id_cliente: cliente ? cliente.id_cliente : quoteData.id_cliente,
-              estado: 'Alerta',
-              fechaInicio: new Date().toISOString().split('T')[0],
-              fechaFin: quoteData.fecha_vencimiento ? new Date(quoteData.fecha_vencimiento).toISOString().split('T')[0] : '',
+              estado: 'Pendiente',
+              fecha_inicio: fechaInicio.toISOString().split('T')[0],
+              fecha_fin: fechaFin.toISOString().split('T')[0],
               prioridad: 'Alta',
               descripcion: `Proyecto generado desde cotización ${quoteData.nombre_cotizacion}. ${quoteData.observaciones || ''}`,
               observaciones: quoteData.observaciones || '',
               empleadosAsociados: [], // Se asignarán en el dashboard
               materiales: productosAgregados.map(p => ({
-                  item: p.nombre,
+                  id_producto: p.id_producto, // Asegurar que se envíe id_producto
                   cantidad: p.cantidad,
-                  precio: p.precio,
-                  id_producto: p.id_producto
+                  precio_unitario: p.precio // Asegurar nombre correcto del campo
               })),
               servicios: serviciosAgregados.map(s => ({
-                  servicio: s.nombre,
+                  id_servicio: s.id_servicio, // Asegurar que se envíe id_servicio
                   cantidad: s.cantidad,
-                  precio: s.precio,
-                  id_servicio: s.id_servicio
+                  precio_unitario: s.precio // Asegurar nombre correcto del campo
               })),
-              costos: { manoDeObra: 0 },
+              costo_mano_obra: 0,
               sedes: [], 
-              cotizacion_id: quoteData.id_cotizacion
+              id_cotizacion: quoteData.id_cotizacion
             };
     
             const projectResponse = await projectsService.createProject(projectPayload);
             
             if (projectResponse && (projectResponse.success || projectResponse.id)) {
-               // 2. Eliminar Cotización
-               await quotesService.deleteQuote(quoteData.id_cotizacion);
+               // 2. Actualizar estado de la cotización a "Aprobada" en lugar de eliminarla
+               // Esto preserva el historial y evita errores de llave foránea con el proyecto creado.
+               await quotesService.changeQuoteState(quoteData.id_cotizacion, 'Aprobada');
                
                // 3. Notificar y cerrar
-               showSuccess('Cotización aprobada. Proyecto creado en estado "Alerta".');
-               onSave({ ...quoteData, _deleted: true });
+               showSuccess('Cotización aprobada. Proyecto creado en estado "Pendiente".');
+               onSave({ ...quoteData, estado: 'Aprobada' });
                onClose();
                return;
             } else {

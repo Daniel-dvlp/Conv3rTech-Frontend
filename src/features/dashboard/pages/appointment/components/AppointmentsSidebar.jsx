@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FaSearch, FaPlus, FaChevronLeft, FaChevronRight, FaCalendarAlt } from 'react-icons/fa';
+import { useAuth } from '../../../../../shared/contexts/AuthContext';
 
 const AppointmentsSidebar = ({
   activeDate,
@@ -11,6 +12,12 @@ const AppointmentsSidebar = ({
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const selectedDate = activeDate ? new Date(activeDate) : null;
+  const { user } = useAuth();
+
+  // Verificar si es Técnico (id_rol 2 según Seed o 3 según configuración legacy)
+  // O usar nombre de rol. El técnico NO puede crear citas.
+  const isTecnico = user?.id_rol === 2 || user?.rol?.toLowerCase().includes('tecnico');
+  const canCreate = !isTecnico;
 
   const isSameDay = (dateA, dateB) => {
     if (!dateA || !dateB) return false;
@@ -92,12 +99,14 @@ const AppointmentsSidebar = ({
     <aside className="h-full flex flex-col bg-white border-r border-gray-200 w-72 flex-shrink-0 overflow-hidden shadow-sm">
       {/* 1. Botón Superior */}
       <div className="p-4 border-b border-gray-100">
-        <button
-          onClick={onCreate}
-          className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-yellow-400 text-[#00012A] rounded-lg hover:bg-yellow-500 transition-all shadow-sm text-sm font-bold"
-        >
-          <FaPlus size={12} /> Asignar Cita
-        </button>
+        {canCreate && (
+          <button
+            onClick={onCreate}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-yellow-400 text-[#00012A] rounded-lg hover:bg-yellow-500 transition-all shadow-sm text-sm font-bold"
+          >
+            <FaPlus size={12} /> Asignar Cita
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">

@@ -34,8 +34,9 @@ export const useUsers = () => {
       toast.success('Usuario creado exitosamente');
       return newUser;
     } catch (err) {
-      setError(err.message);
-      toast.error('Error al crear usuario');
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Error al crear usuario';
+      setError(errorMessage);
+      toast.error(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -55,8 +56,16 @@ export const useUsers = () => {
       toast.success('Usuario actualizado exitosamente');
       return updatedUser;
     } catch (err) {
-      setError(err.message);
-      toast.error('Error al actualizar usuario');
+      let errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Error al actualizar usuario';
+      
+      if (err.response?.status === 404) {
+        errorMessage = 'El usuario no existe o fue eliminado.';
+      } else if (err.response?.status === 400) {
+        errorMessage = errorMessage || 'Datos inválidos. Verifique la información.';
+      }
+
+      setError(errorMessage);
+      toast.error(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -71,8 +80,9 @@ export const useUsers = () => {
       setUsuarios(prev => prev.filter(user => user.id_usuario !== id));
       toast.success('Usuario eliminado exitosamente');
     } catch (err) {
-      setError(err.message);
-      toast.error('Error al eliminar usuario');
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Error al eliminar usuario';
+      setError(errorMessage);
+      toast.error(errorMessage);
       throw err;
     } finally {
       setLoading(false);
@@ -92,8 +102,9 @@ export const useUsers = () => {
       toast.success(`Usuario ${newStatus === 'Activo' ? 'activado' : 'desactivado'} exitosamente`);
       return updatedUser;
     } catch (err) {
-      setError(err.message);
-      toast.error('Error al cambiar estado del usuario');
+      const errorMessage = err.response?.data?.message || err.response?.data?.error || err.message || 'Error al cambiar estado del usuario';
+      setError(errorMessage);
+      toast.error(errorMessage);
       throw err;
     } finally {
       setLoading(false);

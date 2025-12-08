@@ -13,7 +13,6 @@ import { serviceCategoryService } from './services/serviceCategoryService.js';
 
 
 const ITEMS_PER_PAGE = 5;
-const API_URL = 'https://backend-conv3rtech.onrender.com/api/service-categories';
 
 const ServicesCategoryPage = () => {
   const [categories, setCategories] = useState([]);
@@ -42,33 +41,32 @@ const ServicesCategoryPage = () => {
   });
 
   // Listar categorías
-useEffect(() => {
-  let cancelled = false;
+  useEffect(() => {
+    let cancelled = false;
 
-  const load = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(API_URL);
-      const json = await res.json().catch(() => ({}));
-      const listRaw = extractList(json);
-      const list = listRaw.map(normalizeCategory).filter(c => c.id != null);
-      if (!cancelled) {
-        setCategories(list);
+    const load = async () => {
+      setLoading(true);
+      try {
+        const res = await serviceCategoryService.getAllCategories();
+        const listRaw = extractList(res);
+        const list = listRaw.map(normalizeCategory).filter(c => c.id != null);
+        if (!cancelled) {
+          setCategories(list);
+        }
+      } catch (e) {
+        if (!cancelled) {
+          showError('Error al cargar las categorías');
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-    } catch (e) {
-      if (!cancelled) {
-        showError('Error al cargar las categorías');
-      }
-    } finally {
-      if (!cancelled) {
-        setLoading(false);
-      }
-    }
-  };
+    };
 
-  load();
-  return () => { cancelled = true; };
-}, []);
+    load();
+    return () => { cancelled = true; };
+  }, []);
 
 const normalize = (text) =>
   text?.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -166,6 +164,23 @@ const handleAddCategory = async (newCategory) => {
       .catch(() => showError('Error al eliminar la categoría'));
   };
 
+  // Cambiar estado
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const estadoStr = newStatus ? 'activo' : 'inactivo';
+      await serviceCategoryService.changeStateCategory(id, estadoStr);
+      
+      setCategories(prev => prev.map(cat => 
+        (cat.id === id) ? { ...cat, estado: estadoStr } : cat
+      ));
+      showSuccess(`Categoría ${newStatus ? 'activada' : 'desactivada'} exitosamente`);
+    } catch (error) {
+      console.error('Error al cambiar estado:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'Error al cambiar el estado de la categoría';
+      showError(errorMsg);
+    }
+  };
+
   return (
     <div className="p-4 md:p-8 relative">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -219,6 +234,7 @@ const handleAddCategory = async (newCategory) => {
             onViewDetails={(cat) => setSelectedCategory(cat)}
             onEditCategory={handleEditCategory}
             onDeleteCategory={handleDeleteCategory}
+            onStatusChange={handleStatusChange}
           />
           {totalPages > 1 && (
             <Pagination

@@ -17,7 +17,7 @@ const DetailCard = ({ title, icon, children }) => (
 const InfoRow = ({ label, children }) => (
   <div className="text-base text-gray-700">
     <span className="text-gray-500 font-medium">{label}:</span>
-    <p className="font-semibold text-gray-900 mt-1">{children}</p>
+    <div className="font-semibold text-gray-900 mt-1">{children}</div>
   </div>
 );
 

@@ -48,6 +48,9 @@ export const suppliersApi = {
       return response.data;
     } catch (error) {
       console.error('Error al actualizar proveedor:', error);
+      if (error.response) {
+        console.error('Detalles del error (Backend):', JSON.stringify(error.response.data, null, 2));
+      }
       throw error;
     }
   },

@@ -59,7 +59,7 @@ export const quotesService = {
 // Servicio simple para listar servicios (catálogo de servicios)
 export const servicesCatalogApi = {
   getAllServices: async () => {
-    const response = await api.get('/services');
+    const response = await api.get('/services', { params: { estado: 'activo' } });
     return response.data?.data ?? response.data;
   },
 };

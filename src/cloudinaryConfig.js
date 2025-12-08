@@ -34,7 +34,10 @@ const cloudinaryService = {
                 },
             });
 
-            return response.data.urls || [];
+            if (response.data.images) {
+                return response.data.images.map(img => img.url);
+            }
+            return [];
         } catch (error) {
             console.error('Error al subir imágenes:', error);
             if (error.response?.status === 404) {
@@ -70,7 +73,7 @@ const cloudinaryService = {
     deleteImage: async (imageUrl) => {
         try {
             const response = await api.delete('/products/delete-image', {
-                data: { imageUrl },
+                data: { url: imageUrl },
             });
             return response.data.success || false;
         } catch (error) {

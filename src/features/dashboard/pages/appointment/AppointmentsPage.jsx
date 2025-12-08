@@ -49,10 +49,14 @@ const AppointmentsPage = () => {
         const ui = {
           id,
           cliente,
+          clienteId: appt.id_cliente, // Add ID
           telefono,
           servicio,
+          servicioId: appt.id_servicio, // Add ID
           direccion,
+          direccionId: appt.id_direccion, // Add ID
           encargado,
+          usuarioId: appt.id_usuario, // Add ID
           fechaHora: startISO,
           end: endISO,
         };
@@ -79,6 +83,16 @@ const AppointmentsPage = () => {
   const handleDateSelect = (arg) => {
     // arg can be from dateClick (has dateStr) or select (has startStr)
     const dateStr = arg.dateStr || arg.startStr;
+    
+    const selectedStart = new Date(dateStr);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    if (selectedStart < today) {
+       toast.error('No se pueden crear citas en fechas pasadas');
+       return;
+    }
+
     setSelectedDate(dateStr);
     setIsEditMode(false);
     setIsModalOpen(true);
@@ -94,6 +108,50 @@ const AppointmentsPage = () => {
     };
     setSelectedAppointment(appointment);
     setShowDetailsModal(true);
+  };
+
+  const handleEventDrop = async (info) => {
+    const { event } = info;
+    const { id } = event;
+    const newStart = event.start;
+    const newEnd = event.end;
+    
+    // Preparar payload para actualización
+    // Usamos los datos originales extendidos, actualizando solo fecha y hora
+    const originalData = event.extendedProps;
+    
+    // Formato requerido por el backend
+    const pad = (n) => String(n).padStart(2, '0');
+    const fecha = newStart.toISOString().slice(0, 10);
+    const hora_inicio = `${pad(newStart.getHours())}:${pad(newStart.getMinutes())}:00`;
+    const hora_fin = newEnd 
+      ? `${pad(newEnd.getHours())}:${pad(newEnd.getMinutes())}:00` 
+      : `${pad(newStart.getHours() + 1)}:${pad(newStart.getMinutes())}:00`; // Default 1 hora si no hay fin
+
+    try {
+      setIsLoading(true);
+      const payload = {
+        id_cliente: originalData.clienteId,
+        id_usuario: originalData.usuarioId,
+        id_servicio: originalData.servicioId,
+        fecha,
+        hora_inicio,
+        hora_fin,
+        id_direccion: originalData.direccionId || null,
+      };
+      
+      await appointmentsService.update(id, payload);
+      toast.success("Cita movida correctamente");
+      
+      // Actualizar estado local sin recargar todo si es posible, pero para seguridad recargamos
+      // await loadAppointments(); 
+    } catch (error) {
+       info.revert(); // Revertir si falla
+       console.error("Error moving appointment:", error);
+       toast.error("Error al mover la cita: " + (error.response?.data?.error || error.message));
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const addAppointment = async (appointmentData) => {
@@ -230,6 +288,7 @@ const AppointmentsPage = () => {
             onSelect={handleDateSelect}
             onEventClick={handleEventClick}
             onDatesSet={handleDatesSet}
+            onEventDrop={handleEventDrop}
           />
         </div>
 
@@ -246,6 +305,7 @@ const AppointmentsPage = () => {
             filter={filter}
             setFilter={setFilter}
             appointments={appointments} // Pass all to show in list if needed
+            showCreateButton={true} // Se controla internamente en Sidebar o aquí con permisos
           />
         </div>
       </div>

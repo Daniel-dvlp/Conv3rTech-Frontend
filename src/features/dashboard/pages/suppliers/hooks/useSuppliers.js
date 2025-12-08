@@ -26,16 +26,16 @@ const transformSupplierFromBackend = (supplier) => {
 // Función para transformar datos del frontend al formato del backend
 const transformSupplierToBackend = (supplier) => {
   return {
-    nit: supplier.nit,
-    nombre_empresa: supplier.empresa,
-    nombre_encargado: supplier.encargado,
-    telefono_entidad: supplier.telefono_entidad,
-    telefono_encargado: supplier.telefono_encargado,
+    nit: supplier.nit || null,
+    nombre_empresa: supplier.empresa || supplier.nombre_empresa,
+    nombre_encargado: supplier.encargado || supplier.nombre_encargado,
+    telefono_entidad: supplier.telefono_entidad || null,
+    telefono_encargado: supplier.telefono_encargado || null,
     correo_principal: supplier.correo_principal,
-    correo_secundario: supplier.correo_secundario,
-    direccion: supplier.direccion,
+    correo_secundario: supplier.correo_secundario || null,
+    direccion: supplier.direccion || null,
     estado: supplier.estado,
-    observaciones: supplier.observaciones
+    observaciones: supplier.observaciones || null
   };
 };
 
