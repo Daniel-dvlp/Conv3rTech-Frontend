@@ -1,8 +1,10 @@
 import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const ServicesCategoryTable = ({ categories, onViewDetails, onEditCategory, onDeleteCategory, onStatusChange }) => {
+  const { canEdit, canDelete } = usePermissions();
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
@@ -45,20 +47,24 @@ const ServicesCategoryTable = ({ categories, onViewDetails, onEditCategory, onDe
                       >
                         <FaEye size={16} />
                       </button>
-                      <button
-                        onClick={() => onEditCategory(category)}
-                        className="text-yellow-500 hover:text-yellow-700 hover:yellow-200 p-2 rounded-lg transition-colors"
-                        title="Editar"
-                      >
-                        <FaEdit size={16} />
-                      </button>
-                      <button
-                        onClick={() => onDeleteCategory(category.id)}
-                        className="text-red-500 hover:text-red-700 hover:red-200 p-2 rounded-lg transition-colors"
-                        title="Eliminar"
-                      >
-                        <FaTrashAlt size={16} />
-                      </button>
+                      {canEdit('categoria_servicios') && (
+                        <button
+                          onClick={() => onEditCategory(category)}
+                          className="text-yellow-500 hover:text-yellow-700 hover:yellow-200 p-2 rounded-lg transition-colors"
+                          title="Editar"
+                        >
+                          <FaEdit size={16} />
+                        </button>
+                      )}
+                      {canDelete('categoria_servicios') && (
+                        <button
+                          onClick={() => onDeleteCategory(category.id)}
+                          className="text-red-500 hover:text-red-700 hover:red-200 p-2 rounded-lg transition-colors"
+                          title="Eliminar"
+                        >
+                          <FaTrashAlt size={16} />
+                        </button>
+                      )}
                     </div>
                  </td>
                </tr>

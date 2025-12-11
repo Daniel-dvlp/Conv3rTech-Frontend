@@ -31,6 +31,16 @@ class UsersService {
     }
   }
 
+  // Obtener mi perfil
+  async getMyProfile() {
+    try {
+      const response = await api.get('/users/profile/me');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Crear nuevo usuario
   async createUser(userData) {
     try {

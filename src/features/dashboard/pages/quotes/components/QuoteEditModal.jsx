@@ -361,6 +361,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
     // Validar campos obligatorios
     const errs = {};
     if (!quoteData.nombre_cotizacion?.trim()) errs.nombre = 'El nombre de la cotización es obligatorio';
+    else if (quoteData.nombre_cotizacion.trim().length < 3) errs.nombre = 'El nombre debe tener al menos 3 caracteres';
     if (!clienteSeleccionado) errs.cliente = 'Selecciona un cliente';
     if (!quoteData.fecha_vencimiento) errs.fecha = 'Selecciona la fecha de vencimiento';
     else if (new Date(quoteData.fecha_vencimiento) < new Date(new Date().setHours(0, 0, 0, 0))) errs.fecha = 'La fecha de vencimiento no puede ser anterior a hoy';
@@ -390,16 +391,21 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
 
       const payloadUpdate = {
         nombre_cotizacion: quoteData.nombre_cotizacion,
-        id_cliente: clienteSeleccionado ? Number(clienteSeleccionado) : quoteData.id_cliente,
+        id_cliente: clienteSeleccionado ? parseInt(clienteSeleccionado, 10) : parseInt(quoteData.id_cliente, 10),
         fecha_vencimiento: quoteData.fecha_vencimiento ? new Date(quoteData.fecha_vencimiento).toISOString() : undefined,
         // Si vamos a cambiar de estado después, mantenemos el original aquí para evitar inconsistencias
         estado: isStateChanging ? originalState : newState,
         observaciones: observaciones.trim() || undefined,
         detalles: [
-          ...productosAgregados.map(p => ({ id_producto: p.id_producto, cantidad: p.cantidad })),
-          ...serviciosAgregados.map(s => ({ id_servicio: s.id_servicio, cantidad: s.cantidad })),
+          ...productosAgregados.map(p => ({ id_producto: parseInt(p.id_producto, 10), cantidad: parseInt(p.cantidad, 10) })),
+          ...serviciosAgregados.map(s => ({ id_servicio: parseInt(s.id_servicio, 10), cantidad: parseInt(s.cantidad, 10) })),
         ],
       };
+
+      // Validar que tengamos ID de cotización
+      if (!quoteData.id_cotizacion) {
+          throw new Error("No se pudo identificar la cotización a actualizar (ID faltante)");
+      }
 
       // Actualizar cotización (datos básicos + detalles)
       let resultQuote = await quotesService.updateQuote(quoteData.id_cotizacion, payloadUpdate);
@@ -424,29 +430,27 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
 
              const projectPayload = {
               nombre: quoteData.nombre_cotizacion,
-              // Enviar el cliente como un objeto o string, dependiendo de lo que espera el backend.
-              // El backend espera id_cliente como campo obligatorio.
-              id_cliente: cliente ? cliente.id_cliente : quoteData.id_cliente,
+              id_cliente: cliente ? parseInt(cliente.id_cliente, 10) : parseInt(quoteData.id_cliente, 10),
               estado: 'Pendiente',
               fecha_inicio: fechaInicio.toISOString().split('T')[0],
               fecha_fin: fechaFin.toISOString().split('T')[0],
               prioridad: 'Alta',
               descripcion: `Proyecto generado desde cotización ${quoteData.nombre_cotizacion}. ${quoteData.observaciones || ''}`,
               observaciones: quoteData.observaciones || '',
-              empleadosAsociados: [], // Se asignarán en el dashboard
+              empleadosAsociados: [], 
               materiales: productosAgregados.map(p => ({
-                  id_producto: p.id_producto, // Asegurar que se envíe id_producto
-                  cantidad: p.cantidad,
-                  precio_unitario: p.precio // Asegurar nombre correcto del campo
+                  id_producto: parseInt(p.id_producto, 10),
+                  cantidad: parseInt(p.cantidad, 10),
+                  precio_unitario: parseFloat(p.precio)
               })),
               servicios: serviciosAgregados.map(s => ({
-                  id_servicio: s.id_servicio, // Asegurar que se envíe id_servicio
-                  cantidad: s.cantidad,
-                  precio_unitario: s.precio // Asegurar nombre correcto del campo
+                  id_servicio: parseInt(s.id_servicio, 10),
+                  cantidad: parseInt(s.cantidad, 10),
+                  precio_unitario: parseFloat(s.precio)
               })),
               costo_mano_obra: 0,
               sedes: [], 
-              id_cotizacion: quoteData.id_cotizacion
+              id_cotizacion: parseInt(quoteData.id_cotizacion, 10)
             };
     
             const projectResponse = await projectsService.createProject(projectPayload);
@@ -466,7 +470,13 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
             }
           } catch (err) {
              console.error('Error en flujo de aprobación:', err);
-             showError('Error al procesar la aprobación: ' + (err.message || 'Intente nuevamente'));
+             // Mostrar detalles si es error de validación del backend
+             if (err.response && err.response.data && err.response.data.errors) {
+                 const firstError = err.response.data.errors[0];
+                 showError(`Error al crear proyecto: ${firstError.msg} en ${firstError.path || firstError.param}. Valor: ${firstError.value}`);
+             } else {
+                 showError('Error al procesar la aprobación: ' + (err.response?.data?.message || err.message || 'Intente nuevamente'));
+             }
              // No cerramos el modal para permitir reintento
              return; 
           }
@@ -482,8 +492,15 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
       onClose();
     } catch (error) {
       console.error('Error al actualizar cotización:', error);
-      const message = error?.response?.data?.message || error?.message || 'Ocurrió un error al actualizar la cotización';
-      showError(message);
+      if (error.response && error.response.data && error.response.data.errors) {
+         console.error('Detalles de validación:', JSON.stringify(error.response.data.errors, null, 2));
+         // Mostrar el primer error de validación específico si existe
+         const firstError = error.response.data.errors[0];
+         showError(`Error de validación: ${firstError.msg} en ${firstError.path || firstError.param}. Valor: ${firstError.value}`);
+      } else {
+         const message = error?.response?.data?.message || error?.message || 'Ocurrió un error al actualizar la cotización';
+         showError(message);
+      }
     }
   };
 

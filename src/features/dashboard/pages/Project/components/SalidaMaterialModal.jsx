@@ -12,6 +12,7 @@ import {
   FaExclamationTriangle,
 } from "react-icons/fa";
 import { usePermissions } from "../../../../../shared/hooks/usePermissions";
+import { useAuth } from "../../../../../shared/contexts/AuthContext";
 import { showToast } from "../../../../../shared/utils/alertas";
 
 const SalidaMaterialModal = ({
@@ -20,6 +21,7 @@ const SalidaMaterialModal = ({
   onSaveSalida,
   selectedProject,
 }) => {
+  const { user } = useAuth();
   const { checkManage } = usePermissions();
   const [formData, setFormData] = useState({
     sede: "",
@@ -40,16 +42,13 @@ const SalidaMaterialModal = ({
   // Obtener sedes del proyecto seleccionado
   const sedesDisponibles = selectedProject?.sedes || [];
 
-  // Obtener empleados del proyecto seleccionado
-  const empleados = selectedProject?.empleadosAsociados || [];
-
   useEffect(() => {
     if (isOpen && selectedProject) {
       setFormData({
         sede: "",
         material: "",
         cantidad: "",
-        entregador: "",
+        entregador: user ? `${user.nombre} ${user.apellido}` : "",
         receptor: "",
         observaciones: "",
       });
@@ -60,7 +59,7 @@ const SalidaMaterialModal = ({
       setCostoUnitario(0);
       setCostoTotal(0);
     }
-  }, [isOpen, selectedProject]);
+  }, [isOpen, selectedProject, user]);
 
   // Actualizar materiales disponibles cuando se selecciona una sede
   useEffect(() => {
@@ -165,33 +164,46 @@ const SalidaMaterialModal = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) {
       showToast("Por favor, corrige los errores del formulario.", "error");
       return;
     }
 
-    // Crear objeto de salida
-    const nuevaSalida = {
-      id: `salida-${Date.now()}`,
-      proyecto: selectedProject.nombre,
-      sede: formData.sede,
-      material: formData.material,
-      cantidad: Number(formData.cantidad),
-      costoUnitario: costoUnitario,
-      costoTotal: costoTotal,
-      entregador: formData.entregador,
-      receptor: formData.receptor,
-      observaciones: formData.observaciones,
-      fecha: new Date().toISOString(),
-      usuarioRegistro: "Usuario Actual", // En un entorno real, obtener del contexto de autenticación
-    };
+    try {
+      // Crear objeto de salida
+      // Buscar IDs necesarios
+      const materialObj = materialesDisponibles.find(m => m.item === formData.material);
+      
+      const nuevaSalida = {
+        id_proyecto: selectedProject.id_proyecto || selectedProject.id, // Asegurar el uso de id_proyecto
+        id_proyecto_sede: selectedSede ? selectedSede.id_proyecto_sede : null,
+        id_producto: materialObj ? (materialObj.id_producto || materialObj.id) : null,
+        cantidad: Number(formData.cantidad),
+        costo_total: costoTotal,
+        id_entregador: user ? user.id_usuario : null,
+        receptor: formData.receptor,
+        observaciones: formData.observaciones,
+        fecha_salida: new Date().toISOString(),
+        
+        // Datos adicionales para visualización inmediata si se añade a lista local
+        proyecto: selectedProject.nombre,
+        sede: formData.sede,
+        material: formData.material,
+        entregador: user ? `${user.nombre} ${user.apellido}` : "",
+        costoUnitario: costoUnitario,
+        costoTotal: costoTotal
+      };
 
-    // Llamar función de guardado
-    onSaveSalida(nuevaSalida);
+      // Llamar función de guardado
+      await onSaveSalida(nuevaSalida);
 
-    // Cerrar modal
-    onClose();
+      // Cerrar modal
+      onClose();
+    } catch (error) {
+      console.error("Error al preparar los datos de salida:", error);
+      showToast("Error al preparar los datos de salida", "error");
+    }
   };
 
   const formatCurrency = (value) =>
@@ -399,25 +411,12 @@ const SalidaMaterialModal = ({
                   <FaUser className="inline mr-2 text-blue-500" />
                   Entregador *
                 </label>
-                <select
+                <input
+                  type="text"
                   value={formData.entregador}
-                  onChange={(e) => handleChange("entregador", e.target.value)}
-                  className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 ${
-                    errors.entregador ? "border-red-500" : "border-gray-300"
-                  }`}
-                >
-                  <option value="">Selecciona el entregador...</option>
-                  {empleados.map((empleado, index) => (
-                    <option key={index} value={empleado.nombre || empleado}>
-                      {empleado.nombre || empleado}
-                    </option>
-                  ))}
-                </select>
-                {errors.entregador && (
-                  <p className="text-red-500 text-sm mt-1">
-                    {errors.entregador}
-                  </p>
-                )}
+                  readOnly
+                  className="w-full p-3 border border-gray-300 rounded-lg bg-gray-100 text-gray-600 cursor-not-allowed"
+                />
               </div>
 
               <div>

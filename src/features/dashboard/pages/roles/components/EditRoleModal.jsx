@@ -24,10 +24,10 @@ const EditRoleModal = ({ role, isOpen, onClose, onSave }) => {
     const exactTarget = permissionName;
 
     for (const mod of MODULES_CONFIG) {
-      if ((mod.key === exactTarget || normalize(mod.name) === target) && !mod.submodules) return mod.name;
+      if ((mod.key === exactTarget || normalize(mod.key) === target || normalize(mod.name) === target) && !mod.submodules) return mod.name;
       if (mod.submodules) {
         for (const sub of mod.submodules) {
-          if (sub.key === exactTarget || normalize(sub.name) === target) return `${mod.name}.${sub.name}`;
+          if (sub.key === exactTarget || normalize(sub.key) === target || normalize(sub.name) === target) return `${mod.name}.${sub.name}`;
         }
       }
     }

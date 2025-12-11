@@ -5,6 +5,7 @@ import Swal from 'sweetalert2'; // Importar Swal para el modal de motivo
 // Asegúrate de que esta ruta sea correcta para tu utilidad de alertas
 import { confirmDelete } from '../../../../../shared/utils/alerts';
 import { createBasePDF, addHeader, addFooter, addGenericTable } from '../../../../../shared/utils/pdf/pdfTemplate';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const inputBase = 'w-full p-2.5 border rounded-lg text-sm focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -24,6 +25,7 @@ const formatCurrency = (amount) => {
 
 
 const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, onCancelPayment }) => {
+  const { canDelete } = usePermissions();
   const [concepto, setConcepto] = useState('');
   const [montoAbonar, setMontoAbonar] = useState('');
   const [metodoPago, setMetodoPago] = useState('');
@@ -489,7 +491,7 @@ const CreatePaymentsModal = ({ isOpen, onClose, onSaveNewAbono, contractData, on
                          </span>
                       </td>
                       <td className="px-2 py-2">
-                        {p.estado === 'Registrado' && (
+                        {p.estado === 'Registrado' && canDelete('pagosyabonos') && (
                             <button
                             className="text-red-500 hover:text-red-700 transition-colors"
                             onClick={() => handleCancelPaymentInModal(p.id)}

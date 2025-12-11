@@ -1,8 +1,10 @@
 import React from 'react';
 import { FaEye, FaDownload, FaMinusCircle } from 'react-icons/fa';
 import {showError} from '../../../../../shared/utils/alerts';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
+  const { canDelete } = usePermissions();
   const formatNumber = (num) => {
     if (num === null || num === undefined) return '$0';
     const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
@@ -89,19 +91,21 @@ const SalesTable = ({ sales, onViewDetails, onDownloadPDF, onCancel }) => {
                     <FaDownload size={16} />
                   </button>
 
-                  <button
-                    title="Anular venta"
-                    onClick={() =>
-                      sale.estado !== 'Anulada' ? onCancel(sale) : handleDisabledAction()
-                    }
-                    className={
-                      sale.estado !== 'Anulada'
-                        ? 'text-red-600 hover:text-red-800'
-                        : 'text-gray-400 cursor-not-allowed'
-                    }
-                  >
-                    <FaMinusCircle size={16} />
-                  </button>
+                  {canDelete('venta_productos') && (
+                    <button
+                      title="Anular venta"
+                      onClick={() =>
+                        sale.estado !== 'Anulada' ? onCancel(sale) : handleDisabledAction()
+                      }
+                      className={
+                        sale.estado !== 'Anulada'
+                          ? 'text-red-600 hover:text-red-800'
+                          : 'text-gray-400 cursor-not-allowed'
+                      }
+                    >
+                      <FaMinusCircle size={16} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

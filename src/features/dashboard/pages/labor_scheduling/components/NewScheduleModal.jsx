@@ -34,6 +34,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
         descripcion: '',
         color: '#3B82F6',
         fechaInicio: new Date().toISOString().split('T')[0],
+        fechaFin: '',
         dias: { ...DEFAULT_DAYS },
     });
 
@@ -53,6 +54,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
                 descripcion: initialData.descripcion || '',
                 color: initialData.color || '#3B82F6',
                 fechaInicio: initialData.fechaInicio || new Date().toISOString().split('T')[0],
+                fechaFin: initialData.fechaFin || '',
                 dias: initialData.dias || { ...DEFAULT_DAYS },
             });
         } else {
@@ -62,6 +64,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
                 descripcion: '',
                 color: '#3B82F6',
                 fechaInicio: new Date().toISOString().split('T')[0],
+                fechaFin: '',
                 dias: {
                     ...DEFAULT_DAYS,
                     lunes: [{ horaInicio: '09:00', horaFin: '17:00', subtitulo: '' }],
@@ -145,6 +148,16 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
             return;
         }
 
+        if (!formData.fechaFin) {
+            alert('La fecha de fin es obligatoria');
+            return;
+        }
+
+        if (formData.fechaFin < formData.fechaInicio) {
+            alert('La fecha de fin debe ser posterior a la fecha de inicio');
+            return;
+        }
+
         console.log('[NewScheduleModal] Submitting with formData:', formData);
         
         const payload = {
@@ -153,6 +166,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
             descripcion: formData.descripcion,
             color: formData.color,
             fechaInicio: formData.fechaInicio,
+            fechaFin: formData.fechaFin,
             dias: formData.dias,
         };
         
@@ -320,6 +334,16 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
                                             value={formData.fechaInicio}
                                             min={new Date().toISOString().split('T')[0]}
                                             onChange={(e) => setFormData((prev) => ({ ...prev, fechaInicio: e.target.value }))}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin <span className="text-red-500">*</span></label>
+                                        <input
+                                            type="date"
+                                            value={formData.fechaFin}
+                                            min={formData.fechaInicio}
+                                            onChange={(e) => setFormData((prev) => ({ ...prev, fechaFin: e.target.value }))}
                                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                                         />
                                     </div>

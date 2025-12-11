@@ -25,7 +25,9 @@ const LaborSchedulingSidebar = ({
   onInactivate,
   onEditNovedad,
   onDeleteNovedad,
-  userRole
+  userRole,
+  showAnnulled,
+  setShowAnnulled
 }) => {
   const [search, setSearch] = useState(filter);
   const [expandedUsers, setExpandedUsers] = useState(new Set()); // Para expandir usuarios
@@ -153,26 +155,6 @@ const LaborSchedulingSidebar = ({
   return (
     <aside className="h-full flex flex-col bg-white border-r border-gray-200 w-72 flex-shrink-0 overflow-hidden shadow-sm">
 
-      {/* 1. Botones Superiores (Separados) */}
-      <div className="p-4 flex gap-3 border-b border-gray-100">
-        {onCreate && (
-          <button
-            onClick={() => onCreate()}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm font-medium"
-          >
-            <FaPlus size={12} /> Programar
-          </button>
-        )}
-        {onCreateNovedad && (
-          <button
-            onClick={() => onCreateNovedad()}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-all shadow-sm text-sm font-medium"
-          >
-            <FaPlus size={12} /> Novedad
-          </button>
-        )}
-      </div>
-
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
 
         {/* 2. Mini Calendario */}
@@ -212,6 +194,25 @@ const LaborSchedulingSidebar = ({
             onChange={e => { setSearch(e.target.value); setFilter(e.target.value); }}
             className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm text-gray-700 transition-all"
           />
+        </div>
+
+        {/* Toggle Show Annulled */}
+        <div className="mb-6 px-1">
+          <label className="flex items-center gap-3 cursor-pointer select-none group">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={showAnnulled}
+                onChange={(e) => setShowAnnulled && setShowAnnulled(e.target.checked)}
+              />
+              <div className="block w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors"></div>
+              <div className="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform peer-checked:translate-x-4"></div>
+            </div>
+            <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors font-medium">
+              Ver anuladas
+            </span>
+          </label>
         </div>
 
         {/* 4. Listado de Empleados con Programación */}

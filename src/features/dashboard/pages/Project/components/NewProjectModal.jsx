@@ -1407,7 +1407,9 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
                 >
                   <option>Pendiente</option>
                   <option>En Progreso</option>
+                  <option>En Pausa</option>
                   <option>Completado</option>
+                  <option>Cancelado</option>
                 </select>
               </div>
               <div>

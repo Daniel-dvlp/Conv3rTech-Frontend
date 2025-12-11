@@ -1,5 +1,6 @@
 import React from "react";
 import { FaEye, FaEdit, FaTrashAlt } from "react-icons/fa";
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const ServicesTable = ({
   servicios,
@@ -7,6 +8,7 @@ const ServicesTable = ({
   onEditar,
   onEliminar,
 }) => {
+  const { canEdit, canDelete } = usePermissions();
   return (
     <div className="bg-white rounded-lg shadow overflow-x-auto">
       <table className="w-full">
@@ -82,20 +84,24 @@ const ServicesTable = ({
                     >
                       <FaEye size={16} />
                     </button>
-                    <button
-                      onClick={() => onEditar(servicioId)}
-                      className="text-yellow-500 hover:text-yellow-700  hover:yellow-200 p-2 rounded-lg transition-colors"
-                      title="Editar"
-                    >
-                      <FaEdit size={16} />
-                    </button>
-                    <button
-                      onClick={() => onEliminar(servicioId)}
-                      className="text-red-500 hover:text-red-700  hover:red-200 p-2 rounded-lg transition-colors"
-                      title="Eliminar"
-                    >
-                      <FaTrashAlt size={16} />
-                    </button>
+                    {canEdit('servicios') && (
+                      <button
+                        onClick={() => onEditar(servicioId)}
+                        className="text-yellow-500 hover:text-yellow-700  hover:yellow-200 p-2 rounded-lg transition-colors"
+                        title="Editar"
+                      >
+                        <FaEdit size={16} />
+                      </button>
+                    )}
+                    {canDelete('servicios') && (
+                      <button
+                        onClick={() => onEliminar(servicioId)}
+                        className="text-red-500 hover:text-red-700  hover:red-200 p-2 rounded-lg transition-colors"
+                        title="Eliminar"
+                      >
+                        <FaTrashAlt size={16} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>

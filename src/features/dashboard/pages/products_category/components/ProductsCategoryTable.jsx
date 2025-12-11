@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 import { Switch } from '@headlessui/react';
 
 const ToggleSwitch = ({ checked, onChange }) => (
@@ -17,6 +18,7 @@ const ToggleSwitch = ({ checked, onChange }) => (
 );
 
 const ProductsCategoryTable = ({ categories, onViewDetails, onEditCategory, onDeleteCategory, onStatusChange }) => {
+  const { canEdit, canDelete } = usePermissions();
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
@@ -44,12 +46,16 @@ const ProductsCategoryTable = ({ categories, onViewDetails, onEditCategory, onDe
                   <button className="text-blue-600 hover:text-gray-900" title="Ver" onClick={() => onViewDetails(category)}>
                     <FaEye size={16} />
                   </button>
-                  <button className="text-yellow-600 hover:text-yellow-800" title="Editar" onClick={() => onEditCategory(category)}>
-                    <FaEdit size={16} />
-                  </button>
-                  <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDeleteCategory(category.id_categoria)}>
-                    <FaTrashAlt size={16} />
-                  </button>
+                  {canEdit('categoria_productos') && (
+                    <button className="text-yellow-600 hover:text-yellow-800" title="Editar" onClick={() => onEditCategory(category)}>
+                      <FaEdit size={16} />
+                    </button>
+                  )}
+                  {canDelete('categoria_productos') && (
+                    <button className="text-red-600 hover:text-red-800" title="Eliminar" onClick={() => onDeleteCategory(category.id_categoria)}>
+                      <FaTrashAlt size={16} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

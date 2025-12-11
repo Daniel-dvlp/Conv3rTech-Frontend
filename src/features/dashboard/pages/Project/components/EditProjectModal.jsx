@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { FaTimes, FaPlus, FaTrash } from "react-icons/fa";
 import { showToast } from "../../../../../shared/utils/alertas";
-import { usersService, servicesService } from "../../../../../services";
+import { usersService, servicesService, productsService } from "../../../../../services";
 import { clientsApi } from "../../clients/services/clientsApi";
+import { useAuth } from "../../../../../shared/contexts/AuthContext";
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -26,6 +27,9 @@ const inputBaseStyle =
   "block w-full text-sm border-gray-300 rounded-lg shadow-sm p-2.5 focus:ring-conv3r-gold focus:border-conv3r-gold";
 
 const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
+  const { user } = useAuth();
+  const isAdmin = user?.rol?.nombre_rol === "Administrador" || user?.id_rol === 1;
+
   const initialState = project || {
     nombre: "",
     numeroContrato: "",
@@ -60,9 +64,15 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
   const [tecnicos, setTecnicos] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [availableServices, setAvailableServices] = useState([]);
+  const [availableProducts, setAvailableProducts] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  const [materialSearch, setMaterialSearch] = useState("");
+  const [servicioSearch, setServicioSearch] = useState("");
 
   // Cargar usuarios y clientes desde la API cuando se abra el modal
+  const [pauseReason, setPauseReason] = useState("");
+  const [showPauseModal, setShowPauseModal] = useState(false);
+
   useEffect(() => {
     if (isOpen) {
       loadData();
@@ -72,78 +82,241 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
   const loadData = async () => {
     setLoadingData(true);
     try {
-      const [coordinadoresResponse, tecnicosResponse, clientsData, servicesResponse] = await Promise.all([
-        usersService.getUsersByRole("Coordinador"),
-        usersService.getUsersByRole("Tecnico"),
+      const results = await Promise.allSettled([
+        usersService.getAllUsers(),
         clientsApi.getAllClients(),
-        servicesService.getAllServices({ estado: 'activo' })
+        servicesService.getAllServices({ estado: 'activo' }),
+        productsService.getAllProducts()
       ]);
 
+      const [usersResult, clientsResult, servicesResult, productsResult] = results;
+
       // Manejar respuesta de Servicios
-      if (Array.isArray(servicesResponse)) {
-        setAvailableServices(servicesResponse);
-      } else if (servicesResponse?.data && Array.isArray(servicesResponse.data)) {
-        setAvailableServices(servicesResponse.data);
+      if (servicesResult.status === 'fulfilled') {
+        const servicesResponse = servicesResult.value;
+        if (Array.isArray(servicesResponse)) {
+          setAvailableServices(servicesResponse);
+        } else if (servicesResponse?.data && Array.isArray(servicesResponse.data)) {
+          setAvailableServices(servicesResponse.data);
+        } else {
+          setAvailableServices([]);
+        }
       } else {
-        setAvailableServices([]);
+        console.error("Error cargando servicios:", servicesResult.reason);
+        showToast("Error cargando servicios", "error");
       }
 
-      // Manejar respuesta de Coordinadores
-      if (Array.isArray(coordinadoresResponse)) {
-        setCoordinadores(coordinadoresResponse);
-      } else if (coordinadoresResponse.success && Array.isArray(coordinadoresResponse.data)) {
-        setCoordinadores(coordinadoresResponse.data);
+      // Manejar respuesta de Productos
+      if (productsResult.status === 'fulfilled') {
+        const productsResponse = productsResult.value;
+        if (Array.isArray(productsResponse)) {
+          setAvailableProducts(productsResponse);
+        } else if (productsResponse?.data && Array.isArray(productsResponse.data)) {
+          setAvailableProducts(productsResponse.data);
+        } else {
+           setAvailableProducts([]);
+        }
       } else {
-        console.error("Formato de coordinadores inválido:", coordinadoresResponse);
+         console.error("Error cargando productos:", productsResult.reason);
+         // No bloquear flujo, pero avisar
+         // showToast("Error cargando productos", "error");
       }
 
-      // Manejar respuesta de Técnicos
-      if (Array.isArray(tecnicosResponse)) {
-        setTecnicos(tecnicosResponse);
-      } else if (tecnicosResponse.success && Array.isArray(tecnicosResponse.data)) {
-        setTecnicos(tecnicosResponse.data);
+      // Manejar respuesta de Usuarios (Coordinadores y Técnicos)
+      if (usersResult.status === 'fulfilled') {
+        const usersResponse = usersResult.value;
+        let allUsers = [];
+        
+        if (Array.isArray(usersResponse)) {
+          allUsers = usersResponse;
+        } else if (usersResponse?.data && Array.isArray(usersResponse.data)) {
+          allUsers = usersResponse.data;
+        } else if (usersResponse?.success && Array.isArray(usersResponse.data)) {
+           // Handle { success: true, data: [...] } format if applicable
+           allUsers = usersResponse.data;
+        }
+
+        // Filtrar Coordinadores y Administradores
+        const coords = allUsers.filter(u => 
+          u.rol && u.rol.nombre_rol && (
+            u.rol.nombre_rol.toLowerCase().includes('coordinador') ||
+            u.rol.nombre_rol.toLowerCase().includes('admin')
+          ) &&
+          u.estado_usuario === 'Activo'
+        );
+        setCoordinadores(coords);
+
+        // Filtrar Técnicos (con o sin tilde, insensible a mayúsculas/minúsculas) y activos
+        const techs = allUsers.filter(u => 
+          u.rol && u.rol.nombre_rol && (
+            u.rol.nombre_rol.toLowerCase().includes('tecnico') || 
+            u.rol.nombre_rol.toLowerCase().includes('técnico')
+          ) &&
+          u.estado_usuario === 'Activo'
+        );
+        setTecnicos(techs);
+
       } else {
-        console.error("Formato de técnicos inválido:", tecnicosResponse);
+         console.error("Error cargando usuarios:", usersResult.reason);
+         showToast("Error al cargar usuarios", "error");
       }
 
-      if (clientsData) {
-        setClientes(clientsData);
+      // Manejar respuesta de Clientes
+      if (clientsResult.status === 'fulfilled') {
+        const clientsData = clientsResult.value;
+        if (clientsData) {
+          setClientes(clientsData);
+        } else {
+          showToast("Error al cargar clientes", "error");
+        }
       } else {
-        showToast("Error al cargar clientes", "error");
+         console.error("Error cargando clientes:", clientsResult.reason);
+         showToast("Error de conexión al cargar clientes", "error");
       }
 
     } catch (error) {
       console.error("Error loading data:", error);
-      showToast("Error de conexión al cargar datos", "error");
+      const errorMessage = error?.response?.data?.message || error?.message || "Error de conexión al cargar datos";
+      showToast(errorMessage, "error");
     }
     setLoadingData(false);
   };
 
   useEffect(() => {
     if (project && isOpen) {
-      // Si el proyecto no tiene sedes definidas pero tiene un cliente, precargar las sedes
-      if (project.cliente && (!project.sedes || project.sedes.length === 0)) {
-        const sedesPrecargadas = getSedesFromCliente(project.cliente);
+      // Helper para buscar nombre de producto por ID
+      const findProductNameById = (id) => {
+        if (!id) return "";
+        const p = availableProducts.find(prod => prod.id_producto === id || prod.id === id);
+        return p ? p.nombre : "";
+      };
 
+      // Helper para buscar nombre de servicio por ID
+      const findServiceNameById = (id) => {
+        if (!id) return "";
+        const s = availableServices.find(serv => serv.id_servicio === id || serv.id === id);
+        return s ? s.nombre : "";
+      };
+
+      // Helper para obtener nombre de producto/servicio si solo viene ID
+      const getProductName = (m) => {
+        let name = m.item || m.nombre_producto || m.nombre || (m.producto?.nombre);
+        if (!name && (m.id_producto || m.id)) {
+          name = findProductNameById(m.id_producto || m.id);
+        }
+        return name || "";
+      };
+      
+      const getServiceName = (s) => {
+        let name = s.servicio || s.nombre_servicio || s.nombre || (s.servicio_obj?.nombre);
+        if (!name && (s.id_servicio || s.id)) {
+           name = findServiceNameById(s.id_servicio || s.id);
+        }
+        return name || "";
+      };
+
+      const normalizedProject = {
+        ...project,
+        // Normalizar fechas para input type="date"
+        fechaInicio: project.fechaInicio ? new Date(project.fechaInicio).toISOString().split('T')[0] : "",
+        fechaFin: project.fechaFin ? new Date(project.fechaFin).toISOString().split('T')[0] : "",
+        
+        // Normalizar Cliente: Si es objeto, extraer nombre
+        cliente: typeof project.cliente === 'object' ? project.cliente.nombre : (project.cliente || ""),
+
+        // Responsable: Usar ID si está disponible. Manejar varios formatos posibles.
+        responsable: project.id_responsable || (project.responsable?.id) || project.responsable || "",
+        
+        // Empleados: Asegurar array de nombres
+        empleadosAsociados: Array.isArray(project.empleadosAsociados)
+          ? project.empleadosAsociados.map(emp => 
+              typeof emp === 'object' ? (emp.nombre + (emp.apellido ? ` ${emp.apellido}` : '')) : emp
+            )
+          : [],
+
+        // Normalizar Materiales (nivel proyecto)
+        materiales: (project.materiales || []).map(m => ({
+          item: getProductName(m),
+          cantidad: Number(m.cantidad) || 0,
+          precio: Number(m.precio || m.precio_unitario) || 0,
+          id_producto: m.id_producto || m.id
+        })),
+
+        // Normalizar Servicios (nivel proyecto)
+        servicios: (project.servicios || []).map(s => ({
+          servicio: getServiceName(s),
+          cantidad: Number(s.cantidad) || 0,
+          precio: Number(s.precio || s.precio_unitario) || 0,
+          id_servicio: s.id_servicio || s.id
+        })),
+
+        // Sedes: Asegurar estructura y mapeo correcto
+        sedes: (project.sedes || []).map(sede => ({
+          ...sede,
+          nombre: sede.nombre || sede.nombre_sede,
+          ubicacion: sede.ubicacion || sede.direccion,
+          // Asegurar que el presupuesto tenga valores numéricos
+          presupuesto: {
+            materiales: Number(sede.presupuesto?.materiales || sede.presupuesto_materiales) || 0,
+            servicios: Number(sede.presupuesto?.servicios || sede.presupuesto_servicios) || 0,
+            total: Number(sede.presupuesto?.total || sede.presupuesto_total) || 0,
+            restante: Number(sede.presupuesto?.restante || sede.presupuesto_restante) || 0,
+          },
+          materialesAsignados: (sede.materialesAsignados || sede.materiales_asignados || []).map(mat => ({
+            ...mat,
+            item: getProductName(mat),
+            cantidad: Number(mat.cantidad) || 0,
+            precio: Number(mat.precio || mat.precio_unitario) || 0
+          })),
+          serviciosAsignados: (sede.serviciosAsignados || sede.servicios_asignados || []).map(serv => ({
+            ...serv,
+            servicio: getServiceName(serv),
+            cantidad: Number(serv.cantidad) || 0,
+            precio: Number(serv.precio || serv.precio_unitario) || 0
+          }))
+        }))
+      };
+
+      // Si el proyecto no tiene sedes definidas pero tiene un cliente, intentar precargar
+      // SOLO si es un proyecto nuevo (sin ID) o si explícitamente no tiene sedes
+      // Pero para edición, confiamos en lo que viene del backend.
+      if (!project.id && project.cliente && (!project.sedes || project.sedes.length === 0)) {
+        const sedesPrecargadas = getSedesFromCliente(project.cliente);
         setProjectData({
-          ...project,
+          ...normalizedProject,
           sedes: sedesPrecargadas,
         });
       } else {
-        setProjectData(project);
+        setProjectData(normalizedProject);
       }
     }
-  }, [project, isOpen, clientes]); // Added clientes dependency
+  }, [project, isOpen, clientes, availableProducts, availableServices]); // Added dependencies for products/services lookup
 
   // Función helper para obtener las sedes de un cliente
   const getSedesFromCliente = (nombreCliente) => {
     const cliente = clientes.find((c) => c.nombre === nombreCliente);
+    // Verificar si el cliente tiene la propiedad 'AddressClients' o 'direcciones'
+    const direcciones = cliente?.AddressClients || cliente?.direcciones || [];
+
+    // Pre-calcular materiales y servicios a heredar
+    const materialesHeredados = (projectData.materiales || []).map(mat => ({
+        item: mat.item,
+        cantidad: 0,
+        id_producto: mat.id_producto
+    }));
+    const serviciosHeredados = (projectData.servicios || []).map(serv => ({
+        servicio: serv.servicio,
+        cantidad: 0,
+        precio: serv.precio,
+        id_servicio: serv.id_servicio
+    }));
+
     return (
-      cliente?.direcciones?.map((direccion) => ({
-        nombre: direccion.nombre,
+      direcciones.map((direccion) => ({
+        nombre: direccion.nombre_direccion || direccion.nombre,
         ubicacion: `${direccion.direccion}, ${direccion.ciudad}`,
-        materialesAsignados: [],
-        serviciosAsignados: [],
+        materialesAsignados: materialesHeredados,
+        serviciosAsignados: serviciosHeredados,
         presupuesto: {
           materiales: 0,
           servicios: 0,
@@ -156,8 +329,44 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
 
   if (!isOpen) return null;
 
+  const handleConfirmPause = () => {
+    if (!pauseReason.trim()) {
+      showToast("El motivo de pausa es obligatorio", "error");
+      return;
+    }
+
+    const timestamp = new Date().toLocaleString();
+    const pauseNote = `\n\n[ESTADO: PAUSA - ${timestamp}]\nMotivo: ${pauseReason}`;
+    
+    setProjectData(prev => ({
+      ...prev,
+      estado: "En Pausa",
+      observaciones: (prev.observaciones || "") + pauseNote
+    }));
+    
+    setShowPauseModal(false);
+    setPauseReason("");
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Interceptar cambio de estado a "En Pausa"
+    if (name === "estado" && value === "En Pausa") {
+      // Verificar permisos
+      const userRole = user?.rol?.toLowerCase() || "";
+      const isAuthorized = userRole === "administrador" || userRole === "coordinador";
+      
+      if (!isAuthorized) {
+        showToast("Solo administradores o coordinadores pueden pausar un proyecto.", "error");
+        return; // No cambiar el estado
+      }
+      
+      // Abrir modal de motivo
+      setShowPauseModal(true);
+      return; // No cambiar el estado todavía, esperar confirmación
+    }
+
     if (name === "manoDeObra") {
       setProjectData((prev) => ({
         ...prev,
@@ -198,7 +407,7 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     setProjectData((prev) => ({ ...prev, [listName]: updatedList }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = {};
     if (!projectData.nombre.trim())
@@ -206,8 +415,23 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     if (!projectData.cliente) newErrors.cliente = "Selecciona un cliente";
     if (!projectData.responsable)
       newErrors.responsable = "Selecciona un responsable";
-    if (!projectData.fechaInicio)
+    if (!projectData.fechaInicio) {
       newErrors.fechaInicio = "Selecciona la fecha de inicio";
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const [year, month, day] = projectData.fechaInicio.split("-").map(Number);
+      const startDate = new Date(year, month - 1, day);
+
+      // Si la fecha es menor a hoy, y es diferente a la fecha original del proyecto (si existe)
+      // Validamos. Si es la misma que ya tenía, permitimos (para poder editar proyectos antiguos)
+      const originalDate = project?.fechaInicio;
+      const isSameAsOriginal = originalDate && projectData.fechaInicio === originalDate;
+
+      if (startDate < today && !isSameAsOriginal) {
+        newErrors.fechaInicio = "La fecha de inicio no puede ser menor al día de hoy";
+      }
+    }
     if (!projectData.fechaFin)
       newErrors.fechaFin = "Selecciona la fecha de fin";
     if (
@@ -231,96 +455,316 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
       return;
     }
     try {
-      onUpdate({ ...projectData });
-      showToast("Proyecto actualizado exitosamente", "success");
-    } catch {
-      showToast("Error al actualizar el proyecto", "error");
+      // --- LOGICA DE RESOLUCIÓN DE IDs PARA CLIENTE Y RESPONSABLE ---
+
+      // 1. Resolver ID de CLIENTE
+      let id_cliente = null;
+      if (typeof projectData.cliente === 'number') {
+        id_cliente = projectData.cliente;
+      } else if (typeof projectData.cliente === 'string') {
+        // Buscar cliente por nombre en la lista 'clientes'
+        const selectedClient = clientes.find(c => 
+          c.nombre && c.nombre.trim().toLowerCase() === projectData.cliente.trim().toLowerCase()
+        );
+        id_cliente = selectedClient ? (selectedClient.id_cliente || selectedClient.id) : null;
+      } else if (typeof projectData.cliente === 'object' && projectData.cliente !== null) {
+        id_cliente = projectData.cliente.id_cliente || projectData.cliente.id;
+      }
+
+      // Si no se encuentra ID de cliente pero es obligatorio, intentar usar el ID original del proyecto si existe
+      if (!id_cliente && project && project.id_cliente) {
+         id_cliente = project.id_cliente;
+      }
+
+      // 2. Resolver ID de RESPONSABLE
+      let id_responsable = null;
+      // Normalizar input: puede venir como número (ID), string (Nombre) o string numérico ("15")
+      const responsableInput = projectData.responsable;
+
+      if (!isNaN(responsableInput) && responsableInput !== "" && responsableInput !== null) {
+        // Es un número o string numérico
+        id_responsable = Number(responsableInput);
+      } else if (typeof responsableInput === 'string') {
+        // Es un nombre (ej. "Juan Perez"). Buscar en la lista de usuarios.
+        const allUsers = [...tecnicos, ...coordinadores];
+        const foundUser = allUsers.find(u => {
+          const fullName = `${u.nombre} ${u.apellido || ''}`.trim();
+          return fullName.toLowerCase() === responsableInput.trim().toLowerCase() || 
+                 u.nombre.toLowerCase() === responsableInput.trim().toLowerCase();
+        });
+        id_responsable = foundUser ? (foundUser.id_usuario || foundUser.id) : null;
+      }
+
+      // 3. Mapear empleados asociados (array de nombres a array de objetos con ID)
+      const empleadosIds = (projectData.empleadosAsociados || []).map(empName => {
+         const allUsers = [...tecnicos, ...coordinadores];
+         // Si empName ya es un objeto con id, usarlo
+         if (typeof empName === 'object' && (empName.id || empName.id_usuario)) {
+            return { id_usuario: empName.id_usuario || empName.id };
+         }
+         // Si es string (nombre), buscar ID
+         const user = allUsers.find(t => {
+           const fullName = `${t.nombre} ${t.apellido || ''}`.trim();
+           return fullName.toLowerCase() === String(empName).trim().toLowerCase();
+         });
+         return user ? { id_usuario: user.id_usuario || user.id } : null;
+      }).filter(Boolean);
+
+      // --- FIN LOGICA DE RESOLUCIÓN DE IDs ---
+
+      // Mapear servicios (si es necesario enviar IDs) y filtrar cantidad > 0
+      const serviciosMapped = (projectData.servicios || []).map(s => {
+        const serviceObj = availableServices.find(serv => serv.nombre === s.servicio);
+        const id = serviceObj ? (serviceObj.id_servicio || serviceObj.id) : (s.id_servicio || s.id);
+        return {
+          id_servicio: Number(id),
+          cantidad: Number(s.cantidad) || 0,
+          precio_unitario: Number(s.precio || s.precio_unitario) || 0,
+          observaciones: s.observaciones || ""
+        };
+      }).filter(s => s.id_servicio && !isNaN(s.id_servicio) && s.cantidad > 0); 
+      
+      // Helper para limpiar fechas vacías
+      const cleanDate = (dateStr) => (dateStr && dateStr.trim() !== "") ? dateStr : undefined;
+      // Helper para limpiar números (costos)
+      const cleanNumber = (numStr) => {
+        if (numStr === "" || numStr === null || numStr === undefined) return 0;
+        return Number(numStr);
+      };
+
+      const updatedData = {
+        ...projectData,
+        fecha_inicio: cleanDate(projectData.fechaInicio),
+        fecha_fin: cleanDate(projectData.fechaFin),
+        costo_mano_obra: cleanNumber(projectData.costos?.manoDeObra),
+        numero_contrato: projectData.numeroContrato || "",
+        empleadosAsociados: empleadosIds, // Enviar array de objetos o IDs según espere el backend
+        servicios: serviciosMapped,
+        // Map materials to backend format (id_producto, cantidad, precio_unitario) y filtrar cantidad > 0
+         materiales: (projectData.materiales || []).map(m => {
+           // Buscar el producto en la lista cargada para obtener su ID
+           const productObj = availableProducts.find(p => p.nombre === m.item);
+           // Si no se encuentra por nombre exacto, intentar buscar por similitud o asumir que ya tiene ID si es un objeto completo
+           const id = productObj ? (productObj.id_producto || productObj.id) : (m.id_producto || m.id);
+           
+           return {
+             id_producto: Number(id),
+             cantidad: Number(m.cantidad) || 0,
+             precio_unitario: Number(m.precio || m.precio_unitario) || 0
+           };
+         }).filter(m => m.id_producto && !isNaN(m.id_producto) && m.cantidad > 0) // Filter out items without valid product ID or zero quantity
+       };
+
+      // Aplanar sedes para el backend y limpiar datos
+      if (updatedData.sedes && Array.isArray(updatedData.sedes)) {
+        updatedData.sedes = updatedData.sedes.map(sede => {
+          // Mapear materialesAsignados a IDs y limpiar
+          const materialesAsignados = (sede.materialesAsignados || []).map(m => {
+            const productObj = availableProducts.find(p => p.nombre === m.item);
+            const id = productObj ? (productObj.id_producto || productObj.id) : (m.id_producto || m.id);
+            return {
+              id_producto: Number(id),
+              cantidad: Number(m.cantidad) || 0
+            };
+          }).filter(m => m.id_producto && !isNaN(m.id_producto) && m.cantidad > 0);
+
+          // Mapear serviciosAsignados a IDs y limpiar
+          const serviciosAsignados = (sede.serviciosAsignados || []).map(s => {
+            const serviceObj = availableServices.find(serv => serv.nombre === s.servicio);
+            const id = serviceObj ? (serviceObj.id_servicio || serviceObj.id) : (s.id_servicio || s.id);
+            return {
+              id_servicio: Number(id),
+              cantidad: Number(s.cantidad) || 0,
+              precio_unitario: Number(s.precio || s.precio_unitario) || 0
+            };
+          }).filter(s => s.id_servicio && !isNaN(s.id_servicio) && s.cantidad > 0);
+
+          // Construir objeto sede limpio, evitando campos nulos o no definidos en validación
+          return {
+            // Identificadores (si existen)
+            ...(sede.id ? { id: sede.id } : {}),
+            ...(sede.id_sede ? { id_sede: sede.id_sede } : {}),
+            
+            nombre: sede.nombre,
+            ubicacion: sede.ubicacion || "", // Enviar string vacío si no hay ubicación, es seguro
+            
+            // Limpiar id_direccion: solo enviar si es un número válido
+            ...(sede.id_direccion ? { id_direccion: Number(sede.id_direccion) } : {}),
+
+            materialesAsignados,
+            serviciosAsignados,
+            
+            presupuesto_materiales: Number(sede.presupuesto?.materiales || 0),
+            presupuesto_servicios: Number(sede.presupuesto?.servicios || 0),
+            presupuesto_total: Number(sede.presupuesto?.total || 0),
+            presupuesto_restante: Number(sede.presupuesto?.restante !== undefined ? sede.presupuesto.restante : (sede.presupuesto?.total || 0)),
+          };
+        });
+      }
+
+      // Remove camelCase fields to avoid confusion or send clean object
+      delete updatedData.fechaInicio;
+      delete updatedData.fechaFin;
+      delete updatedData.numeroContrato;
+
+      // Agregar IDs solo si son válidos
+      if (id_cliente) {
+        updatedData.id_cliente = id_cliente;
+      } else {
+        console.warn("No se encontró ID para el cliente:", projectData.cliente);
+        // Opcional: Mostrar error si el cliente es obligatorio y no se encuentra
+        // showToast("Error: No se encontró el cliente seleccionado", "error");
+        // return; 
+      }
+
+      if (id_responsable) {
+        updatedData.id_responsable = id_responsable;
+      } else {
+        // Si es "Sin asignar" o no se encuentra, no enviamos el campo para evitar error de validación (isInt)
+        // El backend mantendrá el valor actual (o null si ya lo era)
+        console.warn("No se encontró ID para el responsable (o es Sin asignar):", projectData.responsable);
+      }
+
+      await onUpdate(updatedData);
+    } catch (error) {
+      console.error("Error al actualizar:", error);
+      // El toast de error ya se muestra en onUpdate si falla la API
+      // showToast("Error al actualizar el proyecto", "error");
     }
   };
 
-  const renderListInputs = (listName, label) => {
-    const items = Array.isArray(projectData[listName])
-      ? projectData[listName]
-      : [];
-    const singularLabel = listName === "materiales" ? "Material" : "Servicio";
+  const renderMaterialsAndServices = (type) => {
+    const isMaterial = type === "materiales";
+    const list = projectData[type] || [];
+    const availableItems = isMaterial ? availableProducts : availableServices;
+    const searchTerm = isMaterial ? materialSearch : servicioSearch;
+    const setSearchTerm = isMaterial ? setMaterialSearch : setServicioSearch;
+    const label = isMaterial ? "Materiales y Equipos" : "Servicios Incluidos";
+    const placeholder = isMaterial ? "Buscar material..." : "Buscar servicio...";
+    const idField = isMaterial ? "id_producto" : "id_servicio"; // O "id"
+    const nameField = "nombre"; // Asumimos que tanto productos como servicios tienen "nombre" en available...
+
+    // Filtrar items disponibles para búsqueda
+    const filteredItems = availableItems.filter(item => {
+      const name = item.nombre || item.item || item.servicio;
+      const alreadyAdded = list.some(added => added.item === name || added.servicio === name);
+      return !alreadyAdded && name.toLowerCase().includes(searchTerm.toLowerCase());
+    });
+
+    const handleAddItem = (item) => {
+      const newItem = isMaterial 
+        ? { 
+            item: item.nombre, 
+            cantidad: 1, 
+            precio: item.precio || 0,
+            id_producto: item.id_producto || item.id 
+          }
+        : { 
+            servicio: item.nombre, 
+            cantidad: 1, 
+            precio: item.precio || 0,
+            id_servicio: item.id_servicio || item.id 
+          };
+      
+      setProjectData(prev => ({
+        ...prev,
+        [type]: [...(prev[type] || []), newItem]
+      }));
+      setSearchTerm("");
+    };
 
     return (
       <FormSection title={label}>
-        <div className="space-y-4">
-          <div className="grid grid-cols-[1fr,auto,auto,auto] gap-3 px-1 text-xs font-bold text-gray-500">
-            <span>Nombre del {singularLabel.toLowerCase()}</span>
-            <span className="w-20 text-center">Cantidad</span>
-            <span className="w-28 text-center">Precio</span>
-            <span className="w-10 text-center"></span>
-          </div>
-          {items.map((item, index) => (
-            <div
-              key={index}
-              className="grid grid-cols-[1fr,auto,auto,auto] gap-3 items-center"
-            >
-              {listName === "materiales" ? (
-                <input
-                  type="text"
-                  name="item"
-                  value={item.item}
-                  onChange={(e) => handleListChange(index, e, listName)}
-                  className={inputBaseStyle}
-                  required
-                />
-              ) : (
-                <select
-                  name="servicio"
-                  value={item.servicio}
-                  onChange={(e) => handleListChange(index, e, listName)}
-                  className={inputBaseStyle}
-                  required
+        {/* Buscador */}
+        <div className="mb-4 relative">
+          <FormLabel>Agregar {isMaterial ? "Material" : "Servicio"}</FormLabel>
+          <input
+            type="text"
+            placeholder={placeholder}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={inputBaseStyle}
+          />
+          {searchTerm && filteredItems.length > 0 && (
+            <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto">
+              {filteredItems.map((item, idx) => (
+                <div
+                  key={idx}
+                  className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex justify-between items-center"
+                  onClick={() => handleAddItem(item)}
                 >
-                  <option value="">Seleccione un servicio</option>
-                  {/* Se debe pasar la lista de servicios filtrados como prop o desde contexto */}
-                  {/* Por ahora asumimos que los servicios vienen filtrados */}
-                  {availableServices.map((s) => (
-                    <option key={s.id_servicio} value={s.nombre}>
-                      {s.nombre}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <input
-                type="number"
-                name="cantidad"
-                value={item.cantidad}
-                onChange={(e) => handleListChange(index, e, listName)}
-                className={`${inputBaseStyle} w-20 text-center`}
-                required
-                min="1"
-              />
-              <input
-                type="number"
-                name="precio"
-                value={item.precio}
-                onChange={(e) => handleListChange(index, e, listName)}
-                className={`${inputBaseStyle} w-28`}
-                required
-                min="0"
-                placeholder="COP"
-              />
-              <button
-                type="button"
-                onClick={() => removeListItem(index, listName)}
-                className="p-2 text-gray-400 rounded-full hover:bg-red-100 hover:text-red-600 transition-colors"
-              >
-                <FaTrash />
-              </button>
+                  <span>{item.nombre}</span>
+                  <span className="text-xs text-gray-500 font-semibold">
+                    ${(item.precio || 0).toLocaleString()}
+                  </span>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
+          {searchTerm && filteredItems.length === 0 && (
+            <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 p-3 text-gray-500 text-sm">
+              No se encontraron resultados.
+            </div>
+          )}
         </div>
-        <button
-          type="button"
-          onClick={() => addListItem(listName)}
-          className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg px-3 py-2 transition-colors"
-        >
-          <FaPlus size={12} /> Agregar {singularLabel}
-        </button>
+
+        {/* Lista de Items Agregados */}
+        {list.length > 0 ? (
+          <div className="space-y-3">
+             <div className="grid grid-cols-[1fr,auto,auto,auto] gap-3 px-1 text-xs font-bold text-gray-500 mb-2">
+                <span>Nombre</span>
+                <span className="w-24 text-center">Cantidad</span>
+                <span className="w-32 text-center">Precio Unit.</span>
+                <span className="w-8"></span>
+             </div>
+            {list.map((item, index) => (
+              <div key={index} className="bg-white border border-gray-200 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center gap-3 shadow-sm">
+                <div className="flex-1 font-medium text-gray-800 break-words">
+                  {isMaterial ? item.item : item.servicio}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 sm:hidden">Cant.</span>
+                    <input
+                      type="number"
+                      name="cantidad"
+                      value={item.cantidad}
+                      onChange={(e) => handleListChange(index, e, type)}
+                      className={`${inputBaseStyle} w-24 text-center`}
+                      min="1"
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-gray-400 sm:hidden">Precio</span>
+                    <input
+                      type="number"
+                      name="precio"
+                      value={item.precio}
+                      onChange={(e) => handleListChange(index, e, type)}
+                      className={`${inputBaseStyle} w-32 text-right`}
+                      min="0"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeListItem(index, type)}
+                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-full transition-colors"
+                    title="Eliminar"
+                  >
+                    <FaTrash />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200 text-gray-400">
+            No hay {isMaterial ? "materiales" : "servicios"} agregados.
+          </div>
+        )}
       </FormSection>
     );
   };
@@ -338,11 +782,26 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
       });
       setEditingSede(sedeIdx);
     } else {
+      // Crear NUEVA Sede - Heredar materiales y servicios del proyecto (con cantidad 0 por defecto)
+      // Esto asegura que la sede tenga la estructura lista para asignar cantidades
+      const materialesHeredados = (projectData.materiales || []).map(mat => ({
+        item: mat.item,
+        cantidad: 0, // Inicialmente 0, el usuario debe asignar
+        id_producto: mat.id_producto
+      }));
+
+      const serviciosHeredados = (projectData.servicios || []).map(serv => ({
+        servicio: serv.servicio,
+        cantidad: 0, // Inicialmente 0
+        precio: serv.precio,
+        id_servicio: serv.id_servicio
+      }));
+
       setSedeForm({
         nombre: "",
         ubicacion: "",
-        materialesAsignados: [],
-        serviciosAsignados: [],
+        materialesAsignados: materialesHeredados,
+        serviciosAsignados: serviciosHeredados,
       });
       setEditingSede(null);
     }
@@ -1069,6 +1528,10 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     );
   };
 
+  const selectedClient = projectData.cliente 
+    ? clientes.find(c => c.nombre === projectData.cliente)
+    : null;
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-start z-50 p-4 pt-12"
@@ -1164,6 +1627,33 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                     </option>
                   ))}
                 </select>
+                {selectedClient && (
+                  <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-lg text-sm">
+                    <div className="font-semibold text-blue-800 mb-2 border-b border-blue-200 pb-1">
+                      Información del Cliente
+                    </div>
+                    <div className="grid grid-cols-1 gap-1 text-gray-700">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Documento:</span>
+                        <span>{selectedClient.documento}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Tipo:</span>
+                        <span>{selectedClient.tipo_documento}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Correo:</span>
+                        <span className="truncate max-w-[150px]" title={selectedClient.correo}>
+                          {selectedClient.correo}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Teléfono:</span>
+                        <span>{selectedClient.telefono}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               <div>
                 <FormLabel htmlFor="responsable">Responsable</FormLabel>
@@ -1179,7 +1669,7 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                     Selecciona un responsable...
                   </option>
                   {coordinadores.map((u) => (
-                    <option key={u.id} value={`${u.nombre} ${u.apellido}`}>
+                    <option key={u.id_usuario || u.id} value={u.id_usuario || u.id}>
                       {u.nombre} {u.apellido}
                     </option>
                   ))}
@@ -1196,9 +1686,16 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                   name="fechaInicio"
                   value={projectData.fechaInicio}
                   onChange={handleChange}
-                  className={inputBaseStyle}
+                  className={`${inputBaseStyle} ${
+                    errors.fechaInicio ? "border-red-500 ring-2 ring-red-300" : ""
+                  }`}
                   required
                 />
+                {errors.fechaInicio && (
+                  <span className="text-red-500 text-xs flex items-center gap-1 mt-1">
+                    <span role="img" aria-label="error">❌</span> {errors.fechaInicio}
+                  </span>
+                )}
               </div>
               <div>
                 <FormLabel htmlFor="fechaFin">Fecha de Fin</FormLabel>
@@ -1223,7 +1720,9 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                 >
                   <option>Pendiente</option>
                   <option>En Progreso</option>
+                  <option>En Pausa</option>
                   <option>Completado</option>
+                  <option>Cancelado</option>
                 </select>
               </div>
               <div>
@@ -1239,6 +1738,21 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                   <option>Media</option>
                   <option>Alta</option>
                 </select>
+              </div>
+              <div>
+                <FormLabel htmlFor="progreso">Progreso (%)</FormLabel>
+                <input
+                  id="progreso"
+                  type="number"
+                  name="progreso"
+                  value={projectData.progreso || 0}
+                  onChange={handleChange}
+                  className={`${inputBaseStyle} ${!isAdmin ? "bg-gray-100 cursor-not-allowed" : ""}`}
+                  min="0"
+                  max="100"
+                  disabled={!isAdmin}
+                  title={!isAdmin ? "Solo el administrador puede editar el progreso" : ""}
+                />
               </div>
             </div>
           </FormSection>
@@ -1339,8 +1853,8 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
             </div>
           </FormSection>
 
-          {renderListInputs("materiales", "Materiales y Equipos")}
-          {renderListInputs("servicios", "Servicios Incluidos")}
+          {renderMaterialsAndServices("materiales")}
+          {renderMaterialsAndServices("servicios")}
 
           <FormSection title="Costos Adicionales">
             <div>
@@ -1400,6 +1914,49 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
           </div>
         </form>
       </div>
+      {/* Modal para motivo de pausa */}
+      {showPauseModal && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-[60] p-4"
+          onClick={(e) => e.stopPropagation()} // Detener propagación para no cerrar el modal padre
+        >
+          <div 
+            className="bg-white rounded-lg shadow-xl w-full max-w-md p-6"
+            onClick={(e) => e.stopPropagation()} // Detener propagación
+          >
+            <h3 className="text-lg font-bold text-gray-900 mb-4">
+              Pausar Proyecto
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Por favor, ingrese el motivo por el cual se pausa el proyecto (ej. falta de pago).
+            </p>
+            <textarea
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 mb-4"
+              rows="4"
+              placeholder="Escriba el motivo aquí..."
+              value={pauseReason}
+              onChange={(e) => setPauseReason(e.target.value)}
+            ></textarea>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => {
+                  setShowPauseModal(false);
+                  setPauseReason("");
+                }}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 font-medium"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmPause}
+                className="px-4 py-2 text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 font-medium"
+              >
+                Confirmar Pausa
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

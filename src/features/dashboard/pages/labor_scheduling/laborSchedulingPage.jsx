@@ -48,27 +48,50 @@ const LaborSchedulingPage = () => {
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await usersService.getAllUsers();
-        const dataset = Array.isArray(response)
-          ? response
-          : Array.isArray(response?.data)
-            ? response.data
-            : response?.users || [];
+        // Check for Technician role (ID 3)
+        const isTechnician = user?.id_rol === 3 || user?.rol?.toLowerCase().includes('tecnico');
+        let dataset = [];
+
+        if (isTechnician) {
+            // For technicians, only load their own profile to avoid permission errors
+            try {
+                const profile = await usersService.getMyProfile();
+                // Handle different response structures just in case
+                const userData = profile?.data || profile;
+                if (userData) {
+                    dataset = [userData];
+                }
+            } catch (err) {
+                console.error('Error loading profile', err);
+                // Fallback to user context if API fails
+                if (user) dataset = [user];
+            }
+        } else {
+            const response = await usersService.getAllUsers();
+            dataset = Array.isArray(response)
+            ? response
+            : Array.isArray(response?.data)
+                ? response.data
+                : response?.users || [];
+        }
             
-        const parsed = dataset.map((user) => ({
-          id: user.id_usuario ?? user.id ?? user.idUsuario,
-          nombre: user.nombre,
-          apellido: user.apellido,
-          documento: user.documento,
-          estado: user.estado_usuario
+        const parsed = dataset.map((u) => ({
+          id: u.id_usuario ?? u.id ?? u.idUsuario,
+          nombre: u.nombre,
+          apellido: u.apellido,
+          documento: u.documento,
+          estado: u.estado_usuario
         }));
         setAllUsers(parsed);
       } catch (error) {
         console.error('Error cargando usuarios', error);
       }
     };
-    fetchUsers();
-  }, []);
+    
+    if (user) {
+        fetchUsers();
+    }
+  }, [user]);
 
   // Load Events when range or annulled toggle changes
   useEffect(() => {
@@ -77,13 +100,25 @@ const LaborSchedulingPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange.start, dateRange.end, showAnnulled]);
 
+  // Re-process filters when users or events change to handle race conditions
+  useEffect(() => {
+    if (events.length > 0 && allUsers.length > 0) {
+      processFilters(events);
+    }
+  }, [allUsers]); // Only trigger on allUsers change to avoid loop with events setting
+
   const loadEvents = async () => {
     setLoading(true);
     try {
+      // Check for Technician role (ID 3)
+      const isTechnician = user?.id_rol === 3 || user?.rol?.toLowerCase().includes('tecnico');
+      
       const params = {
         rangeStart: dateRange.start,
         rangeEnd: dateRange.end,
-        includeAnnulled: showAnnulled
+        includeAnnulled: showAnnulled,
+        // Pass as array 'usuarioIds' to match service expectation
+        usuarioIds: isTechnician ? [(user.id_usuario || user.id)] : undefined
       };
       
       // Note: Backend handles role-based filtering automatically

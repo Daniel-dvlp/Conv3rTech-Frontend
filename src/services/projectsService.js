@@ -165,6 +165,25 @@ class ProjectsService {
     }
   }
 
+  // Crear salida de material
+  async createSalidaMaterial(salidaData) {
+    try {
+      const response = await api.post("/projects/salida-material", salidaData);
+      return {
+        success: true,
+        data: response.data,
+      };
+    } catch (error) {
+      console.error("Error creating material exit:", error);
+      return {
+        success: false,
+        message:
+          error.response?.data?.message ||
+          "Error al registrar la salida de material",
+      };
+    }
+  }
+
   // Obtener estadísticas de proyectos
   async getProjectStats() {
     try {

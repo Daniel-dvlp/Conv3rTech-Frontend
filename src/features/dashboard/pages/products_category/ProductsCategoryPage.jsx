@@ -11,11 +11,13 @@ import ProductCategoryDetailModal from './components/ProductCategoryDetailModal'
 import ProductCategoryEditModal from './components/ProductCategoryEditModal';
 import { showSuccess, showError, showInfo, confirmDelete } from '../../../../shared/utils/alerts';
 import { categoriesService } from '../products/services/productsService';
+import { usePermissions } from '../../../../shared/hooks/usePermissions';
 
 
 const ITEMS_PER_PAGE = 5;
 
 const ProductsCategoryPage = () => {
+  const { canCreate } = usePermissions();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -202,13 +204,15 @@ const ProductsCategoryPage = () => {
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
-          >
-            <FaPlus />
-            Crear categoría
-          </button>
+          {canCreate('categoria_productos') && (
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-2 bg-conv3r-gold text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md hover:brightness-95 transition-all"
+            >
+              <FaPlus />
+              Crear categoría
+            </button>
+          )}
         </div>
       </div>
 

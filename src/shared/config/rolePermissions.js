@@ -97,17 +97,79 @@ export const rolePermissions = {
     ],
   },
 
-  Tecnico: {
+  Coordinador: {
     canAccess: [
       "dashboard",
       "usuarios",
+      "proveedores",
+      "categoria_productos",
+      "productos",
+      "compras",
+      "servicios",
+      "categoria_servicios",
       "ordenes_servicios",
+      "programacion_laboral",
+      "clientes",
+      "venta_productos",
+      "citas",
+      "cotizaciones",
+      "proyectos_servicios",
+      "pagosyabonos",
+      "roles",
+      "profile",
+    ],
+    canManage: [
+      "dashboard",
+      "usuarios",
+      "proveedores",
+      "categoria_productos",
+      "productos",
+      "compras",
+      "servicios",
+      "categoria_servicios",
+      "ordenes_servicios",
+      "programacion_laboral",
+      "clientes",
+      "venta_productos",
+      "citas",
+      "cotizaciones",
+      "proyectos_servicios",
+      "pagosyabonos",
+      // "roles", // Excluido explícitamente si se desea bloquear gestión de roles
+      "salida_material",
+    ],
+    permissions: {
+      "dashboard": ["Ver"],
+      "usuarios": ["Ver", "Crear", "Editar"],
+      "proveedores": ["Ver", "Crear", "Editar"],
+      "categoria_productos": ["Ver", "Crear", "Editar"],
+      "productos": ["Ver", "Crear", "Editar"],
+      "compras": ["Ver", "Crear", "Editar"], // Sin Eliminar/Anular
+      "servicios": ["Ver", "Crear", "Editar"],
+      "categoria_servicios": ["Ver", "Crear", "Editar"],
+      "ordenes_servicios": ["Ver", "Crear", "Editar"],
+      "programacion_laboral": ["Ver", "Crear", "Editar"],
+      "clientes": ["Ver", "Crear", "Editar"],
+      "venta_productos": ["Ver", "Crear", "Editar"],
+      "citas": ["Ver", "Crear", "Editar", "Eliminar"], // Acceso total solicitado
+      "cotizaciones": ["Ver", "Crear", "Editar"],
+      "proyectos_servicios": ["Ver", "Crear", "Editar"],
+      "pagosyabonos": ["Ver", "Crear", "Editar"],
+      "roles": ["Ver"],
+      "salida_material": ["Ver", "Crear"],
+      "profile": ["Ver", "Editar"]
+    }
+  },
+
+  Tecnico: {
+    canAccess: [
+      "dashboard",
       "programacion_laboral",
       "proyectos_servicios",
       "citas",
       "profile",
     ],
-    canManage: ["ordenes_servicios"],
+    canManage: [], // Técnico solo visualiza
   },
 
   Recepcionista: {

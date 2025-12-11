@@ -113,13 +113,17 @@ const Sidebar = () => {
       children: [
         { name: 'Gestión de Roles', path: '/dashboard/roles' }
       ]
-    },
-    { name: 'Cerrar Sesión', icon: <FaSignOutAlt />, path: '/logout' }
+    }
   ];
+
+  const logoutItem = { name: 'Cerrar Sesión', icon: <FaSignOutAlt />, path: '/logout' };
 
   // Filtrar menús según permisos del usuario
   const filteredMainMenuItems = filterMenuItems(mainMenuItems);
   const filteredBottomMenuItems = filterMenuItems(bottomMenuItems);
+  
+  // Always add logout item at the end
+  const finalBottomItems = [...filteredBottomMenuItems, logoutItem];
 
   const handleLogout = async (e) => {
     e.preventDefault();
@@ -315,7 +319,7 @@ const Sidebar = () => {
         <ul className="pl-0 pr-0 space-y-2" style={{ width: '100%', height: '100%', listStyle: 'none', margin: 0, padding: 0 }}>
           {/* Espacio adicional para mejor separación */}
           <li className="h-2"></li>
-          {filteredBottomMenuItems.map((item) => {
+          {finalBottomItems.map((item) => {
             const isActiveParent = location.pathname === item.path || isChildActive(item.children);
             return (
               <li key={item.name} className="relative" style={{ width: '100%' }}>

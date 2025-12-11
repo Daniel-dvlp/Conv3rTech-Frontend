@@ -6,8 +6,11 @@ import AppointmentDetailModal from "./components/AppointmentDetailModal";
 import Swal from "sweetalert2";
 import { toast } from 'react-hot-toast';
 import appointmentsService from "./services/appointmentsService";
+import usersService from "../../../../services/usersService";
+import { useAuth } from "../../../../shared/contexts/AuthContext";
 
 const AppointmentsPage = () => {
+  const { user } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -15,6 +18,8 @@ const AppointmentsPage = () => {
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [technicians, setTechnicians] = useState([]);
+  const [visibleUserIds, setVisibleUserIds] = useState(new Set());
   
   // New states for layout
   const [filter, setFilter] = useState('');
@@ -23,7 +28,61 @@ const AppointmentsPage = () => {
 
   useEffect(() => {
     loadAppointments();
+    loadTechnicians();
   }, []);
+
+  // Verificar si es Coordinador o Admin (Roles 1 y 2)
+  // Nota: Basado en LaborSchedulingSidebar, Admin=1, Coordinador=2, Técnico=3
+  const isCoordinadorOrAdmin = user?.id_rol === 1 || user?.id_rol === 2 || user?.rol?.toLowerCase().includes('coordinador') || user?.rol?.toLowerCase().includes('admin');
+
+  // Verificar si es Técnico (rol 2 o 3)
+  const isTecnico = user?.id_rol === 2 || user?.id_rol === 3 || user?.rol?.toLowerCase().includes('tecnico');
+
+  // Load Technicians (for sidebar)
+  const loadTechnicians = async () => {
+      try {
+          let allUsers = [];
+          
+          if (isTecnico) {
+             // If technician, only load self to avoid 403 error
+             const myProfile = await usersService.getMyProfile();
+             allUsers = [myProfile];
+          } else {
+             const response = await usersService.getAllUsers();
+             allUsers = Array.isArray(response) ? response : (response.data || response.users || []);
+          }
+          
+          const techs = allUsers.filter(u => 
+             (u.id_rol === 2 || u.id_rol === 3 || (u.rol && typeof u.rol === 'string' && u.rol.toLowerCase().includes('tecnico'))) &&
+             u.estado_usuario === 'Activo'
+          ).map(u => ({
+              id: u.id_usuario ?? u.id,
+              nombre: u.nombre,
+              apellido: u.apellido,
+              documento: u.documento
+          }));
+          
+          setTechnicians(techs);
+          
+          if (isTecnico) {
+             const myId = user.id_usuario ?? user.id;
+             setVisibleUserIds(new Set([Number(myId)]));
+          } else {
+             setVisibleUserIds(new Set(techs.map(t => t.id)));
+          }
+      } catch (error) {
+          console.error("Error loading technicians", error);
+      }
+  };
+
+  const toggleUser = (userId) => {
+      setVisibleUserIds(prev => {
+          const next = new Set(prev);
+          if (next.has(userId)) next.delete(userId);
+          else next.add(userId);
+          return next;
+      });
+  };
 
   const loadAppointments = async () => {
     try {
@@ -265,47 +324,57 @@ const AppointmentsPage = () => {
     setActiveDate(centerDate);
   };
 
-  // Filter appointments for sidebar or calendar if needed
-  const filteredAppointments = filter 
-    ? appointments.filter(appt => appt.title.toLowerCase().includes(filter.toLowerCase()))
-    : appointments;
+  const filteredAppointments = appointments.filter(appt => {
+     const meta = appt.extendedProps || {};
+     // If user is Technician, only show their own appointments
+     if (isTecnico) {
+       return Number(meta.usuarioId) === Number(user.id_usuario ?? user.id);
+     }
+     // Filter by visibility of technicians
+     if (!visibleUserIds.has(Number(meta.usuarioId))) return false;
+     return true;
+  });
 
   return (
-    <div className="h-full bg-gradient-to-br from-orange-50 via-yellow-50 to-red-50 flex flex-col">
-      <div className="flex-1 flex min-h-0 relative">
-        
-        {isLoading && (
-          <div className="absolute inset-0 bg-white/50 z-50 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-yellow-500"></div>
-          </div>
-        )}
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      <AppointmentsSidebar
+        activeDate={activeDate}
+        onDateSelect={(date) => {
+          setActiveDate(date);
+          const calendarApi = calendarRef.current?.getApi();
+          if (calendarApi) calendarApi.gotoDate(date);
+        }}
+        onCreate={() => {
+          setIsEditMode(false);
+          setSelectedDate(activeDate);
+          setIsModalOpen(true);
+        }}
+        filter={filter}
+        setFilter={setFilter}
+        users={technicians}
+        visibleUserIds={visibleUserIds}
+        toggleUser={toggleUser}
+        appointments={appointments}
+      />
 
-        {/* Main Calendar Area */}
-        <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        <div className="flex-1 p-4 overflow-hidden relative">
+           {isLoading && (
+              <div className="absolute inset-0 z-50 bg-white/50 flex justify-center items-center backdrop-blur-sm">
+                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+           )}
           <AppointmentsCalendar
-            events={filteredAppointments}
             calendarRef={calendarRef}
-            onSelect={handleDateSelect}
-            onEventClick={handleEventClick}
-            onDatesSet={handleDatesSet}
-            onEventDrop={handleEventDrop}
-          />
-        </div>
-
-        {/* Sidebar */}
-        <div className="w-72 min-w-[220px] max-w-xs border-l border-yellow-100 bg-white/70">
-          <AppointmentsSidebar
-            activeDate={activeDate}
-            onDateSelect={handleSidebarDateSelect}
-            onCreate={() => {
-                setIsModalOpen(true);
-                setIsEditMode(false);
-                setSelectedDate(new Date().toISOString());
+            events={filteredAppointments}
+            onSelect={(info) => {
+              setIsEditMode(false);
+              setSelectedDate(info.startStr);
+              setIsModalOpen(true);
             }}
-            filter={filter}
-            setFilter={setFilter}
-            appointments={appointments} // Pass all to show in list if needed
-            showCreateButton={true} // Se controla internamente en Sidebar o aquí con permisos
+            onEventClick={handleEventClick}
+            onEventDrop={handleEventDrop}
+            onDatesSet={(arg) => setActiveDate(arg.view.currentStart)}
           />
         </div>
       </div>
@@ -319,6 +388,7 @@ const AppointmentsPage = () => {
         onSave={addAppointment}
         selectedDate={selectedDate}
         initialData={isEditMode ? selectedAppointment : null}
+        existingAppointments={appointments}
       />
 
       <AppointmentDetailModal

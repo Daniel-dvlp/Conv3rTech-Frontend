@@ -4,8 +4,10 @@ import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 import Swal from 'sweetalert2'; // <--- Importa SweetAlert2
 import toast from 'react-hot-toast'; // Ya lo tienes, es bueno para las notificaciones finales
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const SuppliersTable = ({ suppliers, onEdit, onDelete, onView }) => {
+  const { canEdit, canDelete } = usePermissions();
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -84,20 +86,24 @@ const SuppliersTable = ({ suppliers, onEdit, onDelete, onView }) => {
                   >
                     <FaEye size={16} />
                   </button>
-                  <button
-                    onClick={() => onEdit(supplier)}
-                    className="text-yellow-500 hover:text-yellow-600"
-                    title="Editar"
-                  >
-                    <FaEdit size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(supplier)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Eliminar"
-                  >
-                    <FaTrashAlt size={16} />
-                  </button>
+                  {canEdit('proveedores') && (
+                    <button
+                      onClick={() => onEdit(supplier)}
+                      className="text-yellow-500 hover:text-yellow-600"
+                      title="Editar"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                  )}
+                  {canDelete('proveedores') && (
+                    <button
+                      onClick={() => handleDeleteClick(supplier)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Eliminar"
+                    >
+                      <FaTrashAlt size={16} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

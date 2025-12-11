@@ -1,7 +1,9 @@
 import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const ProductsTable = ({ products, categories, onViewDetails, onEditProduct, onDeleteProduct }) => {
+  const { canEdit, canDelete } = usePermissions();
   //FUNCIÓN PARA FORMATEAR LOS MONTOS.
   const formatNumber = (num) => {
     if (num === null || num === undefined) return '$0';
@@ -56,12 +58,16 @@ const ProductsTable = ({ products, categories, onViewDetails, onEditProduct, onD
                    >
                      <FaEye size={16} />
                    </button>
-                   <button className="text-yellow-600 hover:text-blue-900" title="Editar" onClick={() => onEditProduct(product)}>
-                     <FaEdit size={16} />
-                   </button>
-                   <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() => onDeleteProduct(product.id_producto)}>
-                     <FaTrashAlt size={16} />
-                   </button>
+                   {canEdit('productos') && (
+                     <button className="text-yellow-600 hover:text-blue-900" title="Editar" onClick={() => onEditProduct(product)}>
+                       <FaEdit size={16} />
+                     </button>
+                   )}
+                   {canDelete('productos') && (
+                     <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() => onDeleteProduct(product.id_producto)}>
+                       <FaTrashAlt size={16} />
+                     </button>
+                   )}
                  </div>
                </td>
              </tr>

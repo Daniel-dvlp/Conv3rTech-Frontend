@@ -3,6 +3,7 @@ import {
   hasAccess,
   canManage,
   getAccessibleModules,
+  rolePermissions,
 } from "../config/rolePermissions";
 import { useAuth } from "../contexts/AuthContext";
 
@@ -28,7 +29,7 @@ export const usePermissions = () => {
 
   const checkAccess = (module) => {
     // Administrador siempre tiene acceso total
-    if (userRole === "Administrador" || userRole === "Admin") {
+    if (userRole === "Administrador" || userRole === "Admin" || userRole === "administrador") {
       return true;
     }
     // Preferir verificación dinámica
@@ -39,9 +40,52 @@ export const usePermissions = () => {
     return hasAccess(userRole, module);
   };
 
+  const canCreate = (module) => {
+    if (userRole === "Administrador" || userRole === "Admin" || userRole === "administrador") return true;
+    
+    // 1. Preferir sistema dinámico si está cargado
+    if (permissions && hasPrivilege) {
+        return hasPrivilege(module, "Crear");
+    }
+    
+    // 2. Fallback a configuración estática granular
+    const staticPerms = rolePermissions[userRole]?.permissions?.[module];
+    if (staticPerms && staticPerms.includes("Crear")) return true;
+
+    return false;
+  };
+
+  const canEdit = (module) => {
+    if (userRole === "Administrador" || userRole === "Admin" || userRole === "administrador") return true;
+    
+    if (permissions && hasPrivilege) {
+        return hasPrivilege(module, "Editar");
+    }
+    
+    // Fallback a configuración estática granular
+    const staticPerms = rolePermissions[userRole]?.permissions?.[module];
+    if (staticPerms && staticPerms.includes("Editar")) return true;
+
+    return false;
+  };
+
+  const canDelete = (module) => {
+    if (userRole === "Administrador" || userRole === "Admin" || userRole === "administrador") return true;
+    
+    if (permissions && hasPrivilege) {
+        return hasPrivilege(module, "Eliminar");
+    }
+    
+    // Fallback a configuración estática granular
+    const staticPerms = rolePermissions[userRole]?.permissions?.[module];
+    if (staticPerms && staticPerms.includes("Eliminar")) return true;
+
+    return false;
+  };
+
   const checkManage = (module) => {
     // Administrador puede gestionar todo
-    if (userRole === "Administrador" || userRole === "Admin") {
+    if (userRole === "Administrador" || userRole === "Admin" || userRole === "administrador") {
       return true;
     }
     // Si hay privilegios del backend, comprobar alguno típico de gestión
@@ -95,6 +139,9 @@ export const usePermissions = () => {
     accessibleModules,
     checkAccess,
     checkManage,
+    canCreate,
+    canEdit,
+    canDelete,
     filterMenuItems,
   };
 };

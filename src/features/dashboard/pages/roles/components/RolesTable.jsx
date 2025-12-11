@@ -10,7 +10,7 @@ const RolesTable = ({ roles, onViewDetails, onEditRole, onDeleteRole }) => {
   if (roles.length > 0) {
     console.log("🔍 First role structure:", roles[0]);
   }
-  const { checkAccess, checkManage } = usePermissions();
+  const { checkAccess, checkManage, canEdit, canDelete } = usePermissions();
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
       <table className="w-full">
@@ -113,7 +113,7 @@ const RolesTable = ({ roles, onViewDetails, onEditRole, onDeleteRole }) => {
                       <FaEye size={18} />
                     </button>
                   )}
-                  {checkManage("roles") && (
+                  {canEdit("roles") && (
                     <button
                       onClick={() => onEditRole(rol)}
                       className="text-yellow-500 hover:text-yellow-700"
@@ -122,7 +122,7 @@ const RolesTable = ({ roles, onViewDetails, onEditRole, onDeleteRole }) => {
                       <FaEdit size={18} />
                     </button>
                   )}
-                  {checkManage("roles") && (
+                  {canDelete("roles") && (
                     <button
                       onClick={() => onDeleteRole(rol)}
                       className="text-red-500 hover:text-red-700"

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { FaSearch, FaPlus, FaChevronLeft, FaChevronRight, FaCalendarAlt } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaChevronLeft, FaChevronRight, FaCheckSquare, FaSquare, FaChevronDown, FaChevronUp } from 'react-icons/fa';
 import { useAuth } from '../../../../../shared/contexts/AuthContext';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const AppointmentsSidebar = ({
   activeDate,
@@ -8,16 +9,21 @@ const AppointmentsSidebar = ({
   onCreate,
   filter,
   setFilter,
-  appointments = [] // Optional: to list appointments in sidebar
+  users = [], // List of technicians
+  visibleUserIds = new Set(),
+  toggleUser,
+  appointments = []
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [expandedUsers, setExpandedUsers] = useState(new Set());
   const selectedDate = activeDate ? new Date(activeDate) : null;
   const { user } = useAuth();
+  const { canCreate: checkCanCreate } = usePermissions();
 
   // Verificar si es Técnico (id_rol 2 según Seed o 3 según configuración legacy)
-  // O usar nombre de rol. El técnico NO puede crear citas.
   const isTecnico = user?.id_rol === 2 || user?.rol?.toLowerCase().includes('tecnico');
-  const canCreate = !isTecnico;
+  // Usar permiso centralizado para crear
+  const canCreate = checkCanCreate('citas');
 
   const isSameDay = (dateA, dateB) => {
     if (!dateA || !dateB) return false;
@@ -28,19 +34,10 @@ const AppointmentsSidebar = ({
     );
   };
 
-  // Mini Calendar Logic
-  const handleDateClick = (day) => {
-    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    if (onDateSelect) {
-      onDateSelect(newDate);
-    }
-  };
-
   const getDaysInMonth = (date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
-    const days = new Date(year, month + 1, 0).getDate();
-    return days;
+    return new Date(year, month + 1, 0).getDate();
   };
 
   const getFirstDayOfMonth = (date) => {
@@ -54,12 +51,10 @@ const AppointmentsSidebar = ({
     const firstDay = getFirstDayOfMonth(currentMonth);
     const days = [];
 
-    // Empty slots for previous month
     for (let i = 0; i < firstDay; i++) {
       days.push(<div key={`empty-${i}`} className="w-6 h-6"></div>);
     }
 
-    // Days of current month
     for (let i = 1; i <= daysInMonth; i++) {
       const dayDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), i);
       const isToday = new Date().toDateString() === dayDate.toDateString();
@@ -77,7 +72,7 @@ const AppointmentsSidebar = ({
       days.push(
         <div
           key={i}
-          onClick={() => handleDateClick(i)}
+          onClick={() => onDateSelect && onDateSelect(dayDate)}
           className={dayClasses}
         >
           {i}
@@ -95,6 +90,24 @@ const AppointmentsSidebar = ({
     setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1));
   };
 
+  const toggleExpandUser = (userId) => {
+    const newSet = new Set(expandedUsers);
+    if (newSet.has(userId)) {
+      newSet.delete(userId);
+    } else {
+      newSet.add(userId);
+    }
+    setExpandedUsers(newSet);
+  };
+
+  // Filter users based on search
+  const filteredUsers = users.filter(u => {
+    const fullName = `${u.nombre || ''} ${u.apellido || ''}`.toLowerCase();
+    const doc = (u.documento || '').toLowerCase();
+    const term = (filter || '').toLowerCase();
+    return fullName.includes(term) || doc.includes(term);
+  });
+
   return (
     <aside className="h-full flex flex-col bg-white border-r border-gray-200 w-72 flex-shrink-0 overflow-hidden shadow-sm">
       {/* 1. Botón Superior */}
@@ -102,7 +115,7 @@ const AppointmentsSidebar = ({
         {canCreate && (
           <button
             onClick={onCreate}
-            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-yellow-400 text-[#00012A] rounded-lg hover:bg-yellow-500 transition-all shadow-sm text-sm font-bold"
+            className="w-full flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm font-medium"
           >
             <FaPlus size={12} /> Asignar Cita
           </button>
@@ -142,25 +155,71 @@ const AppointmentsSidebar = ({
           <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm group-focus-within:text-blue-500 transition-colors" />
           <input
             type="text"
-            placeholder="Buscar cliente..."
+            placeholder="Buscar técnico..."
             value={filter || ''}
             onChange={e => setFilter && setFilter(e.target.value)}
             className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm text-gray-700 transition-all"
           />
         </div>
         
-        {/* Lista de citas filtradas (opcional) */}
-        {filter && appointments.length > 0 && (
-            <div className="space-y-2">
-                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Resultados</h3>
-                {appointments.filter(app => app.title.toLowerCase().includes(filter.toLowerCase())).map(app => (
-                    <div key={app.id} className="p-2 bg-gray-50 rounded border border-gray-100 text-sm">
-                        <div className="font-medium text-gray-800">{app.title}</div>
-                        <div className="text-xs text-gray-500">{new Date(app.start).toLocaleString()}</div>
+        {/* 4. Lista de Técnicos */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-3 px-1">
+            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Técnicos</h3>
+          </div>
+          <div className="space-y-1">
+            {filteredUsers.length === 0 ? (
+              <div className="text-xs text-gray-400 italic px-2">No se encontraron técnicos.</div>
+            ) : (
+              filteredUsers.map(user => {
+                const userAppointments = appointments.filter(a => Number(a.extendedProps?.usuarioId) === Number(user.id));
+                const isExpanded = expandedUsers.has(user.id);
+                const isVisible = visibleUserIds.has(user.id);
+
+                return (
+                  <div key={user.id} className="flex flex-col bg-white rounded-lg border border-transparent hover:border-gray-100 transition-colors">
+                    <div className="group relative flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
+                       {/* Checkbox / Visibility */}
+                       <div
+                        onClick={(e) => { e.stopPropagation(); toggleUser && toggleUser(user.id); }}
+                        className="cursor-pointer text-lg flex-shrink-0 transition-transform active:scale-95 text-blue-500"
+                      >
+                        {isVisible ? <FaCheckSquare /> : <FaSquare className="opacity-30" />}
+                      </div>
+
+                      {/* User Info */}
+                      <div className="flex-1 min-w-0 cursor-pointer flex items-center justify-between" onClick={() => toggleExpandUser(user.id)}>
+                        <div>
+                          <div className="text-sm font-medium text-gray-800 truncate">{user.nombre} {user.apellido}</div>
+                          <div className="text-xs text-gray-400 truncate">{userAppointments.length} citas</div>
+                        </div>
+                        <div className="text-gray-400">
+                          {isExpanded ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
+                        </div>
+                      </div>
                     </div>
-                ))}
-            </div>
-        )}
+
+                    {/* Expanded Appointments Details */}
+                    {isExpanded && (
+                      <div className="pl-9 pr-2 pb-2 space-y-2">
+                        {userAppointments.length === 0 ? (
+                          <div className="text-xs text-gray-400 italic">Sin citas asignadas</div>
+                        ) : (
+                          userAppointments.map(appt => (
+                            <div key={appt.id} className="text-xs bg-gray-50 p-2 rounded border border-gray-100">
+                               <div className="font-semibold text-gray-700 truncate">{appt.title}</div>
+                               <div className="text-gray-500">{new Date(appt.start).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
 
       </div>
     </aside>
