@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaTrash, FaTimes, FaPlus, FaMinus } from 'react-icons/fa';
 import { clientsService } from '../services/salesService';
 import SearchSelector from './SearchSelector';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 const FormSection = ({ title, children }) => (
     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -26,6 +27,50 @@ const NewProductSaleModal = ({ isOpen, onClose, onSave, clients, products }) => 
     const [metodoPago, setMetodoPago] = useState('');
     const [fechaVenta, setFechaVenta] = useState('');
     const [errores, setErrores] = useState({});
+
+    // Hook para el lector de código de barras
+    useBarcodeScanner(
+        (scannedCode) => {
+            // Limpiar errores previos
+            setErrores(prev => ({ ...prev, producto: null }));
+            
+            // Buscar producto por código de barras
+            // Normalizar el código escaneado
+            const codigoNormalizado = scannedCode.trim();
+            
+            const productoEncontrado = products?.find(p => {
+                if (!p.codigo_barra) return false;
+                
+                // Normalizar el código del producto (puede ser string, null, o "n/a")
+                const codigoProducto = p.codigo_barra.toString().trim().toLowerCase();
+                
+                // Ignorar valores vacíos o "n/a"
+                if (!codigoProducto || codigoProducto === 'n/a' || codigoProducto === 'null') {
+                    return false;
+                }
+                
+                // Comparar códigos normalizados
+                return codigoProducto === codigoNormalizado.toLowerCase();
+            });
+
+            if (productoEncontrado) {
+                // Seleccionar el producto automáticamente en el SearchSelector
+                setProductoSeleccionado(productoEncontrado.id_producto.toString());
+                setErrores(prev => ({ ...prev, producto: null }));
+            } else {
+                // Solo mostrar error en el SearchSelector
+                setErrores(prev => ({ 
+                    ...prev, 
+                    producto: `No se encontró un producto con el código: ${codigoNormalizado}` 
+                }));
+            }
+        },
+        {
+            minLength: 3,
+            scanDuration: 100,
+            enabled: isOpen
+        }
+    );
 
     const handleKeyDown = (e) => {
         // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos

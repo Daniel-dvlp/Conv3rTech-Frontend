@@ -19,6 +19,10 @@ const SkeletonPurchaseRow = () => {
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="h-4 w-40 bg-gray-200 rounded"></div>
       </td>
+      {/* NIT */}
+      <td className="px-4 py-4 whitespace-nowrap">
+        <div className="h-4 w-20 bg-gray-200 rounded"></div>
+      </td>
       {/* Amount (Monto Total) */}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="h-4 w-20 bg-gray-200 rounded"></div>

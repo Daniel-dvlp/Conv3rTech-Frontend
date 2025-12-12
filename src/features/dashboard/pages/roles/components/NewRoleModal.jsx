@@ -10,93 +10,7 @@ import {
   FaCheck,
 } from "react-icons/fa";
 import { showToast } from "../../../../../shared/utils/alertas";
-
-// Configuración de módulos basada en tu sidebar
-const MODULES_CONFIG = [
-  {
-    name: "Dashboard",
-    icon: "📊",
-    privileges: ["Ver"],
-  },
-  {
-    name: "Usuarios",
-    icon: "👥",
-    privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-  },
-  {
-    name: "Compras",
-    icon: "💰",
-    submodules: [
-      {
-        name: "Proveedores",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-      {
-        name: "Categorías de Productos",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-      { name: "Productos", privileges: ["Crear", "Ver", "Editar", "Eliminar"] },
-      { name: "Compras", privileges: ["Crear", "Ver", "Editar", "Anular"] },
-    ],
-  },
-  {
-    name: "Servicios",
-    icon: "🔧",
-    submodules: [
-      {
-        name: "Categoría de Servicios",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-      {
-        name: "Órdenes de Servicio",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-      {
-        name: "Programación laboral",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-    ],
-  },
-  {
-    name: "Ventas",
-    icon: "📈",
-    submodules: [
-      { name: "Clientes", privileges: ["Crear", "Ver", "Editar", "Eliminar"] },
-      {
-        name: "Venta de Productos",
-        privileges: ["Crear", "Ver", "Editar", "Anular"],
-      },
-      {
-        name: "Órdenes de Servicios",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-      { name: "Citas", privileges: ["Crear", "Ver", "Editar", "Eliminar"] },
-      {
-        name: "Cotizaciones",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-      {
-        name: "Proyectos de Servicio",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-      {
-        name: "Pagos y Abonos",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-    ],
-  },
-  {
-    name: "Configuración",
-    icon: "⚙️",
-    submodules: [
-      { name: "Editar mi Perfil", privileges: ["Ver", "Editar"] },
-      {
-        name: "Gestión de Roles",
-        privileges: ["Crear", "Ver", "Editar", "Eliminar"],
-      },
-    ],
-  },
-];
+import { MODULES_CONFIG } from "../config/rolesConfig";
 
 const privilegeIcons = {
   Crear: <FaPlus className="text-green-500" />,
@@ -230,12 +144,32 @@ const NewRoleModal = ({ isOpen, onClose, onSave }) => {
     try {
       // Convertir permisos a formato esperado por la función createRole
       const formattedPermissions = {};
+      
       Object.keys(permissions).forEach((key) => {
         const selectedPrivileges = Object.keys(permissions[key]).filter(
           (priv) => permissions[key][priv]
         );
+        
         if (selectedPrivileges.length > 0) {
-          formattedPermissions[key] = selectedPrivileges;
+          // Buscar la key correcta en la configuración (mapeo a DB)
+          let permissionName = key;
+          
+          if (key.includes('.')) {
+            const [modName, subName] = key.split('.');
+            const modConfig = MODULES_CONFIG.find(m => m.name === modName);
+            if (modConfig && modConfig.submodules) {
+              const subConfig = modConfig.submodules.find(s => s.name === subName);
+              // Usar la key configurada (ej: "servicios") o el nombre como fallback
+              permissionName = subConfig?.key || subName;
+            } else {
+              permissionName = subName;
+            }
+          } else {
+            const modConfig = MODULES_CONFIG.find(m => m.name === key);
+            permissionName = modConfig?.key || key;
+          }
+          
+          formattedPermissions[permissionName] = selectedPrivileges;
         }
       });
 

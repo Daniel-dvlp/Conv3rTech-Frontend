@@ -1,10 +1,10 @@
 import api from "./api";
 
 class ServicesService {
-  // Obtener todos los servicios
-  async getAllServices() {
+  // Obtener todos los servicios (opcionalmente filtrados por query params)
+  async getAllServices(params = {}) {
     try {
-      const response = await api.get("/services");
+      const response = await api.get("/services", { params });
       return response.data;
     } catch (error) {
       throw error;

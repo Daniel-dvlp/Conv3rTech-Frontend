@@ -20,7 +20,11 @@ const ITEMS_PER_PAGE = 5;
 
 const ProjectPage = () => {
   const { checkManage } = usePermissions();
-  const { hasPermission, hasPrivilege } = useAuth();
+  const { hasPermission, hasPrivilege, user } = useAuth();
+  
+  // Verificar si es Técnico
+  const isTecnico = user?.id_rol === 2 || user?.rol?.toLowerCase().includes('tecnico');
+  const canCreate = !isTecnico && (hasPrivilege('Proyectos', 'Crear') || hasPrivilege('proyectos', 'Crear'));
   // --- TODA TU LÓGICA DE ESTADO Y FUNCIONES PERMANECE EXACTAMENTE IGUAL ---
   const [loading, setLoading] = useState(true);
   const [allProjects, setAllProjects] = useState([]);
@@ -50,12 +54,13 @@ const ProjectPage = () => {
         })));
         setAllProjects(projects);
       } else {
-        showToast("Error al cargar los proyectos", "error");
+        showToast(response.message || "Error al cargar los proyectos", "error");
         setAllProjects([]);
       }
     } catch (error) {
       console.error("Error loading projects:", error);
-      showToast("Error de conexión al cargar proyectos", "error");
+      const errorMessage = error?.response?.data?.message || error?.message || "Error de conexión al cargar proyectos";
+      showToast(errorMessage, "error");
       setAllProjects([]);
     }
     setLoading(false);
@@ -70,7 +75,8 @@ const ProjectPage = () => {
       return [];
     }
 
-    return allProjects.filter(
+    // Filtrar por búsqueda
+    let filtered = allProjects.filter(
       (p) =>
         p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.cliente.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -84,7 +90,18 @@ const ProjectPage = () => {
         p.estado.toLowerCase().includes(searchTerm.toLowerCase()) ||
         p.prioridad.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [allProjects, searchTerm]);
+
+    // Si es Técnico, filtrar solo los proyectos asignados a él (como responsable o empleado asociado)
+    if (isTecnico) {
+      filtered = filtered.filter(p => {
+        const isResponsable = p.responsable?.id === user.id_usuario || p.responsable?.id === user.id;
+        const isEmpleadoAsociado = p.empleadosAsociados?.some(emp => emp.id === user.id_usuario || emp.id === user.id);
+        return isResponsable || isEmpleadoAsociado;
+      });
+    }
+
+    return filtered;
+  }, [allProjects, searchTerm, isTecnico, user]);
 
   // --- AQUÍ SE CALCULA EL NÚMERO TOTAL DE PÁGINAS Y SE REALIZA LA PÁGINACIÓN ---
   // --- NO CAMBIA NADA MÁS EN ESTA SECCIÓN ---
@@ -137,10 +154,12 @@ const ProjectPage = () => {
           response.message || "Error al actualizar el proyecto",
           "error"
         );
+        throw new Error(response.message || "Error al actualizar el proyecto");
       }
     } catch (error) {
       console.error("Error updating project:", error);
       showToast("Error de conexión al actualizar proyecto", "error");
+      throw error;
     }
   };
 
@@ -180,56 +199,62 @@ const ProjectPage = () => {
   };
 
   // Manejar salida de material
-  const handleSaveSalida = (nuevaSalida) => {
+  const handleSaveSalida = async (nuevaSalida) => {
     try {
-      // Encontrar el proyecto y la sede
-      const proyectoIndex = allProjects.findIndex(
-        (p) => p.nombre === nuevaSalida.proyecto
-      );
-      if (proyectoIndex === -1) {
-        showToast("Proyecto no encontrado", "error");
-        return;
+      // Llamar al servicio backend para crear la salida de material
+      const response = await projectsService.createSalidaMaterial(nuevaSalida);
+      
+      if (response && response.success) {
+        showToast("Salida de material registrada exitosamente", "success");
+        
+        // Recargar los proyectos para reflejar los cambios en el inventario y presupuesto
+        loadProjects();
+        setShowSalidaModal(false);
+      } else {
+        throw new Error(response?.message || "Error desconocido al registrar salida");
       }
+    } catch (error) {
+      console.error("Error saving material exit:", error);
+      showToast(error.message || "Error al registrar la salida de material", "error");
+    }
+  };
 
-      const proyecto = allProjects[proyectoIndex];
-      const sedeIndex = proyecto.sedes.findIndex(
-        (s) => s.nombre === nuevaSalida.sede
-      );
-      if (sedeIndex === -1) {
-        showToast("Sede no encontrada", "error");
-        return;
+  // Manejar apertura de detalles del proyecto
+  const handleViewDetails = async (project) => {
+    try {
+      // Mostrar spinner o indicador de carga si fuera necesario, 
+      // pero por ahora solo intentamos obtener datos frescos
+      const response = await projectsService.getProjectById(project.id);
+      if (response.success && response.data) {
+        setSelectedProject(response.data);
+      } else {
+        // Fallback al proyecto de la lista si falla
+        setSelectedProject(project);
       }
+    } catch (error) {
+      console.error("Error loading project details:", error);
+      setSelectedProject(project);
+    }
+  };
 
-      // Actualizar el proyecto con la nueva salida
-      const proyectosActualizados = [...allProjects];
-      const proyectoActualizado = { ...proyecto };
-      const sedeActualizada = { ...proyecto.sedes[sedeIndex] };
-
-      // Agregar la salida al historial
-      if (!sedeActualizada.salidasMaterial) {
-        sedeActualizada.salidasMaterial = [];
+  // Manejar apertura de edición del proyecto
+  const handleEditProject = async (project) => {
+    try {
+      const response = await projectsService.getProjectById(project.id);
+      if (response.success && response.data) {
+        setEditingProject(response.data);
+      } else {
+        setEditingProject(project);
       }
-      sedeActualizada.salidasMaterial.push(nuevaSalida);
-
-      // Actualizar presupuesto restante
-      if (sedeActualizada.presupuesto) {
-        sedeActualizada.presupuesto.restante =
-          (sedeActualizada.presupuesto.restante ||
-            sedeActualizada.presupuesto.total) - nuevaSalida.costoTotal;
-      }
-
-      proyectoActualizado.sedes[sedeIndex] = sedeActualizada;
-      proyectosActualizados[proyectoIndex] = proyectoActualizado;
-
-      setAllProjects(proyectosActualizados);
-      showToast("Salida de material registrada exitosamente", "success");
-    } catch {
-      showToast("Error al registrar la salida de material", "error");
+    } catch (error) {
+      console.error("Error loading project details for editing:", error);
+      setEditingProject(project);
     }
   };
 
   const projectTableHeaders = [
     "Proyecto",
+    "Descripción",
     "Responsable",
     "Fechas",
     "Estado",
@@ -260,15 +285,6 @@ const ProjectPage = () => {
             />
             <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           </div>
-          {checkManage('proyectos_servicios') && (
-            <button
-              onClick={() => setShowNewModal(true)}
-              className="flex items-center gap-2 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-md hover:bg-blue-700 transition-colors text-sm"
-            >
-              <FaPlus />
-              Nuevo Proyecto
-            </button>
-          )}
           {hasPrivilege('proyectos_servicios', 'Exportar') && (
             <button
               onClick={handleExport}
@@ -279,6 +295,14 @@ const ProjectPage = () => {
             </button>
           )}
 
+          {canCreate && (
+            <button
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-2 bg-conv3r-gold hover:bg-yellow-500 text-conv3r-dark font-bold py-2 px-4 rounded-lg shadow-md transition-colors text-sm"
+            >
+              <FaPlus /> Nuevo Proyecto
+            </button>
+          )}
         </div>
       </div>
 
@@ -291,8 +315,8 @@ const ProjectPage = () => {
       ) : (
         <ProjectsTable
           projects={paginatedProjects}
-          onViewDetails={(project) => setSelectedProject(project)}
-          onEditProject={(project) => setEditingProject(project)}
+          onViewDetails={handleViewDetails}
+          onEditProject={handleEditProject}
           onDeleteProject={handleDeleteProject}
           onCreateSalida={handleOpenSalidaModal}
         />

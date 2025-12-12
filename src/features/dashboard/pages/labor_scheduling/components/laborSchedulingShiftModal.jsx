@@ -114,6 +114,11 @@ const LaborSchedulingShiftModal = ({ isOpen, onClose, onSave, users }) => {
       if (!daysOfWeek || daysOfWeek.length === 0) {
         errs.daysOfWeek = 'Selecciona al menos un día de la semana';
       }
+      // Validar fecha fin también para horarios para evitar infinitos
+      if (!form.endDate) errs.endDate = 'Selecciona la fecha límite';
+      if (form.endDate && form.startDate && new Date(form.endDate) < new Date(form.startDate)) {
+        errs.endDate = 'La fecha límite debe ser posterior a la fecha de inicio';
+      }
     } else if (tipoProgramacion === 'evento') {
       // Validar fecha de fin para eventos
       if (!form.endDate) errs.endDate = 'Selecciona la fecha de fin';
@@ -192,6 +197,7 @@ const LaborSchedulingShiftModal = ({ isOpen, onClose, onSave, users }) => {
     if (tipoProgramacion === 'horario') {
       // Para horarios: incluir recurrencia semanal
       basePayload.recurrencia_semanal = daysOfWeek;
+      basePayload.fechaFin = form.endDate;
       onSave(basePayload, 'recurring');
     } else if (tipoProgramacion === 'evento') {
       // Para eventos: incluir fecha de fin
@@ -363,26 +369,24 @@ const LaborSchedulingShiftModal = ({ isOpen, onClose, onSave, users }) => {
                 )}
               </div>
 
-              {tipoProgramacion === 'evento' && (
-                <div>
-                  <FormLabel htmlFor="endDate">
-                    <span className="text-red-500">*</span> Fecha de Fin
-                  </FormLabel>
-                  <input
-                    type="date"
-                    name="endDate"
-                    id="endDate"
-                    value={form.endDate}
-                    onChange={handleChange}
-                    min={form.startDate || new Date().toISOString().split('T')[0]}
-                    className={`${inputBaseStyle} ${errors.endDate ? 'border-red-500' : 'border-gray-300'}`}
-                    required
-                  />
-                  {errors.endDate && (
-                    <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>
-                  )}
-                </div>
-              )}
+              <div>
+                <FormLabel htmlFor="endDate">
+                  <span className="text-red-500">*</span> Fecha de Fin {tipoProgramacion === 'horario' && '(Límite)'}
+                </FormLabel>
+                <input
+                  type="date"
+                  name="endDate"
+                  id="endDate"
+                  value={form.endDate}
+                  onChange={handleChange}
+                  min={form.startDate || new Date().toISOString().split('T')[0]}
+                  className={`${inputBaseStyle} ${errors.endDate ? 'border-red-500' : 'border-gray-300'}`}
+                  required
+                />
+                {errors.endDate && (
+                  <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

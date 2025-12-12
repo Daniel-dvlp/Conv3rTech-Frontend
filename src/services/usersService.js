@@ -11,10 +11,30 @@ class UsersService {
     }
   }
 
+  // Obtener usuarios por rol
+  async getUsersByRole(roleName) {
+    try {
+      const response = await api.get(`/users/role/${roleName}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Obtener usuario por ID
   async getUserById(id) {
     try {
       const response = await api.get(`/users/${id}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  // Obtener mi perfil
+  async getMyProfile() {
+    try {
+      const response = await api.get('/users/profile/me');
       return response.data;
     } catch (error) {
       throw error;
@@ -54,7 +74,12 @@ class UsersService {
   // Cambiar estado del usuario
   async changeUserStatus(id, statusData) {
     try {
-      const response = await api.put(`/users/${id}/status`, statusData);
+      // Si statusData es string, convertirlo a objeto
+      const payload = typeof statusData === 'string' 
+        ? { estado_usuario: statusData } 
+        : statusData;
+        
+      const response = await api.put(`/users/${id}`, payload);
       return response.data;
     } catch (error) {
       throw error;

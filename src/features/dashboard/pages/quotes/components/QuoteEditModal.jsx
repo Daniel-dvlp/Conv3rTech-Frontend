@@ -4,6 +4,7 @@ import SearchSelector from '../../products_sale/components/SearchSelector';
 import { quotesService } from '../services/quotesService';
 import { projectsService } from '../../../../../services';
 import { showError, showSuccess } from '../../../../../shared/utils/alerts';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 const inputBaseStyle = 'block w-full text-sm text-gray-500 border rounded-lg shadow-sm p-2.5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-conv3r-gold focus:border-conv3r-gold';
 
@@ -40,6 +41,68 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
   const [observaciones, setObservaciones] = useState('');
   const [loading, setLoading] = useState(false);
   const [errores, setErrores] = useState({});
+
+  // Hook para el lector de código de barras
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Verificar que products esté disponible y no esté vacío
+      if (!products || !Array.isArray(products) || products.length === 0) {
+        setErrores(prev => ({ 
+          ...prev, 
+          producto: 'No hay productos disponibles para buscar' 
+        }));
+        return;
+      }
+
+      // Limpiar errores previos
+      setErrores(prev => ({ ...prev, producto: null }));
+      
+      // Buscar producto por código de barras
+      // Normalizar el código escaneado
+      const codigoNormalizado = scannedCode.trim();
+      
+      const productoEncontrado = products.find(p => {
+        if (!p || !p.codigo_barra) return false;
+        
+        // Normalizar el código del producto (puede ser string, null, o "n/a")
+        const codigoProducto = p.codigo_barra.toString().trim().toLowerCase();
+        
+        // Ignorar valores vacíos o "n/a"
+        if (!codigoProducto || codigoProducto === 'n/a' || codigoProducto === 'null') {
+          return false;
+        }
+        
+        // Comparar códigos normalizados
+        return codigoProducto === codigoNormalizado.toLowerCase();
+      });
+
+      if (productoEncontrado) {
+        // Seleccionar el producto automáticamente en el SearchSelector
+        // Asegurar que el ID sea un número para la comparación correcta
+        const productId = productoEncontrado.id_producto || productoEncontrado.id;
+        if (productId) {
+          setProductoSeleccionado(String(productId));
+          setErrores(prev => ({ ...prev, producto: null }));
+        } else {
+          setErrores(prev => ({ 
+            ...prev, 
+            producto: 'El producto encontrado no tiene un ID válido' 
+          }));
+        }
+      } else {
+        // Solo mostrar error en el SearchSelector, no duplicar
+        setErrores(prev => ({ 
+          ...prev, 
+          producto: `No se encontró un producto con el código: ${codigoNormalizado}` 
+        }));
+      }
+    },
+    {
+      minLength: 3,
+      scanDuration: 100,
+      enabled: isOpen
+    }
+  );
 
   const handleKeyDown = (e) => {
     // Prevenir entrada de 'e', 'E', '+', '-' en campos numéricos
@@ -298,6 +361,7 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
     // Validar campos obligatorios
     const errs = {};
     if (!quoteData.nombre_cotizacion?.trim()) errs.nombre = 'El nombre de la cotización es obligatorio';
+    else if (quoteData.nombre_cotizacion.trim().length < 3) errs.nombre = 'El nombre debe tener al menos 3 caracteres';
     if (!clienteSeleccionado) errs.cliente = 'Selecciona un cliente';
     if (!quoteData.fecha_vencimiento) errs.fecha = 'Selecciona la fecha de vencimiento';
     else if (new Date(quoteData.fecha_vencimiento) < new Date(new Date().setHours(0, 0, 0, 0))) errs.fecha = 'La fecha de vencimiento no puede ser anterior a hoy';
@@ -327,16 +391,21 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
 
       const payloadUpdate = {
         nombre_cotizacion: quoteData.nombre_cotizacion,
-        id_cliente: clienteSeleccionado ? Number(clienteSeleccionado) : quoteData.id_cliente,
+        id_cliente: clienteSeleccionado ? parseInt(clienteSeleccionado, 10) : parseInt(quoteData.id_cliente, 10),
         fecha_vencimiento: quoteData.fecha_vencimiento ? new Date(quoteData.fecha_vencimiento).toISOString() : undefined,
         // Si vamos a cambiar de estado después, mantenemos el original aquí para evitar inconsistencias
         estado: isStateChanging ? originalState : newState,
         observaciones: observaciones.trim() || undefined,
         detalles: [
-          ...productosAgregados.map(p => ({ id_producto: p.id_producto, cantidad: p.cantidad })),
-          ...serviciosAgregados.map(s => ({ id_servicio: s.id_servicio, cantidad: s.cantidad })),
+          ...productosAgregados.map(p => ({ id_producto: parseInt(p.id_producto, 10), cantidad: parseInt(p.cantidad, 10) })),
+          ...serviciosAgregados.map(s => ({ id_servicio: parseInt(s.id_servicio, 10), cantidad: parseInt(s.cantidad, 10) })),
         ],
       };
+
+      // Validar que tengamos ID de cotización
+      if (!quoteData.id_cotizacion) {
+          throw new Error("No se pudo identificar la cotización a actualizar (ID faltante)");
+      }
 
       // Actualizar cotización (datos básicos + detalles)
       let resultQuote = await quotesService.updateQuote(quoteData.id_cotizacion, payloadUpdate);
@@ -349,43 +418,51 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
         if (newState === 'Aprobada') {
           try {
              // 1. Crear Proyecto
+             const fechaInicio = new Date();
+             const fechaFin = quoteData.fecha_vencimiento 
+                ? new Date(quoteData.fecha_vencimiento) 
+                : new Date(fechaInicio);
+             
+             // Si no hay fecha de vencimiento, asignamos 30 días por defecto
+             if (!quoteData.fecha_vencimiento) {
+                fechaFin.setDate(fechaFin.getDate() + 30);
+             }
+
              const projectPayload = {
               nombre: quoteData.nombre_cotizacion,
-              cliente: cliente ? `${cliente.nombre} ${cliente.apellido}` : (quoteData.cliente_nombre || ''),
-              id_cliente: cliente ? cliente.id_cliente : quoteData.id_cliente,
-              estado: 'Alerta',
-              fechaInicio: new Date().toISOString().split('T')[0],
-              fechaFin: quoteData.fecha_vencimiento ? new Date(quoteData.fecha_vencimiento).toISOString().split('T')[0] : '',
+              id_cliente: cliente ? parseInt(cliente.id_cliente, 10) : parseInt(quoteData.id_cliente, 10),
+              estado: 'Pendiente',
+              fecha_inicio: fechaInicio.toISOString().split('T')[0],
+              fecha_fin: fechaFin.toISOString().split('T')[0],
               prioridad: 'Alta',
               descripcion: `Proyecto generado desde cotización ${quoteData.nombre_cotizacion}. ${quoteData.observaciones || ''}`,
               observaciones: quoteData.observaciones || '',
-              empleadosAsociados: [], // Se asignarán en el dashboard
+              empleadosAsociados: [], 
               materiales: productosAgregados.map(p => ({
-                  item: p.nombre,
-                  cantidad: p.cantidad,
-                  precio: p.precio,
-                  id_producto: p.id_producto
+                  id_producto: parseInt(p.id_producto, 10),
+                  cantidad: parseInt(p.cantidad, 10),
+                  precio_unitario: parseFloat(p.precio)
               })),
               servicios: serviciosAgregados.map(s => ({
-                  servicio: s.nombre,
-                  cantidad: s.cantidad,
-                  precio: s.precio,
-                  id_servicio: s.id_servicio
+                  id_servicio: parseInt(s.id_servicio, 10),
+                  cantidad: parseInt(s.cantidad, 10),
+                  precio_unitario: parseFloat(s.precio)
               })),
-              costos: { manoDeObra: 0 },
+              costo_mano_obra: 0,
               sedes: [], 
-              cotizacion_id: quoteData.id_cotizacion
+              id_cotizacion: parseInt(quoteData.id_cotizacion, 10)
             };
     
             const projectResponse = await projectsService.createProject(projectPayload);
             
             if (projectResponse && (projectResponse.success || projectResponse.id)) {
-               // 2. Eliminar Cotización
-               await quotesService.deleteQuote(quoteData.id_cotizacion);
+               // 2. Actualizar estado de la cotización a "Aprobada" en lugar de eliminarla
+               // Esto preserva el historial y evita errores de llave foránea con el proyecto creado.
+               await quotesService.changeQuoteState(quoteData.id_cotizacion, 'Aprobada');
                
                // 3. Notificar y cerrar
-               showSuccess('Cotización aprobada. Proyecto creado en estado "Alerta".');
-               onSave({ ...quoteData, _deleted: true });
+               showSuccess('Cotización aprobada. Proyecto creado en estado "Pendiente".');
+               onSave({ ...quoteData, estado: 'Aprobada' });
                onClose();
                return;
             } else {
@@ -393,7 +470,13 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
             }
           } catch (err) {
              console.error('Error en flujo de aprobación:', err);
-             showError('Error al procesar la aprobación: ' + (err.message || 'Intente nuevamente'));
+             // Mostrar detalles si es error de validación del backend
+             if (err.response && err.response.data && err.response.data.errors) {
+                 const firstError = err.response.data.errors[0];
+                 showError(`Error al crear proyecto: ${firstError.msg} en ${firstError.path || firstError.param}. Valor: ${firstError.value}`);
+             } else {
+                 showError('Error al procesar la aprobación: ' + (err.response?.data?.message || err.message || 'Intente nuevamente'));
+             }
              // No cerramos el modal para permitir reintento
              return; 
           }
@@ -409,8 +492,15 @@ const QuoteEditModal = ({ isOpen, onClose, onSave, quoteToEdit, products, servic
       onClose();
     } catch (error) {
       console.error('Error al actualizar cotización:', error);
-      const message = error?.response?.data?.message || error?.message || 'Ocurrió un error al actualizar la cotización';
-      showError(message);
+      if (error.response && error.response.data && error.response.data.errors) {
+         console.error('Detalles de validación:', JSON.stringify(error.response.data.errors, null, 2));
+         // Mostrar el primer error de validación específico si existe
+         const firstError = error.response.data.errors[0];
+         showError(`Error de validación: ${firstError.msg} en ${firstError.path || firstError.param}. Valor: ${firstError.value}`);
+      } else {
+         const message = error?.response?.data?.message || error?.message || 'Ocurrió un error al actualizar la cotización';
+         showError(message);
+      }
     }
   };
 

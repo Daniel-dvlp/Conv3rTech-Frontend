@@ -5,8 +5,16 @@ import api from "../shared/config/api";
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
+    
+    // Asegurar que headers existe
+    if (!config.headers) {
+      config.headers = {};
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.warn("[API] No token found in localStorage for request:", config.url);
     }
     return config;
   },

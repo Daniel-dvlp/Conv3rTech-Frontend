@@ -366,8 +366,8 @@ const ProductsSalePage = () => {
         isOpen={showNewModal}
         onClose={() => setShowNewModal(false)}
         onSave={handleAddSale}
-        clients={clients}
-        products={products}
+        clients={clients.filter(c => c.estado_cliente === true)}
+        products={products.filter(p => p.estado === true)}
       />
 
       {selectedProductSale && (

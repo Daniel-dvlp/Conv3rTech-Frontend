@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FaTimes, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { showSuccess } from '../../../../../shared/utils/alerts';
 
@@ -55,6 +55,21 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
     }
   }, [isOpen, userData]);
 
+  const hasChanges = useMemo(() => {
+    if (!userData) return false;
+    return (
+      formData.tipoDocumento !== (userData.tipo_documento || '') ||
+      formData.documento !== (userData.documento || '') ||
+      formData.nombre !== (userData.nombre || '') ||
+      formData.apellido !== (userData.apellido || '') ||
+      formData.celular !== (userData.celular || '') ||
+      String(formData.rol) !== String(userData.id_rol || '') ||
+      formData.email !== (userData.correo || '') ||
+      formData.status !== (userData.estado_usuario || '') ||
+      formData.nuevaContrasena !== ''
+    );
+  }, [formData, userData]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -98,6 +113,13 @@ const EditUserModal = ({ isOpen, onClose, userData, roles, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Si no hay cambios, cerramos sin llamar a la API
+    if (!hasChanges) {
+      onClose();
+      return;
+    }
+
     const newErrors = {};
 
     const celularRegex = /^\+?[0-9]{10,13}$/;

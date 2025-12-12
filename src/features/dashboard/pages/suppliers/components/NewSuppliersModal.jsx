@@ -218,7 +218,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <FormLabel htmlFor="empresa">
-                  <span className="text-red-500">*</span> Nombre Entidad
+                  <span className="text-red-500">*</span> Nombre entidad:
                 </FormLabel>
                 <input
                   id="empresa"
@@ -236,7 +236,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
               <div>
                 <FormLabel htmlFor="nit">
-                  NIT
+                  NIT:
                 </FormLabel>
                 <input
                   id="nit"
@@ -253,7 +253,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
               <div className="sm:col-span-2">
                 <FormLabel htmlFor="telefono_entidad">
-                  Teléfono Entidad
+                  Teléfono entidad:
                 </FormLabel>
                 <input
                   id="telefono_entidad"
@@ -276,7 +276,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div>
                 <FormLabel htmlFor="encargado">
-                  <span className="text-red-500">*</span> Nombre Encargado
+                  <span className="text-red-500">*</span> Nombre encargado:
                 </FormLabel>
                 <input
                   id="encargado"
@@ -294,7 +294,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
               <div>
                 <FormLabel htmlFor="telefono_encargado">
-                  Teléfono Encargado
+                  Teléfono encargado:
                 </FormLabel>
                 <input
                   id="telefono_encargado"
@@ -313,7 +313,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
               <div>
                 <FormLabel htmlFor="correo_principal">
-                  <span className="text-red-500">*</span> Correo Principal
+                  <span className="text-red-500">*</span> Correo principal:
                 </FormLabel>
                 <input
                   id="correo_principal"
@@ -332,7 +332,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
 
               <div>
                 <FormLabel htmlFor="correo_secundario">
-                  Correo Secundario
+                  Correo secundario:
                 </FormLabel>
                 <input
                   id="correo_secundario"
@@ -354,7 +354,7 @@ const NewProviderModal = ({ isOpen, onClose, onSave, existingNits = [] }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
               <div className="sm:col-span-2">
                 <FormLabel htmlFor="direccion">
-                  Dirección
+                  Dirección:
                 </FormLabel>
                 <input
                   id="direccion"

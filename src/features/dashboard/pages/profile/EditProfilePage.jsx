@@ -198,6 +198,14 @@ const EditProfilePage = () => {
     setIsLoading(true);
 
     try {
+      // Verificar token antes de enviar
+      const token = localStorage.getItem("token");
+      if (!token) {
+        showToast("Sesión no válida. Por favor inicia sesión nuevamente.", "error");
+        setTimeout(() => window.location.href = "/login", 1500);
+        return;
+      }
+
       // Mapear 'email' a 'correo' para el backend
       const payload = {
         ...form,

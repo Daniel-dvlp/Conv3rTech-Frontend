@@ -22,6 +22,8 @@ import {
   FaRegSquare,
   FaCheckSquare,
 } from "react-icons/fa";
+import { useAuth } from "../../../../../shared/contexts/AuthContext";
+import { usePermissions } from "../../../../../shared/hooks/usePermissions";
 import HistorialSalidasModal from "./HistorialSalidasModal";
 import { showSuccess, showError } from "../../../../../shared/utils/alerts.js";
 
@@ -66,6 +68,8 @@ const TabButton = ({ active, onClick, children, icon }) => (
 );
 
 const ProjectDetailModal = ({ project, onClose }) => {
+  const { user } = useAuth();
+  const { checkPermission } = usePermissions();
   const [activeTab, setActiveTab] = useState("general");
   const [historialModalOpen, setHistorialModalOpen] = useState(false);
   const [selectedHistorialSedeIndex, setSelectedHistorialSedeIndex] =
@@ -122,6 +126,15 @@ const ProjectDetailModal = ({ project, onClose }) => {
 
   // Función para marcar servicio como completado
   const handleMarkServiceCompleted = (sedeIndex, servIndex) => {
+    // Validar permisos: Solo Administrador o Coordinador pueden marcar
+    const userRole = user?.rol?.toLowerCase() || "";
+    const isAuthorized = userRole === "administrador" || userRole === "coordinador";
+
+    if (!isAuthorized) {
+      showError("No tienes permisos para realizar esta acción. Solo administradores o coordinadores.");
+      return;
+    }
+
     setLocalSedes((prevSedes) =>
       prevSedes.map((sede, index) => {
         if (index === sedeIndex) {
@@ -147,6 +160,25 @@ const ProjectDetailModal = ({ project, onClose }) => {
 
   // Función para marcar servicio como pendiente
   const handleMarkServicePending = (sedeIndex, servIndex) => {
+    // Validar permisos: Solo Administrador o Coordinador pueden desmarcar
+    const userRole = user?.rol?.toLowerCase() || "";
+    const isAuthorized = userRole === "administrador" || userRole === "coordinador";
+
+    if (!isAuthorized) {
+      showError("No tienes permisos para realizar esta acción. Solo administradores o coordinadores.");
+      return;
+    }
+
+    // Regla adicional: Una vez completado, no se puede desmarcar (según requerimiento)
+    // Pero si el usuario es Admin, tal vez queramos permitir correcciones.
+    // El requerimiento dice: "una vez marcado el servicio como realizado no puede desmarcarse"
+    // Asumiremos que es estricto para todos, o solo permitimos si es Admin.
+    // Aplicando requerimiento estricto:
+    showError("Una vez completado, el servicio no puede volver a pendiente.");
+    return;
+
+    /* 
+    // Lógica original comentada por si se decide permitir revertir
     setLocalSedes((prevSedes) =>
       prevSedes.map((sede, index) => {
         if (index === sedeIndex) {
@@ -164,6 +196,7 @@ const ProjectDetailModal = ({ project, onClose }) => {
       })
     );
     showSuccess("Estado cambiado: Pendiente");
+    */
   };
 
   // Generar pestañas dinámicamente
@@ -465,6 +498,26 @@ const ProjectDetailModal = ({ project, onClose }) => {
 
       if (!sede) return <div>Sede no encontrada</div>;
 
+      // --- CÁLCULO DINÁMICO DEL PRESUPUESTO ---
+      // Calcular costo de servicios asignados
+      const costoServiciosEjecutados = (sede.serviciosAsignados || []).reduce(
+        (total, serv) => total + serv.cantidad * (serv.precio || 0),
+        0
+      );
+
+      // Calcular costo de entregas (salidas de material)
+      // Nota: Asegurarse de que `sede.salidasMaterial` esté poblado por el backend o el estado local
+      const costoMaterialesEjecutados = (sede.salidasMaterial || []).reduce(
+        (total, salida) => total + (salida.costoTotal || 0),
+        0
+      );
+
+      const presupuestoTotal = sede.presupuesto?.total || 0;
+      const presupuestoEjecutado =
+        costoServiciosEjecutados + costoMaterialesEjecutados;
+      const presupuestoRestante = presupuestoTotal - presupuestoEjecutado;
+      // ----------------------------------------
+
       return (
         <div className="space-y-6">
           {/* Información de la sede */}
@@ -635,9 +688,10 @@ const ProjectDetailModal = ({ project, onClose }) => {
                                       onClick={() =>
                                         handleMarkServicePending(sedeIndex, i)
                                       }
-                                      className="p-2 rounded-lg bg-green-100 hover:bg-green-200 text-green-700 border border-green-300 transition-colors"
-                                      title="Marcar como pendiente"
-                                      aria-label="Marcar como pendiente"
+                                      className="p-2 rounded-lg bg-green-100 text-green-700 border border-green-300 transition-colors cursor-not-allowed opacity-70"
+                                      title="Completado (no se puede revertir)"
+                                      aria-label="Completado"
+                                      disabled={true}
                                     >
                                       <FaCheckSquare className="text-lg" />
                                     </button>
@@ -672,7 +726,7 @@ const ProjectDetailModal = ({ project, onClose }) => {
                       Presupuesto Inicial
                     </div>
                     <div className="text-xl font-bold text-blue-800">
-                      {formatCurrency(sede.presupuesto.total)}
+                      {formatCurrency(presupuestoTotal)}
                     </div>
                   </div>
                   <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
@@ -680,10 +734,10 @@ const ProjectDetailModal = ({ project, onClose }) => {
                       Presupuesto Ejecutado
                     </div>
                     <div className="text-xl font-bold text-orange-800">
-                      {formatCurrency(
-                        sede.presupuesto.total -
-                          (sede.presupuesto.restante || sede.presupuesto.total)
-                      )}
+                      {formatCurrency(presupuestoEjecutado)}
+                    </div>
+                    <div className="text-xs text-orange-600 mt-1">
+                      (Servicios: {formatCurrency(costoServiciosEjecutados)} + Materiales: {formatCurrency(costoMaterialesEjecutados)})
                     </div>
                   </div>
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
@@ -691,9 +745,7 @@ const ProjectDetailModal = ({ project, onClose }) => {
                       Presupuesto Restante
                     </div>
                     <div className="text-xl font-bold text-green-800">
-                      {formatCurrency(
-                        sede.presupuesto.restante || sede.presupuesto.total
-                      )}
+                      {formatCurrency(presupuestoRestante)}
                     </div>
                   </div>
                 </div>

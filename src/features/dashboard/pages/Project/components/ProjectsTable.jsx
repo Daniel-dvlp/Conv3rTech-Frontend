@@ -17,7 +17,7 @@ const ProgressBar = ({ progress }) => (
 );
 
 const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject, onCreateSalida }) => {
-  const { checkManage } = usePermissions();
+  const { checkManage, canEdit, canDelete } = usePermissions();
   const { hasPermission, hasPrivilege } = useAuth();
 
   // Función para determinar el color del estado
@@ -47,6 +47,7 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
           <tr>
             <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Numero de Contrato</th>
             <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Proyecto</th>
+            <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Descripción</th>
             {/* --- COLUMNAS REINTEGRADAS --- */}
             <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Responsable</th>
             <th className="px-6 py-4 text-left text-sm font-medium text-gray-500 uppercase tracking-wider">Fechas</th>
@@ -70,6 +71,11 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                   {project.nombre}
                 </button>
                 <div className="text-sm text-gray-500">Cliente: {project.cliente}</div>
+              </td>
+              <td className="px-6 py-4">
+                <div className="text-sm text-gray-600 line-clamp-2 max-w-xs" title={project.descripcion}>
+                  {project.descripcion || "Sin descripción"}
+                </div>
               </td>
               {/* --- CELDAS REINTEGRADAS --- */}
               <td className="px-6 py-4">
@@ -110,7 +116,7 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                       <FaEye size={16} />
                     </button>
                    )}
-                   {checkManage('proyectos_servicios') && (
+                   {canEdit('proyectos') && (
                      <button onClick={() => onEditProject(project)} className="text-yellow-400 hover:text-yellow-600 text-sm p-1 rounded hover:bg-yellow-50" title="Editar">
                       <FaEdit size={16} />
                     </button>
@@ -124,7 +130,7 @@ const ProjectsTable = ({ projects, onViewDetails, onEditProject, onDeleteProject
                        <FaTruck size={16} />
                      </button>
                    )}
-                   {checkManage('proyectos_servicios') && (
+                   {canDelete('proyectos') && (
                      <button onClick={() => onDeleteProject(project)} className="text-red-400 hover:text-red-600 text-sm p-1 rounded hover:bg-red-50" title="Eliminar">
                       <FaTrashAlt size={16} />
                     </button>

@@ -318,30 +318,20 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
       const materialesAsignados = [...prev.materialesAsignados];
       let val = Number(value);
       const mat = materialesAsignados[idx];
-      // Calcular stock disponible para este material
-      const prod = productos.find((p) => p.nombre === mat.item);
-      const stockDisponible = prod
-        ? prod.stock -
-          projectData.materiales
-            .filter((m) => m.item === mat.item)
-            .reduce((acc, m) => acc + Number(m.cantidad), 0) -
-          projectData.sedes.reduce((acc, sede, sidx) => {
-            if (editingSede !== null && sidx === editingSede) return acc;
-            const found = sede.materialesAsignados.find(
-              (m) => m.item === mat.item
-            );
-            return acc + (found ? Number(found.cantidad) : 0);
-          }, 0)
-        : 0;
+      
+      // Calcular stock disponible para este material dentro del proyecto
+      const cantidadDisponible = getMaterialDisponible(mat.item);
+      
       const maxDisponible =
-        stockDisponible +
+        cantidadDisponible +
         (editingSede !== null
           ? Number(
-              projectData.sedes[editingSede].materialesAsignados.find(
+              projectData.sedes[editingSede].materialesAsignados?.find(
                 (m) => m.item === mat.item
               )?.cantidad || 0
             )
           : 0);
+
       if (val > maxDisponible) val = maxDisponible;
       materialesAsignados[idx].cantidad = val;
       return { ...prev, materialesAsignados };
@@ -443,15 +433,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
   const handleSedeSubmit = () => {
     // Validar que no se excedan los materiales
     for (const mat of sedeForm.materialesAsignados || []) {
-      const disponible =
-        getMaterialDisponible(mat.item) +
-        (editingSede !== null
-          ? Number(
-              projectData.sedes[editingSede].materialesAsignados?.find(
-                (m) => m.item === mat.item
-              )?.cantidad || 0
-            )
-          : 0);
+      const disponible = getMaterialDisponible(mat.item);
       if (Number(mat.cantidad) > disponible) {
         showToast(
           `No puedes asignar más de ${disponible} unidades de ${mat.item} a esta sede.`,
@@ -462,15 +444,7 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
     }
     // Validar que no se excedan los servicios
     for (const serv of sedeForm.serviciosAsignados || []) {
-      const disponible =
-        getServicioDisponible(serv.servicio) +
-        (editingSede !== null
-          ? Number(
-              projectData.sedes[editingSede].serviciosAsignados?.find(
-                (s) => s.servicio === serv.servicio
-              )?.cantidad || 0
-            )
-          : 0);
+      const disponible = getServicioDisponible(serv.servicio);
       if (Number(serv.cantidad) > disponible) {
         showToast(
           `No puedes asignar más de ${disponible} unidades de ${serv.servicio} a esta sede.`,
@@ -1433,7 +1407,9 @@ const NewProjectModal = ({ isOpen, onClose, onSave }) => {
                 >
                   <option>Pendiente</option>
                   <option>En Progreso</option>
+                  <option>En Pausa</option>
                   <option>Completado</option>
+                  <option>Cancelado</option>
                 </select>
               </div>
               <div>

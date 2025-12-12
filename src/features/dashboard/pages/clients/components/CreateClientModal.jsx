@@ -121,7 +121,7 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
         setFormData(prev => ({ ...prev, addresses: updated }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
         const newErrors = {};
 
@@ -182,9 +182,13 @@ const CreateClientModal = ({ isOpen, onClose, onSubmit, clientesExistentes = [] 
             )
         };
         
-        onSubmit(clientDataForApi);
-        setFormData(initialState);
-        onClose();
+        try {
+            await onSubmit(clientDataForApi);
+            setFormData(initialState);
+            onClose();
+        } catch (error) {
+            console.error("Error al crear cliente:", error);
+        }
     };
 
     if (!isOpen) return null;

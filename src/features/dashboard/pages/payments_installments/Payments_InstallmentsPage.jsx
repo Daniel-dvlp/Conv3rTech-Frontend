@@ -8,6 +8,7 @@ import PaymentsDetailModal from './components/PaymentsDetailModal'; // Importa e
 import { paymentsApi } from './services/paymentsApi';
 import { projectsApi } from '../../../../shared/services/projectsApi';
 import { projectPaymentsApi } from './services/projectPaymentsApi';
+import { clientsApi } from '../clients/services/clientsApi';
 import * as XLSX from 'xlsx';
 
 const ITEMS_PER_PAGE = 5;
@@ -31,11 +32,17 @@ const Payments_InstallmentsPage = () => {
     try {
       setLoading(true);
       
-      // Primero cargar todos los proyectos
-      const projectsResponse = await projectsApi.getAllProjects();
+      // Primero cargar todos los proyectos y clientes
+      const [projectsResponse, clientsResponse] = await Promise.all([
+        projectsApi.getAllProjects(),
+        clientsApi.getAllClients()
+      ]);
+
       const projects = projectsResponse.data || [];
+      const allClients = clientsResponse || [];
       
       console.log('Proyectos obtenidos del backend:', projects);
+      console.log('Clientes obtenidos para cruce:', allClients);
       
       // LOG PARA VERIFICAR COTIZACIONES
       console.log('🔍 Verificación de Cotizaciones en Proyectos:', projects.map(p => ({
@@ -81,16 +88,54 @@ const Payments_InstallmentsPage = () => {
       // Agrupar proyectos por cliente y contrato
       const grouped = {};
       projectsWithPayments.forEach(proyecto => {
-        // Si el cliente es solo un string (nombre), crear un objeto cliente temporal
+        // Calcular el costo total real sumando materiales, servicios y mano de obra
+        const costoMateriales = (proyecto.materiales ?? []).reduce(
+          (sum, item) => sum + (Number(item.cantidad || 0) * Number(item.precio || 0)),
+          0
+        );
+        const costoServicios = (proyecto.servicios ?? []).reduce(
+          (sum, item) => sum + (Number(item.cantidad || 0) * Number(item.precio || 0)),
+          0
+        );
+        const manoDeObra = Number(proyecto.costos?.manoDeObra || 0);
+        const projectTotalCost = costoMateriales + costoServicios + manoDeObra;
+
+        // Intentar encontrar el cliente completo en la lista de clientes
+        // Si el cliente es un objeto, usamos su nombre o ID para buscar. Si es string, usamos el string.
+        const clienteNombre = typeof proyecto.cliente === 'object' ? proyecto.cliente.nombre : proyecto.cliente;
+        
+        // Buscar coincidencia en la lista completa de clientes
+        const clienteCompleto = allClients.find(c => 
+          (c.nombre && clienteNombre && c.nombre.toLowerCase() === clienteNombre.toLowerCase()) ||
+          (proyecto.cliente?.id && c.id === proyecto.cliente.id) ||
+          (proyecto.id_cliente && (c.id === proyecto.id_cliente || c.id_cliente === proyecto.id_cliente))
+        );
+
         let cliente;
-        if (typeof proyecto.cliente === 'string') {
+        if (clienteCompleto) {
+          // Usar datos del cliente encontrado
           cliente = {
-            id_cliente: proyecto.id, // Usar el ID del proyecto como ID temporal del cliente
+            id_cliente: clienteCompleto.id_cliente || clienteCompleto.id,
+            nombre: clienteCompleto.nombre,
+            apellido: clienteCompleto.apellido || '',
+            documento: clienteCompleto.documento || '',
+            tipo_documento: clienteCompleto.tipo_documento || '',
+            correo: clienteCompleto.correo || '',
+            telefono: clienteCompleto.telefono || ''
+          };
+        } else if (typeof proyecto.cliente === 'string') {
+          // Fallback si no se encuentra pero tenemos un nombre string
+          cliente = {
+            id_cliente: proyecto.id, // ID temporal
             nombre: proyecto.cliente,
             apellido: '',
-            documento: ''
+            documento: 'No registrado',
+            tipo_documento: '',
+            correo: '',
+            telefono: ''
           };
         } else {
+          // Fallback si tenemos objeto parcial en proyecto.cliente
           cliente = proyecto.cliente;
         }
         
@@ -105,7 +150,10 @@ const Payments_InstallmentsPage = () => {
               id_cliente: clienteId,
               nombre: cliente.nombre || '',
               apellido: cliente.apellido || '',
-              documento: cliente.documento || ''
+              documento: cliente.documento || '',
+              tipo_documento: cliente.tipo_documento || '',
+              correo: cliente.correo || '',
+              telefono: cliente.telefono || ''
             },
             contratos: {}
           };
@@ -116,7 +164,9 @@ const Payments_InstallmentsPage = () => {
           grouped[clienteId].contratos[contratoNumero] = {
             numero: contratoNumero,
             id_proyecto: proyecto.id, // Usar el campo 'id' en lugar de 'id_proyecto'
-            montoTotal: Number(proyecto.costos?.total || 0), // Usar la estructura de costos del JSON
+            fechaInicio: proyecto.fechaInicio || proyecto.fecha_inicio || 'No definida',
+            fechaFin: proyecto.fechaFin || proyecto.fecha_fin || '',
+            montoTotal: projectTotalCost, // Usar el total calculado
             pagos: []
           };
         }
@@ -126,7 +176,7 @@ const Payments_InstallmentsPage = () => {
           const totalPagado = proyecto.pagos
             .filter(p => p.estado)
             .reduce((sum, p) => sum + Number(p.monto), 0);
-          const montoTotal = Number(proyecto.costos?.total || 0);
+          const montoTotal = projectTotalCost; // Usar el total calculado
           const montoRestante = Math.max(0, montoTotal - totalPagado);
           
           return {
@@ -144,7 +194,7 @@ const Payments_InstallmentsPage = () => {
         
         // Si no hay pagos, crear un pago "virtual" para mostrar el proyecto
         if (pagosProcesados.length === 0) {
-          const montoTotal = Number(proyecto.costos?.total || 0);
+          const montoTotal = projectTotalCost; // Usar el total calculado
           pagosProcesados.push({
             id: `virtual-${proyecto.id}`,
             fecha: 'Sin pagos',
@@ -350,15 +400,11 @@ const handleOpenPaymentDetails = (contractNumber, clientId) => {
 
 
     setDetailContractData({
-      cliente: {
-        id: clienteFound.cliente.id,
-        nombre: clienteFound.cliente.nombre,
-        apellido: clienteFound.cliente.apellido,
-        documento: clienteFound.cliente.documento,
-      },
+      cliente: clienteFound.cliente, // Pasar objeto cliente completo
       contrato: {
         numero: contratoFound.numero,
-        fechaInicio: contratoFound.fechaInicio, // Asegúrate de que esto exista en tus datos
+        fechaInicio: contratoFound.fechaInicio, 
+        fechaFin: contratoFound.fechaFin,
         montoTotal: montoTotalContrato,
         montoAbonado: montoAbonadoContrato,
         montoRestante: montoRestanteContrato,

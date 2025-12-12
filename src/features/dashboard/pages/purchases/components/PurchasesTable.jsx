@@ -2,6 +2,7 @@ import React from 'react';
 import { FaEye, FaMinusCircle } from 'react-icons/fa';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const STATUS_BADGES = {
   Activa: 'bg-green-100 text-green-800',
@@ -10,6 +11,7 @@ const STATUS_BADGES = {
 };
 
 const PurchasesTable = ({ compras, onView, onAnnul }) => {
+  const { canDelete } = usePermissions();
   const manejarAnularClick = async (compra) => {
     // Primer modal: Confirmación de anulación
     const confirmResult = await Swal.fire({
@@ -68,6 +70,7 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
           <tr>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Número de Recibo</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proveedor</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">NIT</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monto Total</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha de Registro</th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
@@ -79,6 +82,7 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
             <tr key={compra.id} className="hover:bg-gray-50 transition-colors">
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">{compra.numeroRecibo}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{compra.proveedor}</td>
+              <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{compra.nit}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">${(compra.total || 0).toLocaleString('es-CO')}</td>
               <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{compra.fechaRegistro}</td>
               <td className="px-4 py-3 whitespace-nowrap">
@@ -100,7 +104,7 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
                     <FaEye size={16} />
                   </button>
                   {/* Solo muestra el botón de anular si la compra está Activa */}
-                  {compra.estado === 'Activa' && (
+                  {compra.estado === 'Activa' && canDelete('compras') && (
                     <button
                       title="Anular Compra"
                       className="text-red-600 hover:text-red-800"
@@ -115,7 +119,7 @@ const PurchasesTable = ({ compras, onView, onAnnul }) => {
           ))}
           {compras.length === 0 && (
             <tr>
-              <td colSpan="6" className="px-4 py-3 text-center text-gray-500">
+              <td colSpan="7" className="px-4 py-3 text-center text-gray-500">
                 No se encontraron compras.
               </td>
             </tr>

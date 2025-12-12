@@ -1,11 +1,10 @@
 import axios from 'axios';
 
-// Usa variable de entorno de Vite; fallback a localhost para desarrollo
-const API_BASE_URL = import.meta.env?.VITE_API_BASE_URL || 'https://convertech-bf96e8817559.herokuapp.com/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://convertech-bf96e8817559.herokuapp.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 60000, // Aumentado a 60s para operaciones lentas
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -13,6 +12,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
+    if (import.meta.env.MODE === 'development') {
+      console.debug('[API] request', { method: config.method, url: config.url, baseURL: API_BASE_URL });
+    }
     return config;
   },
   (error) => Promise.reject(error)

@@ -3,6 +3,7 @@ import { FaTimes, FaTrash, FaPlus, FaReply, FaSpinner } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
 import { featuresService } from '../services/productsService';
 import cloudinaryService from '../../../../../services/cloudinaryService';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 const FormSection = ({ title, children }) => (
   <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 md:p-6">
@@ -55,31 +56,64 @@ const ProductEditModal = ({
   const [uploadProgress, setUploadProgress] = useState(0);
   const [loading, setLoading] = useState(false);
 
+  // Hook para el lector de código de barras
+  // Solo activo cuando el modal está abierto
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Callback que se ejecuta cuando se escanea un código
+      setProductData((prev) => ({
+        ...prev,
+        codigo_barra: scannedCode
+      }));
+      // Opcional: mostrar feedback visual
+      console.log('Código escaneado:', scannedCode);
+    },
+    {
+      minLength: 3,        // Longitud mínima del código
+      scanDuration: 100,  // Tiempo máximo entre caracteres (ms)
+      enabled: isOpen     // Solo activo cuando el modal está abierto
+    }
+  );
+
   // Función para formatear número a formato con puntos y comas
   const formatPrecio = (value) => {
     if (!value || value === '') return '';
-    // Si ya está formateado, retornarlo
-    if (typeof value === 'string' && value.includes('.') && !value.includes(',')) {
-      return value;
-    }
-    // Convertir número a string y formatear
+    
+    // Si ya está formateado (tiene puntos como miles y coma como decimal), retornarlo
+    // OJO: Esta lógica puede ser riesgosa si el backend envía "2500.00" (punto decimal)
+    // Mejor forzamos siempre el re-formateo si parece un número estándar
+    
     const numValue = typeof value === 'number' ? value : parseFloat(value);
-    if (isNaN(numValue)) return '';
+    
+    if (isNaN(numValue)) {
+      return '';
+    }
+    
+    // Convertir a string con 2 decimales fijos para asegurar consistencia si se desea
+    // Pero el usuario dice que "2500000,00" es lo que le molesta si no es lo que quiere.
+    // Si el número es entero, no debería mostrar decimales .00
     
     const parts = numValue.toString().split('.');
     const integerPart = parts[0];
     const decimalPart = parts[1] || '';
     
     const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
-    return decimalPart ? `${formattedInteger},${decimalPart.substring(0, 2)}` : formattedInteger;
+    const result = decimalPart ? `${formattedInteger},${decimalPart.substring(0, 2)}` : formattedInteger;
+    
+    return result;
   };
 
   // Función para parsear precio formateado a número
   const parsePrecio = (formattedValue) => {
-    if (!formattedValue || formattedValue === '') return '';
-    // Quitar puntos y cambiar coma por punto
-    const cleanValue = formattedValue.replace(/\./g, '').replace(',', '.');
-    return cleanValue;
+    if (!formattedValue || formattedValue === '') return 0;
+    if (typeof formattedValue === 'number') return formattedValue;
+    
+    const stringVal = String(formattedValue);
+    // Eliminar puntos de miles y cambiar coma decimal por punto
+    const cleanValue = stringVal.replace(/\./g, '').replace(',', '.');
+    const parsed = parseFloat(cleanValue);
+    
+    return isNaN(parsed) ? 0 : parsed;
   };
 
   const validateField = (name, value) => {
@@ -106,9 +140,8 @@ const ProductEditModal = ({
         break;
       case 'precio':
         // Parsear precio formateado para validación
-        const precioLimpioVal = value ? parsePrecio(value) : '';
-        const precioNumericoVal = precioLimpioVal ? parseFloat(precioLimpioVal) : 0;
-        if (!value || precioNumericoVal <= 0 || isNaN(precioNumericoVal)) {
+        const precioNumericoVal = parsePrecio(value);
+        if (!value || precioNumericoVal <= 0) {
           newErrors.precio = 'Ingresa un precio válido mayor a 0';
         } else {
           delete newErrors.precio;
@@ -129,9 +162,11 @@ const ProductEditModal = ({
 
   useEffect(() => {
     if (productToEdit) {
+      const formatted = formatPrecio(productToEdit.precio);
+
       const productDataFormatted = {
         ...productToEdit,
-        precio: formatPrecio(productToEdit.precio) // Formatear precio al cargar
+        precio: formatted // Formatear precio al cargar
       };
       setProductData(productDataFormatted);
       setErrors({});
@@ -167,8 +202,10 @@ const ProductEditModal = ({
   };
 
   const handlePrecioChange = (e) => {
+    const inputValue = e.target.value;
+
     // 1. Obtener el valor limpio (sin símbolos ni puntos, solo números y comas)
-    let rawValue = e.target.value.replace(/[^0-9,]/g, '');
+    let rawValue = inputValue.replace(/[^0-9,]/g, '');
 
     // 2. Evitar múltiples comas: solo permitir la primera
     const parts = rawValue.split(',');
@@ -418,6 +455,20 @@ const ProductEditModal = ({
       const precioLimpio = productData.precio ? parsePrecio(productData.precio) : '';
       const precioNumerico = precioLimpio ? parseFloat(precioLimpio) : 0;
 
+      // Validar límite de DECIMAL(15, 2)
+      if (precioNumerico > 9999999999999.99) {
+        setErrors(prev => ({
+          ...prev,
+          precio: 'El precio excede el límite permitido (13 dígitos enteros).'
+        }));
+        setTimeout(() => {
+          const precioField = document.getElementById('precio');
+          if (precioField) precioField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
+        setLoading(false);
+        return;
+      }
+
       const updatedProduct = {
         ...productData,
         id_categoria: Number(productData.id_categoria),
@@ -425,7 +476,7 @@ const ProductEditModal = ({
         garantia: Number(productData.garantia),
         codigo_barra: productData.codigo_barra?.trim() || 'n/a',
         fichas_tecnicas: fichasProcesadas,
-        estado: !!productData.estado,
+        estado: productData.estado === true || productData.estado === 'Activo' || productData.estado === 1,
         fotos: Array.isArray(productData.fotos) ? productData.fotos : []
       };
 

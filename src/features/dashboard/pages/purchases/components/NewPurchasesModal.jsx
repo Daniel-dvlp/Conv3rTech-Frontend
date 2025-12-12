@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from 'react-router-dom';
-import { FaTimes, FaPlus, FaTrash, FaEdit, FaBarcode } from "react-icons/fa";
+import { FaTimes, FaPlus, FaTrash, FaEdit } from "react-icons/fa";
 import { toast } from 'react-hot-toast';
+import useBarcodeScanner from '../../../../../shared/hooks/useBarcodeScanner';
 
 // Componentes reutilizables del diseño estándar (sin cambios aquí)
 const FormSection = ({ title, children }) => (
@@ -66,6 +67,46 @@ const NewPurchasesModal = ({
   const [errors, setErrors] = useState({});
   const [touchedFields, setTouchedFields] = useState({});
   const [editingProductIndex, setEditingProductIndex] = useState(null);
+
+  // Hook para el lector de código de barras
+  useBarcodeScanner(
+    (scannedCode) => {
+      // Buscar producto por código de barras
+      // Normalizar el código escaneado
+      const codigoNormalizado = scannedCode.trim();
+      
+      const productoEncontrado = productos.find(p => {
+        if (!p.codigo_barra) return false;
+        
+        // Normalizar el código del producto (puede ser string, null, o "n/a")
+        const codigoProducto = p.codigo_barra.toString().trim().toLowerCase();
+        
+        // Ignorar valores vacíos o "n/a"
+        if (!codigoProducto || codigoProducto === 'n/a' || codigoProducto === 'null') {
+          return false;
+        }
+        
+        // Comparar códigos normalizados
+        return codigoProducto === codigoNormalizado.toLowerCase();
+      });
+
+      if (productoEncontrado) {
+        // Seleccionar el producto automáticamente
+        setNuevoProductoSeleccionado((prev) => ({
+          ...prev,
+          idProducto: productoEncontrado.id_producto.toString(),
+        }));
+        toast.success(`Producto encontrado: ${productoEncontrado.nombre}`);
+      } else {
+        toast.error(`No se encontró un producto con el código: ${codigoNormalizado}`);
+      }
+    },
+    {
+      minLength: 3,
+      scanDuration: 100,
+      enabled: isOpen
+    }
+  );
 
   useEffect(() => {
     if (!isOpen && isClosingIntentionally) {
@@ -153,6 +194,10 @@ const NewPurchasesModal = ({
         break;
       case 'fechaRegistro':
         if (!value) error = 'Fecha de registro es obligatoria.';
+        else {
+          const today = new Date().toISOString().slice(0, 10);
+          if (value > today) error = 'La fecha de registro no puede ser mayor a la fecha actual.';
+        }
         break;
       case 'numeroRecibo':
         if (!value || value.trim() === '') {
@@ -196,11 +241,31 @@ const NewPurchasesModal = ({
     }
   };
 
+  const parsePrecio = (val) => {
+    if (!val) return 0;
+    // Remove dots (thousands), replace comma with dot (decimal)
+    const clean = val.toString().replace(/\./g, '').replace(',', '.');
+    return parseFloat(clean) || 0;
+  };
+
   const handleNuevoProductoChange = (e) => {
     const { name, value } = e.target;
+    let finalValue = value;
+
+    if (name === 'precioUnitarioCompra') {
+      if (value.endsWith('.')) {
+        finalValue = value.slice(0, -1) + ',';
+      } else if (value.includes('.') && !value.includes(',')) {
+        const parts = value.split('.');
+        if (parts.length === 2 && parts[1].length !== 3) {
+          finalValue = value.replace('.', ',');
+        }
+      }
+    }
+
     setNuevoProductoSeleccionado((prev) => ({
       ...prev,
-      [name]: value,
+      [name]: finalValue,
     }));
     // Limpiar errores relacionados con el nuevo producto al cambiar sus valores
     setErrors(prev => ({
@@ -210,23 +275,6 @@ const NewPurchasesModal = ({
     }));
   };
 
-  const generateRandomBarcode = () => {
-    let code = '';
-    for (let i = 0; i < 10; i++) {
-      code += Math.floor(Math.random() * 10);
-    }
-    setNuevoProductoSeleccionado(prev => ({
-      ...prev,
-      codigoDeBarras: code,
-    }));
-  };
-
-  const clearBarcode = () => {
-    setNuevoProductoSeleccionado(prev => ({
-      ...prev,
-      codigoDeBarras: "N/A",
-    }));
-  };
 
   const handleAddProduct = () => {
     const { idProducto, cantidad, precioUnitarioCompra, codigoDeBarras } = nuevoProductoSeleccionado;
@@ -266,11 +314,11 @@ const NewPurchasesModal = ({
 
     const newProduct = {
       idProducto: parseInt(idProducto),
-      nombre: productoInfo.nombre,
-      modelo: productoInfo.modelo,
+      nombre: productoInfo.nombre || 'Desconocido',
+      modelo: productoInfo.modelo || 'N/A',
       unidadDeMedida: productoInfo.unidad_medida || "N/A",
       cantidad: parseInt(cantidad),
-      precioUnitarioCompra: parseFloat(precioUnitarioCompra),
+      precioUnitarioCompra: parsePrecio(precioUnitarioCompra),
       codigoDeBarras: codigoDeBarras === "N/A" ? "" : codigoDeBarras, // Guardar como string vacío si es N/A
     };
 
@@ -523,6 +571,7 @@ const NewPurchasesModal = ({
                   }`}
                   required
                   ref={fechaRegistroRef}
+                  max={new Date().toISOString().slice(0, 10)}
                 />
                 {errors.fechaRegistro && (
                   <p className="text-red-500 text-sm mt-1">{errors.fechaRegistro}</p>
@@ -671,29 +720,20 @@ const NewPurchasesModal = ({
                   <p className="text-red-500 text-sm mt-1">{errors.nuevoProducto}</p>
                 )}
               </div>
-              <div className="md:col-span-2 flex items-end gap-2">
-                <div className="flex-1">
-                  <FormLabel>Código de barras:</FormLabel>
-                  <input
-                    type="text"
-                    name="codigoDeBarras"
-                    value={nuevoProductoSeleccionado.codigoDeBarras}
-                    readOnly
-                    className={`${inputBaseStyle} bg-gray-200 text-gray-700 cursor-not-allowed`}
-                    ref={nuevoProductoCodigoBarrasRef}
-                  />
-                </div>
-                <button
-                  type="button"
-                  onClick={nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? generateRandomBarcode : clearBarcode}
-                  className={`flex-shrink-0 inline-flex items-center gap-2 text-sm font-semibold text-white px-4 py-2 rounded-lg shadow-sm hover:shadow-md transition-all duration-200 ease-in-out transform hover:scale-[1.02] active:scale-[0.98] h-[42px] ${
-                    nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-red-600 hover:bg-red-700'
-                  }`}
-                  title={nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? "Generar código de barras" : "Eliminar código de barras"}
-                >
-                  <FaBarcode size={14} />
-                  {nuevoProductoSeleccionado.codigoDeBarras === "N/A" ? '' : <FaTimes size={14} />}
-                </button>
+              <div className="md:col-span-2">
+                <FormLabel>Código de barras:</FormLabel>
+                <input
+                  type="text"
+                  name="codigoDeBarras"
+                  value={nuevoProductoSeleccionado.codigoDeBarras}
+                  readOnly
+                  className={`${inputBaseStyle} bg-gray-200 text-gray-700 cursor-not-allowed`}
+                  ref={nuevoProductoCodigoBarrasRef}
+                  placeholder="Se mostrará al seleccionar un producto"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Escanea el código de barras para seleccionar el producto automáticamente
+                </p>
               </div>
               <div className="md:col-span-4 flex justify-end">
                 <button
@@ -713,29 +753,33 @@ const NewPurchasesModal = ({
             {purchaseData.productosComprados.length > 0 && (
               <div className="mt-4">
                 <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
+                  <table className="w-full text-sm text-center border border-gray-200">
+                    <thead className="bg-conv3r-dark text-white">
                       <tr>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Producto</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Unidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cantidad</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Precio Unitario Compra</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Subtotal</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Cód. Barras</th>
-                        <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Acción</th>
+                        <th className="p-3 font-semibold">Producto</th>
+                        <th className="font-semibold">Unidad</th>
+                        <th className="font-semibold">Cantidad</th>
+                        <th className="font-semibold">Precio Unitario Compra</th>
+                        <th className="font-semibold">Subtotal</th>
+                        <th className="font-semibold">Cód. Barras</th>
+                        <th className="p-3 font-semibold">Acción</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-gray-200">
+                    <tbody className="bg-white text-gray-700">
                       {purchaseData.productosComprados.map((item, index) => (
-                        <tr key={index}>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.nombre}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.unidadDeMedida}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.cantidad}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${item.precioUnitarioCompra.toLocaleString('es-CO')}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${(item.precioUnitarioCompra * item.cantidad).toLocaleString('es-CO')}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">{item.codigoDeBarras || 'N/A'}</td>
-                          <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-900">
-                            <div className="flex gap-2">
+                        <tr key={index} className="border-t border-gray-200">
+                          <td className="p-3">{item.nombre}</td>
+                          <td className="p-3">{item.unidadDeMedida}</td>
+                          <td className="p-3">{item.cantidad}</td>
+                          <td className="p-3">
+                            ${item.precioUnitarioCompra.toLocaleString('es-CO')}
+                          </td>
+                          <td className="p-3">
+                            ${(item.precioUnitarioCompra * item.cantidad).toLocaleString('es-CO')}
+                          </td>
+                          <td className="p-3">{item.codigoDeBarras || 'N/A'}</td>
+                          <td className="p-3">
+                            <div className="flex justify-center gap-2">
                               <button
                                 type="button"
                                 onClick={() => handleEditProduct(index)}
@@ -757,30 +801,30 @@ const NewPurchasesModal = ({
                         </tr>
                       ))}
                     </tbody>
+                    <tfoot className="bg-gray-50 border-t text-sm text-gray-700">
+                      <tr>
+                        <td colSpan="5" className="text-right font-semibold px-4 py-2">Subtotal:</td>
+                        <td colSpan="2" className="font-bold px-4 py-2 text-right text-conv3r-dark">
+                          ${purchaseData.subtotalProductos.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan="5" className="text-right font-semibold px-4 py-2">IVA (19%):</td>
+                        <td colSpan="2" className="font-bold px-4 py-2 text-right text-conv3r-dark">
+                          ${purchaseData.iva.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                      <tr>
+                        <td colSpan="5" className="text-right font-semibold px-4 py-2">Total:</td>
+                        <td colSpan="2" className="font-bold text-conv3r-gold text-lg px-4 py-2 text-right">
+                          ${purchaseData.total.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </td>
+                      </tr>
+                    </tfoot>
                   </table>
                 </div>
               </div>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-              <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                <h4 className="font-medium text-gray-700 mb-2">Detalles</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Subtotal productos:</span>
-                    <span className="text-sm font-semibold">${purchaseData.subtotalProductos.toLocaleString('es-CO')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">IVA (19%):</span>
-                    <span className="text-sm font-semibold">${purchaseData.iva.toLocaleString('es-CO')}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="md:col-span-1 bg-white border border-gray-300 text-gray-800 p-4 rounded-lg flex flex-col items-center justify-center h-full">
-                <span className="text-sm font-bold uppercase mb-1">Total compra:</span>
-                <span className="text-3xl font-extrabold">${purchaseData.total.toLocaleString('es-CO')}</span>
-              </div>
-            </div>
           </FormSection>
 
           <FormSection title="Observaciones">
@@ -789,7 +833,8 @@ const NewPurchasesModal = ({
               value={purchaseData.observaciones}
               onChange={handleChange}
               rows={3}
-              className={inputBaseStyle}
+              className={`${inputBaseStyle} resize-none`}
+              style={{ resize: 'none' }}
               maxLength="500"
             ></textarea>
           </FormSection>

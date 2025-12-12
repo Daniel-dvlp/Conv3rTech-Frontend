@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaSearch, FaUser, FaPlus, FaChevronDown, FaChevronUp, FaCheckSquare, FaSquare, FaChevronLeft, FaChevronRight, FaEllipsisV, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaSearch, FaUser, FaPlus, FaChevronDown, FaChevronUp, FaCheckSquare, FaSquare, FaChevronLeft, FaChevronRight, FaEllipsisV, FaEdit, FaTrash, FaBan, FaPowerOff } from 'react-icons/fa';
 
 const LaborSchedulingSidebar = ({
   users,
@@ -21,13 +21,26 @@ const LaborSchedulingSidebar = ({
   onCreateNovedad,
   onEdit,
   onDelete,
+  onAnnul,
+  onInactivate,
   onEditNovedad,
-  onDeleteNovedad
+  onDeleteNovedad,
+  userRole,
+  showAnnulled,
+  setShowAnnulled
 }) => {
   const [search, setSearch] = useState(filter);
-  const [expandedSchedules, setExpandedSchedules] = useState(new Set());
+  const [expandedUsers, setExpandedUsers] = useState(new Set()); // Para expandir usuarios
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [novedadMenuOpenId, setNovedadMenuOpenId] = useState(null);
+
+  // Determinar permisos basados en el rol (o usar props si se prefiriera)
+  // Admin: Todo
+  // Coordinador: Todo menos eliminar
+  // Tecnico: Ver solo lo suyo (ya filtrado)
+  const canDelete = userRole === 'Administrador' || userRole === 'Admin' || (userRole?.id_rol === 1);
+  const canManage = canDelete || userRole === 'Coordinador' || (userRole?.id_rol === 2);
+  const isTechnician = userRole === 'Tecnico' || (userRole?.id_rol === 3);
 
   // Mini Calendar State
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -53,19 +66,23 @@ const LaborSchedulingSidebar = ({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(search.toLowerCase()) ||
-    user.documento?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const fullName = `${user.nombre || ''} ${user.apellido || ''}`.trim();
+    const searchTerm = search.toLowerCase();
+    return (
+      fullName.toLowerCase().includes(searchTerm) ||
+      user.documento?.toLowerCase().includes(searchTerm)
+    );
+  });
 
-  const toggleExpandSchedule = (scheduleId) => {
-    const newSet = new Set(expandedSchedules);
-    if (newSet.has(scheduleId)) {
-      newSet.delete(scheduleId);
+  const toggleExpandUser = (userId) => {
+    const newSet = new Set(expandedUsers);
+    if (newSet.has(userId)) {
+      newSet.delete(userId);
     } else {
-      newSet.add(scheduleId);
+      newSet.add(userId);
     }
-    setExpandedSchedules(newSet);
+    setExpandedUsers(newSet);
   };
 
   // Mini Calendar Logic
@@ -138,26 +155,6 @@ const LaborSchedulingSidebar = ({
   return (
     <aside className="h-full flex flex-col bg-white border-r border-gray-200 w-72 flex-shrink-0 overflow-hidden shadow-sm">
 
-      {/* 1. Botones Superiores (Separados) */}
-      <div className="p-4 flex gap-3 border-b border-gray-100">
-        {onCreate && (
-          <button
-            onClick={() => onCreate()}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm text-sm font-medium"
-          >
-            <FaPlus size={12} /> Programar
-          </button>
-        )}
-        {onCreateNovedad && (
-          <button
-            onClick={() => onCreateNovedad()}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2.5 bg-white text-green-600 border border-green-200 rounded-lg hover:bg-green-50 transition-all shadow-sm text-sm font-medium"
-          >
-            <FaPlus size={12} /> Novedad
-          </button>
-        )}
-      </div>
-
       <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
 
         {/* 2. Mini Calendario */}
@@ -199,6 +196,25 @@ const LaborSchedulingSidebar = ({
           />
         </div>
 
+        {/* Toggle Show Annulled */}
+        <div className="mb-6 px-1">
+          <label className="flex items-center gap-3 cursor-pointer select-none group">
+            <div className="relative">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={showAnnulled}
+                onChange={(e) => setShowAnnulled && setShowAnnulled(e.target.checked)}
+              />
+              <div className="block w-9 h-5 bg-gray-300 rounded-full peer-checked:bg-blue-500 transition-colors"></div>
+              <div className="absolute left-1 top-1 bg-white w-3 h-3 rounded-full transition-transform peer-checked:translate-x-4"></div>
+            </div>
+            <span className="text-sm text-gray-600 group-hover:text-gray-800 transition-colors font-medium">
+              Ver anuladas
+            </span>
+          </label>
+        </div>
+
         {/* 4. Listado de Empleados con Programación */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3 px-1">
@@ -208,42 +224,102 @@ const LaborSchedulingSidebar = ({
             {filteredUsers.length === 0 ? (
               <div className="text-xs text-gray-400 italic px-2">No se encontraron empleados.</div>
             ) : (
-              filteredUsers.map(user => (
-                <div key={user.id} className="group relative flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100">
-                  {/* Checkbox / Visibility */}
-                  <div
-                    onClick={(e) => { e.stopPropagation(); toggleUser(user.id); }}
-                    className="cursor-pointer text-lg flex-shrink-0 transition-transform active:scale-95"
-                    style={{ color: user.color || '#3B82F6' }}
-                  >
-                    {visibleUserIds.has(user.id) ? <FaCheckSquare /> : <FaSquare className="opacity-30" />}
+              filteredUsers.map(user => {
+                const userSchedules = schedules.filter(s => s.usuarioId === user.id);
+                const isExpanded = expandedUsers.has(user.id);
+
+                return (
+                <div key={user.id} className="flex flex-col bg-white rounded-lg border border-transparent hover:border-gray-100 transition-colors">
+                  <div className="group relative flex items-center gap-3 p-2 hover:bg-gray-50 rounded-lg">
+                    {/* Checkbox / Visibility */}
+                    <div
+                      onClick={(e) => { e.stopPropagation(); toggleUser(user.id); }}
+                      className="cursor-pointer text-lg flex-shrink-0 transition-transform active:scale-95"
+                      style={{ color: user.color || '#3B82F6' }}
+                    >
+                      {visibleUserIds.has(user.id) ? <FaCheckSquare /> : <FaSquare className="opacity-30" />}
+                    </div>
+
+                    {/* User Info */}
+                    <div className="flex-1 min-w-0 cursor-pointer flex items-center justify-between" onClick={() => toggleExpandUser(user.id)}>
+                      <div>
+                        <div className="text-sm font-medium text-gray-800 truncate">{user.nombre} {user.apellido}</div>
+                        <div className="text-xs text-gray-400 truncate">{user.documento || 'Sin ID'}</div>
+                      </div>
+                      <div className="text-gray-400">
+                        {isExpanded ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* User Info */}
-                  <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleUser(user.id)}>
-                    <div className="text-sm font-medium text-gray-800 truncate">{user.name}</div>
-                    <div className="text-xs text-gray-400 truncate">{user.documento || 'Sin ID'}</div>
-                  </div>
+                  {/* Expanded Schedules Details */}
+                  {isExpanded && (
+                    <div className="pl-9 pr-2 pb-2 space-y-2">
+                      {userSchedules.length === 0 ? (
+                        <div className="text-xs text-gray-400 italic">Sin programaciones asignadas</div>
+                      ) : (
+                        userSchedules.map(sched => (
+                          <div key={sched.id} className="text-xs bg-gray-50 p-2 rounded border border-gray-100 relative group/sched">
+                            <div className="flex justify-between items-start mb-1">
+                              <span className="font-semibold text-gray-700 truncate w-3/4" title={sched.title}>{sched.title}</span>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] ${
+                                sched.estado === 'Activa' ? 'bg-green-100 text-green-700' :
+                                sched.estado === 'Inactiva' ? 'bg-gray-200 text-gray-600' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {sched.estado}
+                              </span>
+                            </div>
+                            
+                            {/* Actions for specific schedule */}
+                            {canManage && (
+                              <div className="flex justify-end gap-1 mt-2 border-t border-gray-200 pt-1">
+                                <button
+                                  onClick={(e) => { e.stopPropagation(); onEdit(sched); }}
+                                  className="p-1 text-blue-500 hover:bg-blue-50 rounded"
+                                  title="Editar"
+                                >
+                                  <FaEdit />
+                                </button>
+                                
+                                {sched.estado !== 'Anulada' && (
+                                  <>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onAnnul(sched.id); }}
+                                      className="p-1 text-amber-500 hover:bg-amber-50 rounded"
+                                      title="Anular"
+                                    >
+                                      <FaBan />
+                                    </button>
+                                    <button
+                                      onClick={(e) => { e.stopPropagation(); onInactivate(sched.id, sched.estado); }}
+                                      className="p-1 text-gray-500 hover:bg-gray-100 rounded"
+                                      title={sched.estado === 'Inactiva' ? 'Activar' : 'Inactivar'}
+                                    >
+                                      <FaPowerOff />
+                                    </button>
+                                  </>
+                                )}
 
-                  {/* Actions (Edit/Delete) */}
-                  <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onEdit(user); }}
-                      className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                      title="Editar Programación"
-                    >
-                      <FaEdit size={12} />
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); onDelete(user.id); }}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                      title="Eliminar Programación"
-                    >
-                      <FaTrash size={12} />
-                    </button>
-                  </div>
+                                {canDelete && (
+                                  <button
+                                    onClick={(e) => { e.stopPropagation(); onDelete(sched.id); }}
+                                    className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                    title="Eliminar"
+                                  >
+                                    <FaTrash />
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
                 </div>
-              ))
+              );
+             })
             )}
           </div>
         </div>
@@ -271,7 +347,7 @@ const LaborSchedulingSidebar = ({
 
                   {/* Novedad Info */}
                   <div className="flex-1 min-w-0 cursor-pointer" onClick={() => toggleNovedad(novedad.id)}>
-                    <div className="text-sm font-medium text-gray-800 truncate">{novedad.name}</div>
+                    <div className="text-sm font-medium text-gray-800 truncate">{novedad.title}</div>
                   </div>
 
                   {/* Actions */}

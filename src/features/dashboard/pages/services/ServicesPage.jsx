@@ -83,7 +83,18 @@ const ServicesPage = () => {
       showSuccess('Servicio eliminado correctamente');
       toast.success('Servicio eliminado exitosamente');
     } catch (error) {
-      toast.error('Error al eliminar el servicio');
+      console.error('Error al eliminar servicio:', error);
+      let errorMessage = 'Error al eliminar el servicio';
+      
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        errorMessage = error.response.data.errors.map(e => e.msg).join(', ');
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     }
   };
 
@@ -160,7 +171,7 @@ const ServicesPage = () => {
     <div className="p-6">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-        <h2 className="text-3xl font-bold text-[#000435]">SERVICIOS</h2>
+        <h2 className="text-3xl font-bold text-[#000435]">Servicios</h2>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 mt-4 sm:mt-0">
           <div className="relative">

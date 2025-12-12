@@ -44,6 +44,9 @@ export const productsService = {
       return response.data?.data ?? response.data;
     } catch (error) {
       console.error('Error al actualizar producto:', error);
+      if (error.response) {
+        console.error('Detalles del error (Backend):', JSON.stringify(error.response.data, null, 2));
+      }
       throw error;
     }
   },
@@ -69,6 +72,50 @@ export const categoriesService = {
       return response.data;
     } catch (error) {
       console.error('Error al obtener categorías:', error);
+      throw error;
+    }
+  },
+
+  // Crear categoría
+  createCategory: async (categoryData) => {
+    try {
+      const response = await api.post('/productsCategory', categoryData);
+      return response.data;
+    } catch (error) {
+      console.error('Error al crear categoría:', error);
+      throw error;
+    }
+  },
+
+  // Actualizar categoría
+  updateCategory: async (id, categoryData) => {
+    try {
+      const response = await api.put(`/productsCategory/${id}`, categoryData);
+      return response.data;
+    } catch (error) {
+      console.error('Error al actualizar categoría:', error);
+      throw error;
+    }
+  },
+
+  // Eliminar categoría
+  deleteCategory: async (id) => {
+    try {
+      const response = await api.delete(`/productsCategory/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error al eliminar categoría:', error);
+      throw error;
+    }
+  },
+
+  // Cambiar estado de categoría
+  changeStateCategory: async (id, state) => {
+    try {
+      const response = await api.patch(`/productsCategory/${id}`, { estado: state });
+      return response.data;
+    } catch (error) {
+      console.error('Error al cambiar estado de categoría:', error);
       throw error;
     }
   }

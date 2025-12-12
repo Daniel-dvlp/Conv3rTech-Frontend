@@ -4,7 +4,7 @@ import {showError} from '../../../../../shared/utils/alerts';
 import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel }) => {
-  const { checkManage } = usePermissions();
+  const { checkManage, canEdit, canDelete } = usePermissions();
   const formatNumber = (num) => {
     if (num === null || num === undefined) return '$0';
     const parsedNum = typeof num === 'string' ? parseFloat(num) : num;
@@ -75,7 +75,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                   <FaEye />
                 </button>
 
-                {checkManage('cotizaciones') && (
+                {canEdit('cotizaciones') && (
                   <button
                     onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onEdit(quote)}
                     title="Editar"
@@ -94,7 +94,7 @@ const QuotesTable = ({ quotes, onViewDetails, onEdit, onDownloadPDF, onCancel })
                   <FaDownload />
                 </button>
 
-                {checkManage('cotizaciones') && (
+                {canDelete('cotizaciones') && (
                   <button
                     onClick={() => (isLocked(quote.estado)) ? handleDisabledAction() : onCancel(quote)}
                     title="Anular"

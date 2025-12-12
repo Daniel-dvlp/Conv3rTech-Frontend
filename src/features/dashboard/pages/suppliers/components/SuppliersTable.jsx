@@ -4,8 +4,10 @@ import React from 'react';
 import { FaEdit, FaTrashAlt, FaEye } from 'react-icons/fa';
 import Swal from 'sweetalert2'; // <--- Importa SweetAlert2
 import toast from 'react-hot-toast'; // Ya lo tienes, es bueno para las notificaciones finales
+import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const SuppliersTable = ({ suppliers, onEdit, onDelete, onView }) => {
+  const { canEdit, canDelete } = usePermissions();
 
   const getStatusClass = (status) => {
     switch (status) {
@@ -50,32 +52,32 @@ const SuppliersTable = ({ suppliers, onEdit, onDelete, onView }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-x-auto">
-      <table className="w-full">
+      <table className="w-full table-fixed md:table-auto">
         <thead className="bg-gray-50">
           <tr>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Entidad</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIT</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono Entidad</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Encargado</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo Principal</th>
-            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Entidad</th>
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIT</th>
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teléfono Entidad</th>
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Encargado</th>
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Correo Principal</th>
+            <th className="px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
+            <th className="px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
           {(suppliers || []).map((supplier) => (
             <tr key={supplier.id} className="hover:bg-gray-50 transition-colors">
-              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{supplier.empresa}</td>
-              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{supplier.nit || '-'}</td>
-              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{supplier.telefono_entidad}</td>
-              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{supplier.encargado}</td>
-              <td className="px-6 py-3 whitespace-nowrap text-sm text-gray-900">{supplier.correo_principal}</td>
-              <td className="px-6 py-3 whitespace-nowrap">
+              <td className="px-4 md:px-6 py-3 text-sm text-gray-900 break-words whitespace-normal">{supplier.empresa}</td>
+              <td className="px-4 md:px-6 py-3 text-sm text-gray-900 break-words whitespace-normal">{supplier.nit || '-'}</td>
+              <td className="px-4 md:px-6 py-3 text-sm text-gray-900 break-words whitespace-normal">{supplier.telefono_entidad}</td>
+              <td className="px-4 md:px-6 py-3 text-sm text-gray-900 break-words whitespace-normal">{supplier.encargado}</td>
+              <td className="px-4 md:px-6 py-3 text-sm text-gray-900 break-words whitespace-normal">{supplier.correo_principal}</td>
+              <td className="px-4 md:px-6 py-3">
                 <span className={`px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusClass(supplier.estado)}`}>
                   {supplier.estado}
                 </span>
               </td>
-              <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
+              <td className="px-4 md:px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-end items-center gap-3">
                   <button
                     onClick={() => onView(supplier)}
@@ -84,20 +86,24 @@ const SuppliersTable = ({ suppliers, onEdit, onDelete, onView }) => {
                   >
                     <FaEye size={16} />
                   </button>
-                  <button
-                    onClick={() => onEdit(supplier)}
-                    className="text-yellow-500 hover:text-yellow-600"
-                    title="Editar"
-                  >
-                    <FaEdit size={16} />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteClick(supplier)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Eliminar"
-                  >
-                    <FaTrashAlt size={16} />
-                  </button>
+                  {canEdit('proveedores') && (
+                    <button
+                      onClick={() => onEdit(supplier)}
+                      className="text-yellow-500 hover:text-yellow-600"
+                      title="Editar"
+                    >
+                      <FaEdit size={16} />
+                    </button>
+                  )}
+                  {canDelete('proveedores') && (
+                    <button
+                      onClick={() => handleDeleteClick(supplier)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Eliminar"
+                    >
+                      <FaTrashAlt size={16} />
+                    </button>
+                  )}
                 </div>
               </td>
             </tr>

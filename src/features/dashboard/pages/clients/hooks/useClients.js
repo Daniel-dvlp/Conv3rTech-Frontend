@@ -32,8 +32,9 @@ export const useClients = () => {
       toast.success('Cliente creado exitosamente');
       return newClient;
     } catch (err) {
-      setError(err.message);
-      toast.error('Error al crear cliente');
+      const message = err.response?.data?.message || err.response?.data?.error || err.message || 'Error al crear cliente';
+      setError(message);
+      toast.error(message);
       throw err;
     } finally {
       setLoading(false);

@@ -48,9 +48,17 @@ const QuotesPage = () => {
         ]);
         const quotesData = Array.isArray(quotesRes) ? quotesRes : quotesRes?.data ?? [];
         setQuotes(quotesData);
-        setClients(Array.isArray(clientsRes) ? clientsRes : clientsRes?.data ?? []);
-        setProducts(Array.isArray(productsRes) ? productsRes : productsRes?.data ?? []);
-        setServices(Array.isArray(servicesRes) ? servicesRes : servicesRes?.data ?? []);
+        
+        const allClients = Array.isArray(clientsRes) ? clientsRes : clientsRes?.data ?? [];
+        setClients(allClients.filter(c => c.estado_cliente === true));
+        
+        // Filtrar productos activos
+        const allProducts = Array.isArray(productsRes) ? productsRes : productsRes?.data ?? [];
+        setProducts(allProducts.filter(p => p.estado === true));
+
+        // Filtrar servicios activos
+        const allServices = Array.isArray(servicesRes) ? servicesRes : servicesRes?.data ?? [];
+        setServices(allServices.filter(s => s.estado === 'activo'));
       } catch (e) {
         console.error('Error cargando datos de cotizaciones', e);
         showError('No se pudieron cargar las cotizaciones');

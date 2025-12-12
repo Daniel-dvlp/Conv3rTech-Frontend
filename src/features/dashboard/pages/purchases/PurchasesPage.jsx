@@ -367,8 +367,8 @@ const PaginaCompras = () => {
         isOpen={esNuevaCompraAbierto}
         onClose={() => setEsNuevaCompraAbierto(false)}
         onSave={manejarGuardarCompra}
-        proveedores={proveedores}
-        productos={productos}
+        proveedores={proveedores.filter(p => p.estado === 'Activo')}
+        productos={productos.filter(p => p.estado === true)}
       />
     </div>
   );

@@ -1,16 +1,42 @@
 import React, { useState } from 'react';
-import { FaEye, FaEdit, FaTrashAlt } from 'react-icons/fa';
+import { FaEye, FaEdit } from 'react-icons/fa';
 import UserDetailModal from './UserDetailModal';
 import EditUserModal from './EditUserModal';
 import { mockRoles } from '../../roles/data/Roles_data';
 import { useAuth } from '../../../../../shared/contexts/AuthContext';
+import { Switch } from '@headlessui/react';
+import { showError } from '../../../../../shared/utils/alerts';
 
+const ToggleSwitch = ({ checked, onChange, disabled }) => (
+  <Switch
+    checked={checked}
+    onChange={onChange}
+    disabled={disabled}
+    className={`${checked ? 'bg-green-500' : 'bg-gray-300'}
+    ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+    relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 focus:outline-none`}
+  >
+    <span
+      className={`${checked ? 'translate-x-5' : 'translate-x-1'}
+      inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform duration-300`}
+    />
+  </Switch>
+);
 
 const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina, onDelete, onUpdate, onChangeStatus, roles = [] }) => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalAbierto, setModalAbierto] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
-  const { hasPermission, hasPrivilege } = useAuth();
+  const { hasPermission, hasPrivilege, user } = useAuth();
+
+  // Helper para verificar permisos
+  // Si es Admin (id_rol === 1) tiene acceso total
+  const isAdmin = user?.id_rol === 1 || user?.rol === 'Administrador';
+  
+  const canView = isAdmin || hasPrivilege('Usuarios', 'Ver') || hasPrivilege('usuarios', 'Ver');
+  const canEdit = isAdmin || hasPrivilege('Usuarios', 'Editar') || hasPrivilege('usuarios', 'Editar');
+  // const canDelete = isAdmin || hasPrivilege('Usuarios', 'Eliminar') || hasPrivilege('usuarios', 'Eliminar');
+
 
   const startIndex = (paginaActual - 1) * itemsPorPagina;
   const usuariosPaginados = usuariosFiltrados.slice(startIndex, startIndex + itemsPorPagina);
@@ -28,6 +54,17 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
       setUsuarioSeleccionado(null);
     } catch (error) {
       console.error('Error al actualizar usuario:', error);
+    }
+  };
+
+  const handleStatusChange = async (usuario) => {
+    const newStatus = usuario.estado_usuario === 'Activo' ? 'Inactivo' : 'Activo';
+    try {
+      await onChangeStatus(usuario.id_usuario, newStatus);
+    } catch (error) {
+      console.error('Error changing status:', error);
+      const errorMsg = error.response?.data?.error || error.response?.data?.message || error.message || 'Error al cambiar el estado';
+      showError(errorMsg);
     }
   };
 
@@ -79,43 +116,48 @@ const UsersTable = ({ usuarios, usuariosFiltrados, paginaActual, itemsPorPagina,
               </td>
               <td className="px-6 py-3 whitespace-nowrap text-right text-sm font-medium">
                 <div className="flex justify-center items-center gap-4">
-                  {hasPermission('usuarios') && (
+                  {canView && (
                     <button className="text-blue-600 hover:text-blue-900" title="Ver detalles" onClick={() => setSelectedUser(usuario)} >
                       <FaEye size={20} />
                     </button>
                   )}
-                  {hasPrivilege('usuarios', 'Editar') && (
+                  {canEdit && (
                     <button className="text-yellow-600 hover:text-yellow-900" onClick={() => handleEditarUsuario(usuario)} title="Editar">
                       <FaEdit size={20} />
                     </button>
                   )}
-                  {hasPrivilege('usuarios', 'Eliminar') && (
-                    <button className="text-red-600 hover:text-red-900" title="Eliminar" onClick={() => onDelete(usuario.id_usuario)} >
-                      <FaTrashAlt size={20} />
-                    </button>
+                  {canEdit && (
+                    <div title="Cambiar Estado">
+                      <ToggleSwitch 
+                        checked={usuario.estado_usuario === 'Activo'} 
+                        onChange={() => handleStatusChange(usuario)}
+                        disabled={!canEdit} 
+                      />
+                    </div>
                   )}
                 </div>
-                {selectedUser && (
-                  <UserDetailModal
-                    user={selectedUser}
-                    onClose={() => setSelectedUser(null)}
-                  />
-                )}
-
               </td>
             </tr>
           ))}
         </tbody>
-        {usuarioSeleccionado && (
-          <EditUserModal
-            isOpen={modalAbierto}
-            onClose={() => setModalAbierto(false)}
-            userData={usuarioSeleccionado}
-            roles={roles}
-            onSubmit={actualizarUsuario}
-          />
-        )}
       </table>
+
+      {selectedUser && (
+        <UserDetailModal
+          user={selectedUser}
+          onClose={() => setSelectedUser(null)}
+        />
+      )}
+
+      {usuarioSeleccionado && (
+        <EditUserModal
+          isOpen={modalAbierto}
+          onClose={() => setModalAbierto(false)}
+          userData={usuarioSeleccionado}
+          roles={roles}
+          onSubmit={actualizarUsuario}
+        />
+      )}
     </div>
   );
 };
