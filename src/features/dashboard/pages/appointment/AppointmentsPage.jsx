@@ -32,11 +32,11 @@ const AppointmentsPage = () => {
   }, []);
 
   // Verificar si es Coordinador o Admin (Roles 1 y 2)
-  // Nota: Basado en LaborSchedulingSidebar, Admin=1, Coordinador=2, Técnico=3
+  // Nota: Admin=1, Coordinador=2, Técnico=3
   const isCoordinadorOrAdmin = user?.id_rol === 1 || user?.id_rol === 2 || user?.rol?.toLowerCase().includes('coordinador') || user?.rol?.toLowerCase().includes('admin');
 
-  // Verificar si es Técnico (rol 2 o 3)
-  const isTecnico = user?.id_rol === 2 || user?.id_rol === 3 || user?.rol?.toLowerCase().includes('tecnico');
+  // Verificar si es Técnico (rol 3)
+  const isTecnico = user?.id_rol === 3 || user?.rol?.toLowerCase().includes('tecnico');
 
   // Load Technicians (for sidebar)
   const loadTechnicians = async () => {
@@ -48,12 +48,14 @@ const AppointmentsPage = () => {
              const myProfile = await usersService.getMyProfile();
              allUsers = [myProfile];
           } else {
+             // Admin y Coordinador cargan todos
              const response = await usersService.getAllUsers();
              allUsers = Array.isArray(response) ? response : (response.data || response.users || []);
           }
           
           const techs = allUsers.filter(u => 
-             (u.id_rol === 2 || u.id_rol === 3 || (u.rol && typeof u.rol === 'string' && u.rol.toLowerCase().includes('tecnico'))) &&
+             // Filtrar solo roles relevantes (2=Coordinador, 3=Técnico) - EXCLUIR ADMIN (1)
+             ([2, 3].includes(u.id_rol) || (u.rol && typeof u.rol === 'string' && ['técnico', 'tecnico', 'coordinador'].some(r => u.rol.toLowerCase().includes(r)) && !u.rol.toLowerCase().includes('admin'))) &&
              u.estado_usuario === 'Activo'
           ).map(u => ({
               id: u.id_usuario ?? u.id,
@@ -64,10 +66,12 @@ const AppointmentsPage = () => {
           
           setTechnicians(techs);
           
+          // Lógica de selección inicial
           if (isTecnico) {
              const myId = user.id_usuario ?? user.id;
              setVisibleUserIds(new Set([Number(myId)]));
           } else {
+             // Coordinador/Admin ven a todos por defecto
              setVisibleUserIds(new Set(techs.map(t => t.id)));
           }
       } catch (error) {
@@ -325,13 +329,27 @@ const AppointmentsPage = () => {
   };
 
   const filteredAppointments = appointments.filter(appt => {
+     // BYPASS: Si es Coordinador o Admin, MOSTRAR TODO SIEMPRE (Ignorar filtros de sidebar temporalmente para debug/fix)
+     if (isCoordinadorOrAdmin) return true;
+
      const meta = appt.extendedProps || {};
      // If user is Technician, only show their own appointments
      if (isTecnico) {
        return Number(meta.usuarioId) === Number(user.id_usuario ?? user.id);
      }
-     // Filter by visibility of technicians
+     
+     // Si es coordinador o admin, mostrar todas las citas si no hay filtro activo
+     // O si el usuario asignado está en la lista visible
+     if (!meta.usuarioId) return true; // Mostrar citas sin asignar
+     
+     if (visibleUserIds.size === 0) return true; // Si no hay nadie seleccionado (o carga inicial fallida), mostrar todo por defecto
+
+     // FIX: Si el usuario asignado NO está en la lista de técnicos conocidos (sidebar), mostrar la cita para no perderla de vista
+     const isKnownTech = technicians.some(t => t.id === Number(meta.usuarioId));
+     if (!isKnownTech) return true;
+     
      if (!visibleUserIds.has(Number(meta.usuarioId))) return false;
+     
      return true;
   });
 

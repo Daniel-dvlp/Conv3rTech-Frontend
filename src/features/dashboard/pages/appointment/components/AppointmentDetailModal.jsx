@@ -3,7 +3,7 @@ import { FaTimes, FaEdit, FaTrash, FaUser, FaPhone, FaMapMarkerAlt, FaCalendarAl
 import { usePermissions } from '../../../../../shared/hooks/usePermissions';
 
 const AppointmentDetailModal = ({ isOpen, onClose, appointment, onEdit, onDelete }) => {
-  const { canDelete } = usePermissions();
+  const { canDelete, canEdit } = usePermissions();
   if (!isOpen || !appointment) return null;
 
   const {
@@ -90,12 +90,14 @@ const AppointmentDetailModal = ({ isOpen, onClose, appointment, onEdit, onDelete
               <FaTrash size={14} /> Eliminar
             </button>
           )}
-          <button
-            onClick={onEdit}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-md"
-          >
-            <FaEdit size={14} /> Editar
-          </button>
+          {canEdit('citas') && (
+            <button
+              onClick={onEdit}
+              className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-md"
+            >
+              <FaEdit size={14} /> Editar
+            </button>
+          )}
         </div>
       </div>
     </div>

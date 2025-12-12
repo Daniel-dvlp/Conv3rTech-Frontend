@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'https://conv3rtech-api-cd12e8da137d.herokuapp.com/api';
-// const API_BASE_URL = 'http://localhost:3006/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -13,7 +12,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    if (process.env.NODE_ENV === 'development') {
+    if (import.meta.env.MODE === 'development') {
       console.debug('[API] request', { method: config.method, url: config.url, baseURL: API_BASE_URL });
     }
     return config;
