@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3006/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://convertech-bf96e8817559.herokuapp.com/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

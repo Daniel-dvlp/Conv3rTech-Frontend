@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaSpinner, FaTimes, FaPlus } from 'react-icons/fa';
 import { Switch } from '@headlessui/react';
-import { serviceCategoryService } from '../../services_category/services/serviceCategoryService.js';
+import { serviceCategoryService } from '../../services_category/services/serviceCategoryService';
 import cloudinaryService from '../../../../../services/cloudinaryService';
-import { toast } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 // Componentes auxiliares estandarizados
 const FormSection = ({ title, children }) => (
@@ -61,10 +61,7 @@ const ServiceFormModal = ({ isOpen, onClose, onSubmit, servicio, esEdicion }) =>
   // Función para formatear número a formato con puntos y comas
   const formatPrecio = (value) => {
     if (!value || value === '') return '';
-    // Si ya está formateado, retornarlo
-    if (typeof value === 'string' && value.includes('.') && !value.includes(',')) {
-      return value;
-    }
+    
     // Convertir número a string y formatear
     const numValue = typeof value === 'number' ? value : parseFloat(value);
     if (isNaN(numValue)) return '';
