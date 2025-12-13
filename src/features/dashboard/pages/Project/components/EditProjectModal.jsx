@@ -298,31 +298,33 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
     // Verificar si el cliente tiene la propiedad 'AddressClients' o 'direcciones'
     const direcciones = cliente?.AddressClients || cliente?.direcciones || [];
 
-    // Pre-calcular materiales y servicios a heredar
-    const materialesHeredados = (projectData.materiales || []).map(mat => ({
-        item: mat.item,
-        cantidad: 0,
-        id_producto: mat.id_producto
-    }));
-    const serviciosHeredados = (projectData.servicios || []).map(serv => ({
-        servicio: serv.servicio,
-        cantidad: 0,
-        precio: serv.precio,
-        id_servicio: serv.id_servicio
-    }));
-
     return (
-      direcciones.map((direccion) => ({
-        nombre: direccion.nombre_direccion || direccion.nombre,
-        ubicacion: `${direccion.direccion}, ${direccion.ciudad}`,
-        materialesAsignados: materialesHeredados,
-        serviciosAsignados: serviciosHeredados,
-        presupuesto: {
-          materiales: 0,
-          servicios: 0,
-          total: 0,
-        },
-      })) || []
+      direcciones.map((direccion) => {
+        // Crear copias frescas para cada sede para evitar referencias compartidas
+        const materialesHeredados = (projectData.materiales || []).map(mat => ({
+            item: mat.item,
+            cantidad: 0,
+            id_producto: mat.id_producto
+        }));
+        const serviciosHeredados = (projectData.servicios || []).map(serv => ({
+            servicio: serv.servicio,
+            cantidad: 0,
+            precio: serv.precio,
+            id_servicio: serv.id_servicio
+        }));
+
+        return {
+          nombre: direccion.nombre_direccion || direccion.nombre,
+          ubicacion: `${direccion.direccion}, ${direccion.ciudad}`,
+          materialesAsignados: materialesHeredados,
+          serviciosAsignados: serviciosHeredados,
+          presupuesto: {
+            materiales: 0,
+            servicios: 0,
+            total: 0,
+          },
+        };
+      }) || []
     );
   };
 
@@ -824,7 +826,7 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
   const handleMaterialAsignadoChange = (idx, value) => {
     setSedeForm((prev) => {
       const materialesAsignados = [...(prev.materialesAsignados || [])];
-      materialesAsignados[idx].cantidad = value;
+      materialesAsignados[idx] = { ...materialesAsignados[idx], cantidad: value };
       return { ...prev, materialesAsignados };
     });
   };
@@ -855,7 +857,7 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
             )
           : 0);
       if (val > maxDisponible) val = maxDisponible;
-      serviciosAsignados[idx].cantidad = val;
+      serviciosAsignados[idx] = { ...serviciosAsignados[idx], cantidad: val };
       return { ...prev, serviciosAsignados };
     });
   };
