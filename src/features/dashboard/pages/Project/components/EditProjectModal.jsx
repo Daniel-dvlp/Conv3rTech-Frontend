@@ -627,6 +627,30 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
         console.warn("No se encontró ID para el responsable (o es Sin asignar):", projectData.responsable);
       }
 
+      // Validar stock de materiales antes de enviar
+      for (const mat of updatedData.materiales) {
+        const product = availableProducts.find(p => (p.id_producto || p.id) === mat.id_producto);
+        if (product) {
+            // Calcular delta
+            let delta = mat.cantidad;
+            
+            // Buscar cantidad original
+            const originalMat = project.materiales?.find(m => {
+                const mId = m.id_producto || m.id;
+                return mId === mat.id_producto;
+            });
+            
+            if (originalMat) {
+                delta = mat.cantidad - (Number(originalMat.cantidad) || 0);
+            }
+            
+            if (delta > 0 && delta > product.stock) {
+                showToast(`Stock insuficiente para ${product.nombre}. Disponible: ${product.stock}, Adicional Requerido: ${delta}`, "error");
+                return;
+            }
+        }
+      }
+
       await onUpdate(updatedData);
     } catch (error) {
       console.error("Error al actualizar:", error);
@@ -695,7 +719,14 @@ const EditProjectModal = ({ isOpen, onClose, onUpdate, project }) => {
                   className="px-4 py-2 hover:bg-blue-50 cursor-pointer flex justify-between items-center"
                   onClick={() => handleAddItem(item)}
                 >
-                  <span>{item.nombre}</span>
+                  <div className="flex flex-col">
+                    <span>{item.nombre}</span>
+                    {isMaterial && (
+                      <span className={`text-[10px] ${item.stock > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                        Stock: {item.stock}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-gray-500 font-semibold">
                     ${(item.precio || 0).toLocaleString()}
                   </span>
