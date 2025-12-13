@@ -30,7 +30,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onAnnul, onDelete, canManag
 
     return (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden animate-fade-in-up">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md md:max-w-2xl flex flex-col overflow-hidden animate-fade-in-up">
                 
                 {/* Header */}
                 <div className="bg-gray-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
@@ -61,7 +61,7 @@ const EventDetailsModal = ({ isOpen, onClose, event, onAnnul, onDelete, canManag
                     </div>
 
                     {/* User Info */}
-                    <div className="grid grid-cols-1 gap-4 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
                         <div className="flex items-center gap-3">
                             <div className="bg-white p-2 rounded-full text-blue-600 shadow-sm">
                                 <FaUser />

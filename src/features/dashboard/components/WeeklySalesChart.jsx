@@ -92,10 +92,6 @@ const WeeklySalesChart = ({ data }) => {
           <h3 className="text-gray-900 text-lg font-bold leading-normal">Ventas Diarias</h3>
           <p className="text-gray-500 text-sm">Total de ventas de los últimos 7 días.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setMode('week')} className={`text-sm font-semibold px-3 py-1.5 rounded-lg ${mode==='week'?'text-blue-600 bg-blue-100':'text-gray-500 hover:bg-gray-100'}`}>Semana</button>
-          <button onClick={() => setMode('month')} className={`text-sm font-semibold px-3 py-1.5 rounded-lg ${mode==='month'?'text-blue-600 bg-blue-100':'text-gray-500 hover:bg-gray-100'}`}>Mes</button>
-        </div>
       </div>
       <div className="relative h-[220px] w-full" ref={containerRef}>
         <svg

@@ -5,29 +5,25 @@ import React from 'react';
 const SkeletonSupplierRow = () => {
   return (
     <tr className="animate-pulse">
-      {/* Tax ID */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="h-4 w-24 bg-gray-200 rounded"></div>
-      </td>
-      {/* Contact Name */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="h-4 w-32 bg-gray-200 rounded"></div>
-      </td>
-      {/* Company */}
+      {/* Company (Nombre Entidad) */}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="h-4 w-40 bg-gray-200 rounded"></div>
+      </td>
+      {/* Tax ID (NIT) */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="h-4 w-24 bg-gray-200 rounded"></div>
       </td>
       {/* Phone */}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="h-4 w-28 bg-gray-200 rounded"></div>
       </td>
+      {/* Contact Name */}
+      <td className="px-6 py-4 whitespace-nowrap">
+        <div className="h-4 w-32 bg-gray-200 rounded"></div>
+      </td>
       {/* Email */}
       <td className="px-6 py-4 whitespace-nowrap">
         <div className="h-4 w-40 bg-gray-200 rounded"></div>
-      </td>
-      {/* Address */}
-      <td className="px-6 py-4 whitespace-nowrap">
-        <div className="h-4 w-48 bg-gray-200 rounded"></div>
       </td>
       {/* Status */}
       <td className="px-6 py-4 whitespace-nowrap">

@@ -14,7 +14,9 @@ export const serviceCategoryService = {
   createCategory: async (categoryData) => {
     const nombre = categoryData.nombre?.trim();
     const descripcion = categoryData.descripcion?.trim();
-    const estado = (categoryData.estado || 'activo').toLowerCase();
+    const estado = typeof categoryData.estado === 'boolean' 
+      ? (categoryData.estado ? 'activo' : 'inactivo')
+      : (categoryData.estado || 'activo').toLowerCase();
 
     // 🔹 VALIDACIONES DEL NOMBRE
     if (!nombre) throw new Error('El nombre no puede estar vacío.');
