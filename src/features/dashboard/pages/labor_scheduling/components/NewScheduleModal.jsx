@@ -148,12 +148,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
             return;
         }
 
-        if (!formData.fechaFin) {
-            alert('La fecha de fin es obligatoria');
-            return;
-        }
-
-        if (formData.fechaFin < formData.fechaInicio) {
+        if (formData.fechaFin && formData.fechaFin < formData.fechaInicio) {
             alert('La fecha de fin debe ser posterior a la fecha de inicio');
             return;
         }
@@ -166,7 +161,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
             descripcion: formData.descripcion,
             color: formData.color,
             fechaInicio: formData.fechaInicio,
-            fechaFin: formData.fechaFin,
+            fechaFin: formData.fechaFin || null,
             dias: formData.dias,
         };
         
@@ -338,7 +333,7 @@ const NewScheduleModal = ({ isOpen, onClose, onSave, onSuccess, initialData }) =
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin <span className="text-red-500">*</span></label>
+                                        <label className="block text-sm font-medium text-gray-700 mb-1">Fecha Fin <span className="text-gray-400 text-xs font-normal">(Opcional - Indefinido)</span></label>
                                         <input
                                             type="date"
                                             value={formData.fechaFin}

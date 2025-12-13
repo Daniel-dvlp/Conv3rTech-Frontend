@@ -37,35 +37,37 @@ const QuotesPage = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [quoteToCancel, setQuoteToCancel] = useState(null);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const [quotesRes, clientsRes, productsRes, servicesRes] = await Promise.all([
-          quotesService.getAllQuotes(),
-          clientsApi.getAllClients(),
-          productsService.getAllProducts(),
-          servicesCatalogApi.getAllServices(),
-        ]);
-        const quotesData = Array.isArray(quotesRes) ? quotesRes : quotesRes?.data ?? [];
-        setQuotes(quotesData);
-        
-        const allClients = Array.isArray(clientsRes) ? clientsRes : clientsRes?.data ?? [];
-        setClients(allClients.filter(c => c.estado_cliente === true));
-        
-        // Filtrar productos activos
-        const allProducts = Array.isArray(productsRes) ? productsRes : productsRes?.data ?? [];
-        setProducts(allProducts.filter(p => p.estado === true));
+  const loadData = async () => {
+    try {
+      const [quotesRes, clientsRes, productsRes, servicesRes] = await Promise.all([
+        quotesService.getAllQuotes(),
+        clientsApi.getAllClients(),
+        productsService.getAllProducts(),
+        servicesCatalogApi.getAllServices(),
+      ]);
+      const quotesData = Array.isArray(quotesRes) ? quotesRes : quotesRes?.data ?? [];
+      setQuotes(quotesData);
+      
+      const allClients = Array.isArray(clientsRes) ? clientsRes : clientsRes?.data ?? [];
+      setClients(allClients.filter(c => c.estado_cliente === true));
+      
+      // Filtrar productos activos
+      const allProducts = Array.isArray(productsRes) ? productsRes : productsRes?.data ?? [];
+      setProducts(allProducts.filter(p => p.estado === true));
 
-        // Filtrar servicios activos
-        const allServices = Array.isArray(servicesRes) ? servicesRes : servicesRes?.data ?? [];
-        setServices(allServices.filter(s => s.estado === 'activo'));
-      } catch (e) {
-        console.error('Error cargando datos de cotizaciones', e);
-        showError('No se pudieron cargar las cotizaciones');
-      } finally {
-        setLoading(false);
-      }
-    })();
+      // Filtrar servicios activos
+      const allServices = Array.isArray(servicesRes) ? servicesRes : servicesRes?.data ?? [];
+      setServices(allServices.filter(s => s.estado === 'activo'));
+    } catch (e) {
+      console.error('Error cargando datos de cotizaciones', e);
+      showError('No se pudieron cargar las cotizaciones');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, []);
 
   const mockServices = [
@@ -440,6 +442,7 @@ const QuotesPage = () => {
     const created = await quotesService.createQuote(payload);
     showSuccess('Cotización creada exitosamente');
     setIsCreateOpen(false);
+    loadData();
     // Opcional: insertar arriba si el listado ya es real. Con mocks, lo dejamos fuera.
     // setQuotes(prev => [created, ...prev]);
     // Si hay error, se lanza y será capturado en el modal

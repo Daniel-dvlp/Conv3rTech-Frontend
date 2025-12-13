@@ -22,13 +22,13 @@ const ProductsTable = ({ products, categories, onViewDetails, onEditProduct, onD
       <table className="w-full">
         <thead className="bg-gray-50">
            <tr>
-             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre</th>
-             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Modelo</th>
-             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Categoría</th>
-             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Precio</th>
-             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stock</th>
-             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estado</th>
-             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/4">Nombre</th>
+             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/6">Modelo</th>
+             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/6">Categoría</th>
+             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/12">Precio</th>
+             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/12">Stock</th>
+             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase w-1/12">Estado</th>
+             <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase w-1/12">Acciones</th>
            </tr>
          </thead>
         <tbody className="divide-y divide-gray-200">
