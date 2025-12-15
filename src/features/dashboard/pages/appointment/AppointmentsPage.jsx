@@ -174,6 +174,13 @@ const AppointmentsPage = () => {
   };
 
   const handleEventDrop = async (info) => {
+    // Si es técnico, NO permitir mover eventos
+    if (isTecnico) {
+      info.revert();
+      toast.error("No tienes permiso para mover citas.");
+      return;
+    }
+
     const { event } = info;
     const { id } = event;
     const newStart = event.start;

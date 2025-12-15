@@ -191,7 +191,7 @@ const LaborSchedulingCalendar = ({ events, onSelect, onEventClick, onEventDrop, 
           week: 'Semana',
           day: 'Día'
         }}
-        editable={false} // Disable D&D for now unless explicitly required, simplified for stability
+        editable={false} // Siempre deshabilitado para programación laboral por estabilidad
         droppable={false}
         selectable={true}
         selectMirror={true}
