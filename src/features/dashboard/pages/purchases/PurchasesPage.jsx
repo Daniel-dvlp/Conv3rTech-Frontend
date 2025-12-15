@@ -15,12 +15,19 @@ const ITEMS_POR_PAGINA = 5;
 
 const PaginaCompras = () => {
   // Usar el hook personalizado
-  const { purchases: compras, loading: cargando, suppliers: proveedores, products: productos, createPurchase, changePurchaseStatus } = usePurchases();
+  const { purchases: compras, loading: cargando, suppliers: proveedores, products: productos, createPurchase, changePurchaseStatus, reloadProducts } = usePurchases();
   
   const [paginaActual, setPaginaActual] = useState(1);
   const [terminoBusqueda, setTerminoBusqueda] = useState('');
   const [compraSeleccionada, setCompraSeleccionada] = useState(null);
   const [esNuevaCompraAbierto, setEsNuevaCompraAbierto] = useState(false);
+
+  // Recargar productos al abrir el modal de nueva compra para asegurar que estén actualizados
+  useEffect(() => {
+    if (esNuevaCompraAbierto) {
+      reloadProducts();
+    }
+  }, [esNuevaCompraAbierto, reloadProducts]);
 
   const normalizar = (texto) =>
     String(texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();

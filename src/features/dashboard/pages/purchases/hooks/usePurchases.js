@@ -247,8 +247,8 @@ export const usePurchases = () => {
       setSuppliers(normalizedSuppliers);
       setProducts(normalizedProducts);
     } catch (err) {
-      console.error('Error al cargar proveedores y productos:', err);
-      toast.error('Error al cargar datos adicionales');
+      setError(err.message);
+      toast.error('Error al cargar datos auxiliares');
     }
   }, []);
 
@@ -275,6 +275,7 @@ export const usePurchases = () => {
         await loadPurchases();
       }
       toast.success('Compra creada exitosamente');
+      loadSuppliersAndProducts();
       return purchaseId;
     } catch (err) {
       setError(err.message);
@@ -283,7 +284,7 @@ export const usePurchases = () => {
     } finally {
       setLoading(false);
     }
-  }, [loadPurchases]);
+  }, [loadPurchases, loadSuppliersAndProducts]);
 
   // Actualizar compra
   const updatePurchase = useCallback(async (id, purchaseData) => {
@@ -332,6 +333,9 @@ export const usePurchases = () => {
       await purchasesApi.changePurchaseStatus(id, backendStatus, motivo);
       await loadPurchases();
       toast.success(`Compra ${newStatus === 'Anulada' ? 'anulada' : 'actualizada'} exitosamente`);
+      if (newStatus === 'Anulada') {
+        loadSuppliersAndProducts();
+      }
     } catch (err) {
       setError(err.message);
       toast.error('Error al cambiar estado de la compra');
@@ -339,7 +343,7 @@ export const usePurchases = () => {
     } finally {
       setLoading(false);
     }
-  }, [loadPurchases]);
+  }, [loadPurchases, loadSuppliersAndProducts]);
 
   // Cargar compras, proveedores y productos al montar el componente
   useEffect(() => {
@@ -354,6 +358,8 @@ export const usePurchases = () => {
     suppliers,
     products,
     loadPurchases,
+    reloadPurchases: loadPurchases,
+    reloadProducts: loadSuppliersAndProducts,
     createPurchase,
     updatePurchase,
     deletePurchase,
