@@ -165,7 +165,8 @@ const AppointmentsCalendar = ({ events, onSelect, onEventClick, onDatesSet, cale
           week: 'Semana',
           day: 'Día'
         }}
-        editable={true}
+        editable={true} // Se permite D&D general, pero se controla en onEventDrop
+        droppable={false}
         selectable={true}
         selectMirror={true}
         dayMaxEvents={true}
