@@ -234,16 +234,25 @@ export const usePurchases = () => {
         suppliersApi.getAllSuppliers(),
         productsService.getAllProducts()
       ]);
+
       const normalizedSuppliers = Array.isArray(suppliersData)
         ? suppliersData
             .map(transformSupplierOption)
             .filter((supplier) => supplier.id)
         : [];
-      const normalizedProducts = Array.isArray(productsData)
-        ? productsData
+
+      // Manejo robusto de respuesta de productos (array o { data: [...] })
+      let rawProducts = productsData;
+      if (productsData && !Array.isArray(productsData) && Array.isArray(productsData.data)) {
+        rawProducts = productsData.data;
+      }
+
+      const normalizedProducts = Array.isArray(rawProducts)
+        ? rawProducts
             .map(transformProductOption)
             .filter((product) => product.id_producto)
         : [];
+
       setSuppliers(normalizedSuppliers);
       setProducts(normalizedProducts);
     } catch (err) {
